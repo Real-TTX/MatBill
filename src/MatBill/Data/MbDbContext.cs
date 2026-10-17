@@ -33,6 +33,20 @@ public class MbDbContext(DbContextOptions<MbDbContext> options, ICurrentUser cur
 
     public DbSet<Notification> Notification => Set<Notification>();
 
+    public DbSet<Quote> Quote => Set<Quote>();
+
+    public DbSet<QuoteLine> QuoteLine => Set<QuoteLine>();
+
+    public DbSet<Expense> Expense => Set<Expense>();
+
+    public DbSet<BankAccount> BankAccount => Set<BankAccount>();
+
+    public DbSet<BankConnection> BankConnection => Set<BankConnection>();
+
+    public DbSet<BankTransaction> BankTransaction => Set<BankTransaction>();
+
+    public DbSet<BankImport> BankImport => Set<BankImport>();
+
     public DbSet<NumberSequence> NumberSequence => Set<NumberSequence>();
 
     public DbSet<StoredFile> StoredFile => Set<StoredFile>();
@@ -159,6 +173,47 @@ public class MbDbContext(DbContextOptions<MbDbContext> options, ICurrentUser cur
             e.HasIndex(x => new { x.UserId, x.Key }).IsUnique().HasFilter("\"Key\" IS NOT NULL");
             e.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
         });
+        b.Entity<Quote>().Ignore(x => x.IsDraft);
+        b.Entity(typeof(QuoteLine)).Property(nameof(LineBase.Quantity)).HasColumnType("numeric(18,3)");
+        b.Entity(typeof(QuoteLine)).Property(nameof(LineBase.UnitPrice)).HasColumnType("numeric(18,4)");
+        b.Entity(typeof(QuoteLine)).Property(nameof(LineBase.TaxRate)).HasColumnType("numeric(5,2)");
+        b.Entity(typeof(QuoteLine)).Ignore(nameof(LineBase.Net)).Ignore(nameof(LineBase.Amounts));
+        b.Entity<Quote>(e =>
+        {
+            e.HasIndex(x => x.Number).IsUnique().HasFilter("\"Number\" IS NOT NULL");
+            e.HasIndex(x => new { x.Status, x.ValidUntil });
+            e.HasOne(x => x.Customer).WithMany().HasForeignKey(x => x.CustomerId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.PdfFile).WithMany().HasForeignKey(x => x.PdfFileId).OnDelete(DeleteBehavior.SetNull);
+        });
+        b.Entity<QuoteLine>(e =>
+        {
+            e.HasIndex(x => new { x.QuoteId, x.Position });
+            e.HasOne(x => x.Quote).WithMany(x => x.Lines).HasForeignKey(x => x.QuoteId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<Expense>(e =>
+        {
+            e.HasIndex(x => x.Number).IsUnique().HasFilter("\"UpdateState\" <> 0");
+            e.HasIndex(x => x.ExpenseDate);
+            e.HasIndex(x => x.Status);
+            e.Property(x => x.TaxRate).HasColumnType("numeric(5,2)");
+            e.HasOne(x => x.ReceiptFile).WithMany().HasForeignKey(x => x.ReceiptFileId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<BankAccount>().HasOne(x => x.BankConnection).WithMany().HasForeignKey(x => x.BankConnectionId).OnDelete(DeleteBehavior.SetNull);
+        b.Entity<BankConnection>().HasIndex(x => x.Token).IsUnique();
+        b.Entity<BankTransaction>(e =>
+        {
+            e.HasIndex(x => new { x.BankAccountId, x.ImportKey }).IsUnique();
+            e.HasIndex(x => new { x.State, x.BookingDate });
+            e.HasIndex(x => x.InvoiceId);
+            e.HasIndex(x => x.ExpenseId);
+            e.HasOne(x => x.BankAccount).WithMany().HasForeignKey(x => x.BankAccountId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Invoice).WithMany().HasForeignKey(x => x.InvoiceId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(x => x.Expense).WithMany().HasForeignKey(x => x.ExpenseId).OnDelete(DeleteBehavior.SetNull);
+        });
+        b.Entity<BankImport>().HasOne(x => x.BankAccount).WithMany().HasForeignKey(x => x.BankAccountId).OnDelete(DeleteBehavior.Cascade);
+
         b.Entity<NumberSequence>().HasIndex(x => new { x.Name, x.Period }).IsUnique();
 
         b.Entity<StoredFile>().HasIndex(x => x.Token).IsUnique();

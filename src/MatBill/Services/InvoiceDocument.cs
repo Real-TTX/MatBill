@@ -48,6 +48,45 @@ public sealed record InvoiceDocument
 
     public bool IsCancelled { get; init; }
 
+    public DocumentKind Kind { get; init; } = DocumentKind.Invoice;
+
+    /// <summary>A cancellation invoice: the number of the invoice it cancels.</summary>
+    public string? CancelsNumber { get; init; }
+
+    /// <summary>A quote: the last day it stands.</summary>
+    public DateOnly? ValidUntil { get; init; }
+
+    public string? BuyerReference { get; init; }
+
+    public string NumberLabel => Kind == DocumentKind.Quote ? "Angebotsnummer" : "Rechnungsnummer";
+
+    public string DateLabel => Kind == DocumentKind.Quote ? "Angebotsdatum" : "Rechnungsdatum";
+
+    /// <summary>The box below the totals: payment terms of an invoice, terms of a quote.</summary>
+    public string TermsLabel => Kind == DocumentKind.Quote ? "Bedingungen" : "Zahlungsbedingungen";
+
+    /// <summary>The stamp across a page that is no valid document (yet or any more).</summary>
+    public string? Stamp => IsDraft ? "ENTWURF" : IsCancelled ? "STORNIERT" : null;
+
+    public static InvoiceDocument Of(Quote quote, InvoicingConfig invoicing) => new()
+    {
+        Kind = DocumentKind.Quote,
+        Title = quote.Title,
+        Number = quote.Number,
+        CustomerNumber = quote.Customer?.Number,
+        InvoiceDate = quote.QuoteDate,
+        ValidUntil = quote.ValidUntil,
+        RecipientLines = RecipientLinesOf(quote.RecipientName, quote.RecipientContact, quote.RecipientStreet, quote.RecipientPostalCode, quote.RecipientCity, quote.RecipientCountry),
+        IntroText = quote.IntroText,
+        PaymentTerms = Texts.ExpandQuote(quote.Terms, quote.ValidUntil),
+        ClosingText = quote.ClosingText,
+        Lines = [.. quote.Lines.OrderBy(l => l.Position).Select((l, i) => new DocumentLine(i + 1, l.Name, l.Description, l.Quantity, l.Unit, l.UnitPrice, quote.TaxExempt ? 0m : l.TaxRate, l.Net))],
+        Totals = InvoiceMath.Totals(quote.Lines.Select(l => l.Amounts), quote.TaxExempt),
+        TaxExempt = quote.TaxExempt,
+        TaxExemptNote = quote.TaxExempt ? invoicing.SmallBusinessNote : null,
+        IsDraft = quote.Status == QuoteStatus.Draft,
+    };
+
     /// <summary>"Leistungsdatum 17.10.2026" or "Leistungszeitraum 01.10.2026 bis 31.10.2026"; null when there is none.</summary>
     public string? ServiceText => (ServiceFrom, ServiceTo) switch
     {
@@ -61,6 +100,9 @@ public sealed record InvoiceDocument
 
     public static InvoiceDocument Of(Invoice invoice, InvoicingConfig invoicing) => new()
     {
+        Kind = invoice.Kind == InvoiceKind.Cancellation ? DocumentKind.Cancellation : DocumentKind.Invoice,
+        CancelsNumber = invoice.CancelsNumber,
+        BuyerReference = invoice.BuyerReference,
         Title = invoice.Title,
         Number = invoice.Number,
         CustomerNumber = invoice.Customer?.Number,
@@ -82,14 +124,24 @@ public sealed record InvoiceDocument
     };
 
     public static IReadOnlyList<string> RecipientLinesOf(Invoice i)
+        => RecipientLinesOf(i.RecipientName, i.RecipientContact, i.RecipientStreet, i.RecipientPostalCode, i.RecipientCity, i.RecipientCountry);
+
+    public static IReadOnlyList<string> RecipientLinesOf(string? name, string? contact, string? street, string? postalCode, string? city, string? country)
         => [.. new[]
         {
-            i.RecipientName,
-            i.RecipientContact,
-            i.RecipientStreet,
-            string.Join(" ", new[] { i.RecipientPostalCode, i.RecipientCity }.Where(s => !string.IsNullOrWhiteSpace(s))),
-            string.Equals(i.RecipientCountry, "Deutschland", StringComparison.OrdinalIgnoreCase) ? null : i.RecipientCountry,
+            name,
+            contact,
+            street,
+            string.Join(" ", new[] { postalCode, city }.Where(s => !string.IsNullOrWhiteSpace(s))),
+            string.Equals(country, "Deutschland", StringComparison.OrdinalIgnoreCase) ? null : country,
         }.Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s!)];
+}
+
+public enum DocumentKind
+{
+    Invoice,
+    Cancellation,
+    Quote,
 }
 
 /// <summary>The placeholders of the texts of an invoice and a mail.</summary>
@@ -98,6 +150,18 @@ public static class Texts
     /// <summary>The payment terms with the days and the due date filled in.</summary>
     public static string? Expand(string? text, int days, DateOnly? due)
         => text?.Replace("{Tage}", days.ToString(Fmt.Culture), StringComparison.Ordinal).Replace("{Faellig}", Fmt.Date(due), StringComparison.Ordinal);
+
+    /// <summary>The terms of a quote with the last day filled in.</summary>
+    public static string? ExpandQuote(string? text, DateOnly validUntil) => text?.Replace("{Gueltig}", Fmt.Date(validUntil), StringComparison.Ordinal);
+
+    public static string Mail(string template, Quote quote, CompanyConfig company)
+        => template
+            .Replace("{Nummer}", quote.Number ?? "", StringComparison.Ordinal)
+            .Replace("{Kunde}", quote.RecipientName ?? "", StringComparison.Ordinal)
+            .Replace("{Betrag}", Fmt.Money(quote.GrossTotal), StringComparison.Ordinal)
+            .Replace("{Gueltig}", Fmt.Date(quote.ValidUntil), StringComparison.Ordinal)
+            .Replace("{Datum}", Fmt.Date(quote.QuoteDate), StringComparison.Ordinal)
+            .Replace("{Firma}", company.Name, StringComparison.Ordinal);
 
     public static string Mail(string template, Invoice invoice, CompanyConfig company)
         => template

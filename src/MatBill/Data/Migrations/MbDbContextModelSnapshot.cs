@@ -275,6 +275,277 @@ namespace MatBill.Data.Migrations
                     b.ToTable("BackupTarget");
                 });
 
+            modelBuilder.Entity("MatBill.Data.Entities.BankAccount", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<decimal?>("Balance")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateOnly?>("BalanceDate")
+                        .HasColumnType("date");
+
+                    b.Property<long?>("BankConnectionId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("BankName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Bic")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CreateUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("CsvMapping")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ExternalId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Iban")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastSyncDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastSyncError")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<short>("UpdateState")
+                        .HasColumnType("smallint");
+
+                    b.Property<long?>("UpdateUserId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BankConnectionId");
+
+                    b.ToTable("BankAccount");
+                });
+
+            modelBuilder.Entity("MatBill.Data.Entities.BankConnection", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("BankName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CreateUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Error")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SessionId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("Token")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("UpdateUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("ValidUntil")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.ToTable("BankConnection");
+                });
+
+            modelBuilder.Entity("MatBill.Data.Entities.BankImport", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("Added")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("BankAccountId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CreateUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Duplicates")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FileName")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("ImportDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Matched")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Total")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("UpdateUserId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BankAccountId");
+
+                    b.ToTable("BankImport");
+                });
+
+            modelBuilder.Entity("MatBill.Data.Entities.BankTransaction", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<long>("BankAccountId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("BankImportId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateOnly>("BookingDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("CounterpartyIban")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CounterpartyName")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CreateUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("EndToEndId")
+                        .HasColumnType("text");
+
+                    b.Property<long?>("ExpenseId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ImportKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long?>("InvoiceId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("MatchScore")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("MatchedAutomatically")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Purpose")
+                        .HasColumnType("text");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("UpdateUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateOnly?>("ValueDate")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpenseId");
+
+                    b.HasIndex("InvoiceId");
+
+                    b.HasIndex("BankAccountId", "ImportKey")
+                        .IsUnique();
+
+                    b.HasIndex("State", "BookingDate");
+
+                    b.ToTable("BankTransaction");
+                });
+
             modelBuilder.Entity("MatBill.Data.Entities.Customer", b =>
                 {
                     b.Property<long>("Id")
@@ -282,6 +553,9 @@ namespace MatBill.Data.Migrations
                         .HasColumnType("bigint");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("BuyerReference")
+                        .HasColumnType("text");
 
                     b.Property<string>("City")
                         .HasColumnType("text");
@@ -352,6 +626,102 @@ namespace MatBill.Data.Migrations
                     b.ToTable("Customer");
                 });
 
+            modelBuilder.Entity("MatBill.Data.Entities.Expense", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CreateUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly?>("DueDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("ExpenseDate")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("FromEInvoice")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("GrossAmount")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<bool>("NeedsReview")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("NetAmount")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly?>("PaidDate")
+                        .HasColumnType("date");
+
+                    b.Property<long?>("ReceiptFileId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Supplier")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SupplierIban")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SupplierInvoiceNumber")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("TaxAmount")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("TaxRate")
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<short>("UpdateState")
+                        .HasColumnType("smallint");
+
+                    b.Property<long?>("UpdateUserId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpenseDate");
+
+                    b.HasIndex("Number")
+                        .IsUnique()
+                        .HasFilter("\"UpdateState\" <> 0");
+
+                    b.HasIndex("ReceiptFileId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("Expense");
+                });
+
             modelBuilder.Entity("MatBill.Data.Entities.Invoice", b =>
                 {
                     b.Property<long>("Id")
@@ -360,11 +730,23 @@ namespace MatBill.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<string>("BuyerReference")
+                        .HasColumnType("text");
+
                     b.Property<string>("CancelReason")
                         .HasColumnType("text");
 
+                    b.Property<long?>("CancellationInvoiceId")
+                        .HasColumnType("bigint");
+
                     b.Property<DateTime?>("CancelledDate")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CancelsInvoiceId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("CancelsNumber")
+                        .HasColumnType("text");
 
                     b.Property<string>("ClosingText")
                         .HasColumnType("text");
@@ -393,6 +775,10 @@ namespace MatBill.Data.Migrations
                     b.Property<DateTime?>("IssuedDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<decimal>("NetTotal")
                         .HasColumnType("numeric(18,2)");
 
@@ -412,6 +798,9 @@ namespace MatBill.Data.Migrations
                         .HasColumnType("text");
 
                     b.Property<long?>("PdfFileId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("QuoteId")
                         .HasColumnType("bigint");
 
                     b.Property<string>("RecipientCity")
@@ -765,6 +1154,179 @@ namespace MatBill.Data.Migrations
                     b.HasIndex("Name");
 
                     b.ToTable("Product");
+                });
+
+            modelBuilder.Entity("MatBill.Data.Entities.Quote", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime?>("AnsweredDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ClosingText")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CreateUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("CustomerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("GrossTotal")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("IntroText")
+                        .HasColumnType("text");
+
+                    b.Property<long?>("InvoiceId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("IssuedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("NetTotal")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Number")
+                        .HasColumnType("text");
+
+                    b.Property<long?>("PdfFileId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateOnly>("QuoteDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("RecipientCity")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RecipientContact")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RecipientCountry")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RecipientEmail")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RecipientName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RecipientPostalCode")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RecipientStreet")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("SentDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("TaxExempt")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("TaxTotal")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Terms")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<short>("UpdateState")
+                        .HasColumnType("smallint");
+
+                    b.Property<long?>("UpdateUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateOnly>("ValidUntil")
+                        .HasColumnType("date");
+
+                    b.Property<int>("ValidityDays")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("Number")
+                        .IsUnique()
+                        .HasFilter("\"Number\" IS NOT NULL");
+
+                    b.HasIndex("PdfFileId");
+
+                    b.HasIndex("Status", "ValidUntil");
+
+                    b.ToTable("Quote");
+                });
+
+            modelBuilder.Entity("MatBill.Data.Entities.QuoteLine", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CreateUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
+
+                    b.Property<long?>("ProductId")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("numeric(18,3)");
+
+                    b.Property<long>("QuoteId")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("TaxRate")
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<string>("Unit")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("UpdateUserId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuoteId", "Position");
+
+                    b.ToTable("QuoteLine");
                 });
 
             modelBuilder.Entity("MatBill.Data.Entities.RecurringInvoice", b =>
@@ -1303,6 +1865,62 @@ namespace MatBill.Data.Migrations
                     b.Navigation("Plan");
                 });
 
+            modelBuilder.Entity("MatBill.Data.Entities.BankAccount", b =>
+                {
+                    b.HasOne("MatBill.Data.Entities.BankConnection", "BankConnection")
+                        .WithMany()
+                        .HasForeignKey("BankConnectionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("BankConnection");
+                });
+
+            modelBuilder.Entity("MatBill.Data.Entities.BankImport", b =>
+                {
+                    b.HasOne("MatBill.Data.Entities.BankAccount", "BankAccount")
+                        .WithMany()
+                        .HasForeignKey("BankAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BankAccount");
+                });
+
+            modelBuilder.Entity("MatBill.Data.Entities.BankTransaction", b =>
+                {
+                    b.HasOne("MatBill.Data.Entities.BankAccount", "BankAccount")
+                        .WithMany()
+                        .HasForeignKey("BankAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MatBill.Data.Entities.Expense", "Expense")
+                        .WithMany()
+                        .HasForeignKey("ExpenseId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("MatBill.Data.Entities.Invoice", "Invoice")
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("BankAccount");
+
+                    b.Navigation("Expense");
+
+                    b.Navigation("Invoice");
+                });
+
+            modelBuilder.Entity("MatBill.Data.Entities.Expense", b =>
+                {
+                    b.HasOne("MatBill.Data.Entities.StoredFile", "ReceiptFile")
+                        .WithMany()
+                        .HasForeignKey("ReceiptFileId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ReceiptFile");
+                });
+
             modelBuilder.Entity("MatBill.Data.Entities.Invoice", b =>
                 {
                     b.HasOne("MatBill.Data.Entities.Customer", "Customer")
@@ -1357,6 +1975,34 @@ namespace MatBill.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MatBill.Data.Entities.Quote", b =>
+                {
+                    b.HasOne("MatBill.Data.Entities.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MatBill.Data.Entities.StoredFile", "PdfFile")
+                        .WithMany()
+                        .HasForeignKey("PdfFileId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("PdfFile");
+                });
+
+            modelBuilder.Entity("MatBill.Data.Entities.QuoteLine", b =>
+                {
+                    b.HasOne("MatBill.Data.Entities.Quote", "Quote")
+                        .WithMany("Lines")
+                        .HasForeignKey("QuoteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Quote");
                 });
 
             modelBuilder.Entity("MatBill.Data.Entities.RecurringInvoice", b =>
@@ -1444,6 +2090,11 @@ namespace MatBill.Data.Migrations
                 });
 
             modelBuilder.Entity("MatBill.Data.Entities.Invoice", b =>
+                {
+                    b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("MatBill.Data.Entities.Quote", b =>
                 {
                     b.Navigation("Lines");
                 });

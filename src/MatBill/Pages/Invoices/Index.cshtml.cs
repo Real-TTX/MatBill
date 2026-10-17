@@ -81,7 +81,7 @@ public sealed class IndexModel(MbDbContext db, TimeProvider clock) : PageModelBa
         Toolbar = result.Toolbar;
         Pager = result.Pager;
         HasAny = result.Toolbar.Total > 0;
-        ShownGross = await result.Filtered.Where(i => i.Status != InvoiceStatus.Cancelled && i.Status != InvoiceStatus.Draft).SumAsync(i => i.GrossTotal);
+        ShownGross = await result.Filtered.Where(i => i.Status != InvoiceStatus.Draft).SumAsync(i => i.GrossTotal);
         OpenSum = await db.Invoice.Where(i => i.Status == InvoiceStatus.Open).SumAsync(i => i.GrossTotal);
         OverdueSum = await db.Invoice.Where(i => i.Status == InvoiceStatus.Open && i.DueDate < today).SumAsync(i => i.GrossTotal);
         OverdueCount = await db.Invoice.CountAsync(i => i.Status == InvoiceStatus.Open && i.DueDate < today);

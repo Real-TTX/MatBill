@@ -268,7 +268,28 @@ public sealed class EditModel(MbDbContext db, InvoiceService invoices, Recurring
 
     public async Task<IActionResult> OnPostReopenAsync() => await ChangeAsync(i => invoices.ReopenAsync(i), i => $"Rechnung {i.Number} ist wieder offen.");
 
-    public async Task<IActionResult> OnPostCancelAsync(string? reason) => await ChangeAsync(i => invoices.CancelAsync(i, reason), i => $"Rechnung {i.Number} ist storniert.");
+    /// <summary>Cancels the invoice with a cancellation invoice of its own number; the page of the cancellation invoice opens.</summary>
+    public async Task<IActionResult> OnPostCancelAsync(string? reason)
+    {
+        var invoice = Id is { } id ? await invoices.FindAsync(id) : null;
+        if (invoice is null)
+        {
+            return NotFound();
+        }
+
+        try
+        {
+            var storno = await invoices.CancelAsync(invoice, reason);
+            nav.Invalidate();
+            Flash($"Rechnung {invoice.Number} ist storniert: Stornorechnung {storno.Number} angelegt. Sende sie dem Kunden.");
+            return RedirectToPage(new { id = storno.Id });
+        }
+        catch (InvoiceException ex)
+        {
+            FlashError(ex.Message);
+            return RedirectToPage(new { id = invoice.Id });
+        }
+    }
 
     public async Task<IActionResult> OnPostDuplicateAsync()
     {
@@ -325,7 +346,7 @@ public sealed class EditModel(MbDbContext db, InvoiceService invoices, Recurring
         ViewData["OwnHead"] = true;
         ViewData["Width"] = "wide";
         ViewData["ActiveHref"] = IsNew ? "/Invoices/Edit" : "/Invoices";
-        var title = IsNew ? "Neue Rechnung" : Invoice.Number is { } number ? $"Rechnung {number}" : "Rechnungsentwurf";
+        var title = IsNew ? "Neue Rechnung" : Invoice.Number is { } number ? $"{(Invoice.Kind == InvoiceKind.Cancellation ? "Stornorechnung" : "Rechnung")} {number}" : "Rechnungsentwurf";
         Head(title, null, ("Rechnungen", "/Invoices"), (IsNew ? "Neu" : Invoice.Number ?? "Entwurf", null));
 
         if (!Invoice.IsDraft)

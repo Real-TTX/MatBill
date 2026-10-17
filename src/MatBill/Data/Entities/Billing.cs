@@ -38,6 +38,9 @@ public class Customer : AuditedEntity, ISoftDeletable
     /// <summary>The VAT identification number of the customer (needed for reverse charge within the EU).</summary>
     public string? VatId { get; set; }
 
+    /// <summary>The Leitweg-ID of a public authority (or another buyer reference): every e-invoice to this customer carries it.</summary>
+    public string? BuyerReference { get; set; }
+
     /// <summary>The payment term of this customer in days; null takes the default of the company.</summary>
     public int? PaymentTermDays { get; set; }
 
@@ -129,6 +132,24 @@ public enum SendState
 public class Invoice : AuditedEntity, ISoftDeletable
 {
     /// <summary>The invoice number; null while it is a draft (the number is given when it is issued, so the range has no gaps).</summary>
+    /// <summary>Invoice, or the cancellation invoice of another one (negative amounts, own number, refers to the cancelled one).</summary>
+    public InvoiceKind Kind { get; set; } = InvoiceKind.Invoice;
+
+    /// <summary>A cancellation invoice: the invoice it cancels.</summary>
+    public long? CancelsInvoiceId { get; set; }
+
+    /// <summary>A cancelled invoice: its cancellation invoice.</summary>
+    public long? CancellationInvoiceId { get; set; }
+
+    /// <summary>The number of the cancelled invoice, as the cancellation invoice prints it.</summary>
+    public string? CancelsNumber { get; set; }
+
+    /// <summary>The quote this invoice was made from.</summary>
+    public long? QuoteId { get; set; }
+
+    /// <summary>The reference of the buyer (Leitweg-ID of a public authority, or an order number): in the e-invoice (BT-10).</summary>
+    public string? BuyerReference { get; set; }
+
     public string? Number { get; set; }
 
     public InvoiceStatus Status { get; set; } = InvoiceStatus.Draft;
@@ -394,4 +415,10 @@ public class NumberSequence : AuditedEntity
     public string Period { get; set; } = "";
 
     public long LastValue { get; set; }
+}
+
+public enum InvoiceKind
+{
+    Invoice,
+    Cancellation,
 }

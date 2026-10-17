@@ -1,0 +1,17 @@
+@page
+@model MatBill.Pages.Quotes.IndexModel
+
+<div class="mb-stats">
+    @Ui.Kpi("Offene Angebote", Fmt.Money(Model.OpenSum), Ui.CountNoun(Model.OpenCount, "Angebote"), "clock", href: "/Quotes?status=offen")
+    @Ui.Kpi("Angenommen " + DateTime.Today.Year, Fmt.Money(Model.AcceptedSum), "angenommen oder in Rechnung", "check-circle", href: "/Quotes?status=angenommen")
+    @Ui.Kpi("Erfolgsquote", Model.Rate + " %", "der beantworteten Angebote", "trending-up")
+</div>
+
+<div class="mat-list">
+    <partial name="_Toolbar" model="Model.Toolbar" />
+    <partial name="_Table" model="Model.Table" />
+    <partial name="_Pager" model="Model.Pager" />
+    <div class="mat-actions">
+        <a class="mat-btn mat-btn--primary" href="/Quotes/Edit">@Ui.Icon("plus")<span>Neues Angebot</span></a>
+    </div>
+</div>

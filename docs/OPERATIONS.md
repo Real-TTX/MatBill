@@ -61,3 +61,37 @@ Versions: releases `<major>.<minor>.<build>-<date>` (from `main`), `nightly-<bui
 - Automatic sending: a mail that fails is tried again after 10 min, 1 h and 6 h, then waits for *Erneut senden* on the invoice.
 - Issued invoices are never changed: their PDF is kept as it was issued (GoBD). A mistake is cancelled (*Stornieren*) and written anew.
 - PDFs are drawn with QuestPDF (community licence: free for companies below 1 million USD of annual revenue).
+- Cancelling an issued invoice writes a cancellation invoice (own number, negative amounts) that refers to the original; send it to the customer like an invoice.
+
+## E-invoice (ZUGFeRD, XRechnung)
+
+- *Einstellungen › Rechnungen › ZUGFeRD-PDF* (on by default): every issued invoice is a PDF/A-3 with the CII XML embedded as `factur-x.xml` (ZUGFeRD 2.3,
+  profile EN 16931). The XML alone: `/invoices/{id}/xml`, as XRechnung `/invoices/{id}/xml?xrechnung=1` (links on the invoice page).
+- For a correct e-invoice the company needs name, address, VAT id or tax number, and IBAN (*Branding*); public customers need their Leitweg-ID (*Kunde › Käuferreferenz*).
+- The files are written with ZUGFeRD-csharp but have not been checked against an official validator (Mustang, KoSIT). Check a sample with the validator of your
+  recipient or tax advisor before relying on it. If building the e-invoice fails, the invoice is still issued with a plain PDF and the error is logged.
+
+## Quotes and expenses
+
+- Number ranges: *Einstellungen › Rechnungen* (`AN-{JJJJ}-{NNNN}`, `BE-{JJJJ}-{NNNN}`), validity in days, intro text and terms of a quote (`{Gueltig}` = valid until),
+  the list of expense categories. *Einstellungen › E-Mail* holds subject and text of a quote mail.
+- Receipts dropped on *Ausgaben* are stored like the PDFs of invoices (data volume or NAS, part of a backup "System und Dateien"). E-invoices are read automatically;
+  everything else is marked *zu prüfen*.
+
+## Banking
+
+- **File import** (*Banking › Import*): CSV of any bank (columns, delimiter, encoding UTF-8/Windows-1252 and header row are detected; the mapping is kept per account),
+  CAMT.052/053/054 and MT940. Bookings already imported are skipped (bank reference, else a fingerprint of date, amount, name and purpose).
+- **Online** via [Enable Banking](https://enablebanking.com) (PSD2 aggregator for most banks in Europe). Register an application in the Enable Banking control panel,
+  set its redirect URL to `<PublicUrl>/Banking/Callback`, then enter the application id and paste the private key (PEM) under *Einstellungen › Banking*.
+  `MATBILL__Server__PublicUrl` must be set to the address people use. *Banking › Bank verbinden*: choose the bank, consent at the bank; the consent is requested for
+  90 days (the bank may shorten it); MatBill notifies a week before it expires and when it has expired. Bookings are fetched every *SyncHours* hours (default 6) and on *Abrufen*.
+  The key is stored encrypted with the data protection keys (`/data/keys`).
+- **Assignment**: with *Automatisch zuordnen* on, a booking that clearly names an open invoice or expense (number in the purpose, amount, name/IBAN) is assigned and the
+  document marked paid. Everything else waits under *Banking › offen* with suggestions. Partial payments are not split: assign the booking and mark the rest by hand.
+
+## Report and export
+
+- *Auswertung*: income, expenses, VAT and input tax per month, by document date (Soll) or by payment (Ist). It is an overview, not a tax return.
+- *Export*: a ZIP for a period with the PDFs of the invoices, the receipts of the expenses, `Rechnungen.csv`, `Ausgaben.csv`, `Uebersicht.csv`, optionally
+  `Kontoumsaetze.csv` and a `LIESMICH.txt`. CSV files are UTF-8 with BOM and semicolons (Excel in German).

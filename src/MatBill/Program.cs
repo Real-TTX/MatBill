@@ -77,11 +77,19 @@ builder.Services.AddScoped<InvoiceService>();
 builder.Services.AddScoped<RecurringService>();
 builder.Services.AddScoped<MailService>();
 builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<QuoteService>();
+builder.Services.AddScoped<ExpenseService>();
+builder.Services.AddScoped<BankingService>();
+builder.Services.AddScoped<MatchingService>();
+builder.Services.AddScoped<BankSyncService>();
+builder.Services.AddScoped<ExportService>();
+builder.Services.AddHttpClient<EnableBankingClient>(c => c.Timeout = TimeSpan.FromSeconds(60));
 builder.Services.AddScoped<BackupStoreFactory>();
 builder.Services.AddScoped<DatabaseArchive>();
 builder.Services.AddScoped<BackupService>();
 builder.Services.AddHostedService<BackupScheduler>();
 builder.Services.AddHostedService<BillingScheduler>();
+builder.Services.AddHostedService<BankingScheduler>();
 builder.Services.AddHostedService<MaintenanceService>();
 builder.Services.AddScoped<SystemService>();
 builder.Services.AddScoped<DemoData>();
@@ -274,6 +282,54 @@ app.MapGet("/invoices/{id:long}/pdf", async (long id, HttpContext http, InvoiceS
     var bytes = await invoices.PdfAsync(invoice, http.RequestAborted);
     http.Response.Headers.CacheControl = "private, no-store";
     return Results.File(bytes, "application/pdf", http.Request.Query.ContainsKey("download") ? InvoiceService.PdfName(invoice) : null);
+});
+
+// The e-invoice of an issued invoice as XML: EN 16931 (CII), or with ?xrechnung=1 the XRechnung for public authorities.
+app.MapGet("/invoices/{id:long}/xml", async (long id, HttpContext http, InvoiceService invoices) =>
+{
+    var invoice = await invoices.FindAsync(id, http.RequestAborted);
+    if (invoice is null || invoice.Number is null)
+    {
+        return Results.NotFound();
+    }
+
+    var xrechnung = http.Request.Query.ContainsKey("xrechnung");
+    try
+    {
+        var xml = invoices.Xml(invoice, xrechnung);
+        return Results.File(xml, "application/xml", Path.ChangeExtension(InvoiceService.PdfName(invoice), xrechnung ? ".xrechnung.xml" : ".zugferd.xml"));
+    }
+    catch (Exception ex) when (ex is InvoiceException or ArgumentException or InvalidOperationException)
+    {
+        return Results.Problem("Die E-Rechnung konnte nicht erzeugt werden: " + ex.Message, statusCode: 422);
+    }
+});
+
+app.MapGet("/quotes/{id:long}/pdf", async (long id, HttpContext http, QuoteService quotes) =>
+{
+    var quote = await quotes.FindAsync(id, http.RequestAborted);
+    if (quote is null)
+    {
+        return Results.NotFound();
+    }
+
+    http.Response.Headers.CacheControl = "private, no-store";
+    return Results.File(await quotes.PdfAsync(quote, http.RequestAborted), "application/pdf", http.Request.Query.ContainsKey("download") ? QuoteService.PdfName(quote) : null);
+});
+
+// The receipt of an expense: shown in the browser (PDF, image); anything else is a download.
+app.MapGet("/expenses/{id:long}/receipt", async (long id, HttpContext http, ExpenseService expenses, FileStoreService files) =>
+{
+    var expense = await expenses.FindAsync(id, http.RequestAborted);
+    if (expense?.ReceiptFile is not { } file)
+    {
+        return Results.NotFound();
+    }
+
+    http.Response.Headers.CacheControl = "private, no-store";
+    http.Response.Headers.ContentSecurityPolicy = "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; object-src 'self'";
+    var inline = file.ContentType is "application/pdf" or "image/png" or "image/jpeg" or "image/webp";
+    return Results.File(await files.ReadAllAsync(file, http.RequestAborted), inline ? file.ContentType : "application/octet-stream", inline && !http.Request.Query.ContainsKey("download") ? null : file.FileName);
 });
 
 // The PDF of the template of a series, as its next invoice would look.

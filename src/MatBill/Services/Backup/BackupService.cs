@@ -488,6 +488,7 @@ public sealed class BackupService(
                     c.Company = restoredConfig.Company;
                     c.Invoicing = restoredConfig.Invoicing;
                     c.Mail = restoredConfig.Mail;
+                    c.Banking = restoredConfig.Banking;
                     c.Storage = restoredConfig.Storage;
                     c.Security = restoredConfig.Security;
                     c.Backup = restoredConfig.Backup;

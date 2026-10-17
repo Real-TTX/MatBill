@@ -36,6 +36,26 @@ public sealed class InvoicingModel(ConfigStore config, NumberService numbers, Ac
 
         [Range(0, 30, ErrorMessage = "Zwischen 0 und 30 Tagen.")]
         public int NoticeDays { get; set; } = 3;
+
+        [Required(ErrorMessage = "Bitte gib ein Muster ein.")]
+        public string QuoteNumberPattern { get; set; } = "";
+
+        [Required(ErrorMessage = "Bitte gib ein Muster ein.")]
+        public string ExpenseNumberPattern { get; set; } = "";
+
+        [Range(1, 365, ErrorMessage = "Zwischen 1 und 365 Tagen.")]
+        public int QuoteValidityDays { get; set; } = 30;
+
+        [StringLength(4000)]
+        public string? QuoteIntroText { get; set; }
+
+        [StringLength(2000)]
+        public string? QuoteTerms { get; set; }
+
+        public bool ZugferdPdf { get; set; } = true;
+
+        /// <summary>One category per line.</summary>
+        public string? Categories { get; set; }
     }
 
     [BindProperty]
@@ -44,6 +64,10 @@ public sealed class InvoicingModel(ConfigStore config, NumberService numbers, Ac
     public string InvoiceExample { get; private set; } = "";
 
     public string CustomerExample { get; private set; } = "";
+
+    public string QuoteExample { get; private set; } = "";
+
+    public string ExpenseExample { get; private set; } = "";
 
     public string NextInvoice { get; private set; } = "";
 
@@ -54,7 +78,8 @@ public sealed class InvoicingModel(ConfigStore config, NumberService numbers, Ac
         {
             InvoiceNumberPattern = i.InvoiceNumberPattern, CustomerNumberPattern = i.CustomerNumberPattern, PaymentTermDays = i.PaymentTermDays,
             DefaultTaxRate = Amount.Quantity(i.DefaultTaxRate), IntroText = i.IntroText, PaymentTerms = i.PaymentTerms, ClosingText = i.ClosingText,
-            SmallBusinessNote = i.SmallBusinessNote, NoticeDays = i.NoticeDays,
+            SmallBusinessNote = i.SmallBusinessNote, NoticeDays = i.NoticeDays, QuoteNumberPattern = i.QuoteNumberPattern, ExpenseNumberPattern = i.ExpenseNumberPattern,
+            QuoteValidityDays = i.QuoteValidityDays, QuoteIntroText = i.QuoteIntroText, QuoteTerms = i.QuoteTerms, ZugferdPdf = i.ZugferdPdf, Categories = string.Join("\n", i.ExpenseCategories),
         };
         await PrepareAsync();
     }
@@ -64,6 +89,20 @@ public sealed class InvoicingModel(ConfigStore config, NumberService numbers, Ac
         if (NumberPattern.Problem(Input.InvoiceNumberPattern) is { } p1)
         {
             ModelState.AddModelError("Input.InvoiceNumberPattern", p1);
+        }
+
+        foreach (var (key, pattern) in new[] { ("Input.QuoteNumberPattern", Input.QuoteNumberPattern), ("Input.ExpenseNumberPattern", Input.ExpenseNumberPattern) })
+        {
+            if (NumberPattern.Problem(pattern) is { } problem)
+            {
+                ModelState.AddModelError(key, problem);
+            }
+        }
+
+        var categories = (Input.Categories ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Distinct(StringComparer.OrdinalIgnoreCase).Take(60).ToList();
+        if (categories.Count == 0)
+        {
+            ModelState.AddModelError("Input.Categories", "Es braucht mindestens eine Kategorie.");
         }
 
         if (NumberPattern.Problem(Input.CustomerNumberPattern) is { } p2)
@@ -93,6 +132,13 @@ public sealed class InvoicingModel(ConfigStore config, NumberService numbers, Ac
             c.Invoicing.ClosingText = Input.ClosingText?.Trim() ?? "";
             c.Invoicing.SmallBusinessNote = Input.SmallBusinessNote?.Trim() ?? "";
             c.Invoicing.NoticeDays = Input.NoticeDays;
+            c.Invoicing.QuoteNumberPattern = Input.QuoteNumberPattern.Trim();
+            c.Invoicing.ExpenseNumberPattern = Input.ExpenseNumberPattern.Trim();
+            c.Invoicing.QuoteValidityDays = Input.QuoteValidityDays;
+            c.Invoicing.QuoteIntroText = Input.QuoteIntroText?.Trim() ?? "";
+            c.Invoicing.QuoteTerms = Input.QuoteTerms?.Trim() ?? "";
+            c.Invoicing.ZugferdPdf = Input.ZugferdPdf;
+            c.Invoicing.ExpenseCategories = categories;
         });
         await log.LogAsync("Einstellungen der Rechnungen geändert", "Invoicing");
         Flash("Die Einstellungen sind gespeichert. Sie gelten für neue Rechnungen.");
@@ -106,6 +152,8 @@ public sealed class InvoicingModel(ConfigStore config, NumberService numbers, Ac
         var today = Fmt.Today(clock);
         InvoiceExample = NumberPattern.Problem(Input.InvoiceNumberPattern) is null ? NumberPattern.Format(Input.InvoiceNumberPattern, today, 42) : "–";
         CustomerExample = NumberPattern.Problem(Input.CustomerNumberPattern) is null ? NumberPattern.Format(Input.CustomerNumberPattern, today, 7) : "–";
+        QuoteExample = NumberPattern.Problem(Input.QuoteNumberPattern) is null ? NumberPattern.Format(Input.QuoteNumberPattern, today, 12) : "–";
+        ExpenseExample = NumberPattern.Problem(Input.ExpenseNumberPattern) is null ? NumberPattern.Format(Input.ExpenseNumberPattern, today, 3) : "–";
         NextInvoice = await numbers.PeekInvoiceNumberAsync(today);
     }
 }

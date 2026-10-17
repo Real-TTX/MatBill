@@ -131,6 +131,47 @@ public sealed class MailService(MbDbContext db, ConfigStore config, SecretProtec
         return due.Count;
     }
 
+    public InvoiceMail DefaultMail(Quote quote)
+    {
+        var mail = config.Current.Mail;
+        var company = config.Current.Company;
+        return new InvoiceMail(quote.RecipientEmail ?? quote.Customer?.Email ?? "", null, Texts.Mail(mail.QuoteSubject, quote, company), Texts.Mail(mail.QuoteBody, quote, company));
+    }
+
+    /// <summary>Sends an issued quote with its PDF; null when it went out, else the reason.</summary>
+    public async Task<string?> SendAsync(Quote quote, InvoiceMail mail, byte[] pdf, CancellationToken ct = default)
+    {
+        string? error = null;
+        try
+        {
+            var message = NewMessage(mail.To, mail.Cc, mail.Subject, mail.Body);
+            var multipart = new Multipart("mixed") { message.Body ?? new TextPart("plain") { Text = mail.Body } };
+            multipart.Add(new MimePart("application", "pdf")
+            {
+                Content = new MimeContent(new MemoryStream(pdf)),
+                ContentDisposition = new ContentDisposition(ContentDisposition.Attachment),
+                ContentTransferEncoding = ContentEncoding.Base64,
+                FileName = QuoteService.PdfName(quote),
+            });
+            message.Body = multipart;
+            await DeliverAsync(message, ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            error = Describe(ex);
+        }
+
+        db.MailDelivery.Add(new MailDelivery { To = mail.To, Cc = mail.Cc, Subject = mail.Subject, Status = error is null ? MailStatus.Sent : MailStatus.Failed, Error = error, AttemptDate = clock.GetUtcNow().UtcDateTime });
+        if (error is null)
+        {
+            quote.SentDate = clock.GetUtcNow().UtcDateTime;
+        }
+
+        await db.SaveChangesAsync(ct);
+        await activity.LogAsync(error is null ? "Angebot versendet" : "Versand des Angebots fehlgeschlagen", nameof(Quote), quote.Id, $"{quote.Number} an {mail.To}{(error is null ? "" : ": " + error)}");
+        return error;
+    }
+
     /// <summary>A test mail to <paramref name="to"/> with the current settings; null when it went out.</summary>
     public async Task<string?> SendTestAsync(string to, CancellationToken ct = default)
     {

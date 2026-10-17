@@ -12,6 +12,30 @@
         <div class="mat-form__grid">
             <mb-input for="Input.InvoiceNumberPattern" label="Rechnungsnummern" required="true" hint="@($"Beispiel: {Model.InvoiceExample}")" autocomplete="off" />
             <mb-input for="Input.CustomerNumberPattern" label="Kundennummern" required="true" hint="@($"Beispiel: {Model.CustomerExample}")" autocomplete="off" />
+            <mb-input for="Input.QuoteNumberPattern" label="Angebotsnummern" required="true" hint="@($"Beispiel: {Model.QuoteExample}")" autocomplete="off" />
+            <mb-input for="Input.ExpenseNumberPattern" label="Belegnummern (Ausgaben)" required="true" hint="@($"Beispiel: {Model.ExpenseExample}")" autocomplete="off" />
+        </div>
+        <p class="mat-hint">Stornorechnungen bekommen ihre Nummer aus dem Kreis der Rechnungen.</p>
+    </mb-card>
+
+    <mb-card title="E-Rechnung" icon="file-document">
+        <div class="mat-form__grid">
+            <mb-switch for="Input.ZugferdPdf" label="Ausgestellte Rechnungen als ZUGFeRD-E-Rechnung (PDF/A-3 mit XML nach EN 16931)" full="true" />
+        </div>
+        <p class="mat-hint">Die PDF bleibt für Menschen lesbar, die eingebettete XML liest jede Buchhaltungssoftware. Für Behörden gibt es an jeder Rechnung zusätzlich die XRechnung (XML); die Leitweg-ID trägst du beim Kunden ein.</p>
+    </mb-card>
+
+    <mb-card title="Angebote" icon="file-document">
+        <div class="mat-form__grid">
+            <mb-input for="Input.QuoteValidityDays" label="Gültig (Tage)" type="number" min="1" max="365" step="1" />
+            <mb-textarea for="Input.QuoteIntroText" label="Einleitung" rows="3" full="true" />
+            <mb-textarea for="Input.QuoteTerms" label="Bedingungen" rows="3" full="true" hint="{Gueltig} wird zum Datum, bis zu dem das Angebot gilt." />
+        </div>
+    </mb-card>
+
+    <mb-card title="Ausgaben" icon="euro">
+        <div class="mat-form__grid">
+            <mb-textarea for="Input.Categories" label="Kategorien (eine pro Zeile)" rows="8" full="true" hint="Werden in Ausgaben, Auswertung und Export verwendet." />
         </div>
     </mb-card>
 

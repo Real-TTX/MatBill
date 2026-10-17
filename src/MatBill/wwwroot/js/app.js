@@ -656,3 +656,13 @@
     timers.set(el, setTimeout(function () { el.classList.remove('is-scrolling'); }, 900));
   }, true);
 })();
+
+// Receipts that are dropped (or chosen, or pasted) on a drop zone with data-upload-autosubmit go up at once.
+document.addEventListener('mat:upload-change', function (event) {
+  'use strict';
+  var input = event.target && event.target.querySelector && event.target.querySelector('input[data-upload-autosubmit]');
+  if (!input || !input.files || input.files.length === 0 || !input.form) { return; }
+  input.form.classList.add('is-busy');
+  if (window.MatUi && window.MatUi.toast) { window.MatUi.toast(input.files.length === 1 ? 'Der Beleg wird hochgeladen …' : input.files.length + ' Belege werden hochgeladen …', { tone: 'info' }); }
+  input.form.requestSubmit ? input.form.requestSubmit() : input.form.submit();
+});

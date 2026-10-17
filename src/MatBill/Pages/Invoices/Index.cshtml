@@ -4,7 +4,7 @@
 <div class="mb-stats">
     @Ui.Kpi("Offen", Fmt.Money(Model.OpenSum), "noch nicht bezahlt", "clock", href: "/Invoices?status=offen")
     @Ui.Kpi("Überfällig", Fmt.Money(Model.OverdueSum), Model.OverdueCount == 0 ? "nichts überfällig" : Ui.CountNoun(Model.OverdueCount, "Rechnungen"), "alert", href: "/Invoices?status=ueberfaellig", bad: Model.OverdueCount > 0)
-    @Ui.Kpi("In dieser Auswahl", Fmt.Money(Model.ShownGross), "ausgestellt, ohne Stornos", "euro")
+    @Ui.Kpi("In dieser Auswahl", Fmt.Money(Model.ShownGross), "ausgestellt, Stornos verrechnet", "euro")
 </div>
 
 <div class="mat-list">

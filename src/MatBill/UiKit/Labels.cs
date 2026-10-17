@@ -19,7 +19,7 @@ public static class Labels
 
     /// <summary>The status as a person reads it: an open invoice past its due date is "Überfällig".</summary>
     public static IHtmlContent Pill(Invoice invoice, DateOnly today)
-        => invoice.IsOverdue(today) ? Ui.Pill("Überfällig", "error") : invoice.Status switch
+        => invoice.Kind == InvoiceKind.Cancellation ? Ui.Pill("Storno", "plain") : invoice.IsOverdue(today) ? Ui.Pill("Überfällig", "error") : invoice.Status switch
         {
             InvoiceStatus.Draft => Ui.Pill("Entwurf", ""),
             InvoiceStatus.Open => Ui.Pill("Offen", "info"),
@@ -50,6 +50,26 @@ public static class Labels
             RecurringStatus.Active => Ui.Pill("Aktiv", "ok"),
             RecurringStatus.Paused => Ui.Pill("Pausiert", "warn"),
             _ => Ui.Pill("Beendet", "plain"),
+        };
+
+    public static string Of(QuoteStatus s) => s switch
+    {
+        QuoteStatus.Draft => "Entwurf",
+        QuoteStatus.Open => "Offen",
+        QuoteStatus.Accepted => "Angenommen",
+        QuoteStatus.Declined => "Abgelehnt",
+        _ => "In Rechnung",
+    };
+
+    /// <summary>The status of a quote; an open quote past its date is "Abgelaufen".</summary>
+    public static IHtmlContent Pill(Quote q, DateOnly today)
+        => q.IsExpired(today) ? Ui.Pill("Abgelaufen", "warn") : q.Status switch
+        {
+            QuoteStatus.Draft => Ui.Pill("Entwurf", ""),
+            QuoteStatus.Open => Ui.Pill("Offen", "info"),
+            QuoteStatus.Accepted => Ui.Pill("Angenommen", "ok"),
+            QuoteStatus.Declined => Ui.Pill("Abgelehnt", "plain"),
+            _ => Ui.Pill("In Rechnung", "accent"),
         };
 
     public static string Of(CustomerKind k) => k == CustomerKind.Company ? "Firma" : "Person";

@@ -14,7 +14,7 @@ public sealed record FieldProblem(string Key, string Message);
 /// changed again (it is paid, or cancelled and written anew). The pages and the series go through this class, so the rules live in one place.
 /// </summary>
 public sealed class InvoiceService(MbDbContext db, ConfigStore config, NumberService numbers, BrandingService branding, Storage.FileStoreService files,
-    ActivityLogger activity, TimeProvider clock)
+    ActivityLogger activity, TimeProvider clock, ILogger<InvoiceService> logger)
 {
     public DateOnly Today => Fmt.Today(clock);
 
@@ -80,7 +80,10 @@ public sealed class InvoiceService(MbDbContext db, ConfigStore config, NumberSer
         invoice.IntroText = CleanText(input.IntroText);
         invoice.PaymentTerms = CleanText(input.PaymentTerms);
         invoice.ClosingText = CleanText(input.ClosingText);
-        invoice.TaxExempt = config.Current.Company.SmallBusiness;
+        if (invoice.Kind == InvoiceKind.Invoice)
+        {
+            invoice.TaxExempt = config.Current.Company.SmallBusiness;
+        }
 
         ApplyLines(invoice.Lines, input.Lines, () => new InvoiceLine(), problems);
         Recalculate(invoice);
@@ -240,12 +243,16 @@ public sealed class InvoiceService(MbDbContext db, ConfigStore config, NumberSer
         invoice.Number = await numbers.NextInvoiceNumberAsync(invoice.InvoiceDate, ct);
         invoice.Status = InvoiceStatus.Open;
         invoice.IssuedDate = clock.GetUtcNow().UtcDateTime;
-        invoice.TaxExempt = config.Current.Company.SmallBusiness;
+        if (invoice.Kind == InvoiceKind.Invoice)
+        {
+            invoice.TaxExempt = config.Current.Company.SmallBusiness;
+        }
         invoice.ServiceFrom ??= invoice.InvoiceDate;
+        invoice.BuyerReference ??= invoice.Customer?.BuyerReference;
         invoice.DueDate = InvoiceMath.DueDate(invoice.InvoiceDate, invoice.PaymentTermDays);
         Recalculate(invoice);
 
-        var pdf = await RenderAsync(invoice, ct);
+        var pdf = await IssuedPdfAsync(invoice, ct);
         invoice.PdfFile = await files.SaveAsync(pdf, PdfName(invoice), "application/pdf", ct);
         await db.SaveChangesAsync(ct);
         if (transaction is not null)
@@ -255,6 +262,33 @@ public sealed class InvoiceService(MbDbContext db, ConfigStore config, NumberSer
             await activity.LogAsync("Rechnung ausgestellt", nameof(Invoice), invoice.Id, $"{invoice.Number} · {invoice.RecipientName} · {Fmt.Money(invoice.GrossTotal)}");
         }
     }
+
+    /// <summary>
+    /// The PDF that is stored when an invoice is issued: a ZUGFeRD e-invoice (PDF/A-3 with the XML of EN 16931 inside) unless the settings say a plain PDF.
+    /// Should the e-invoice fail (data the standard does not accept), the plain PDF is stored and the reason is logged: issuing never fails because of it.
+    /// </summary>
+    private async Task<byte[]> IssuedPdfAsync(Invoice invoice, CancellationToken ct)
+    {
+        if (!config.Current.Invoicing.ZugferdPdf)
+        {
+            return await RenderAsync(invoice, ct);
+        }
+
+        try
+        {
+            var company = config.Current.Company;
+            var pdf = InvoicePdf.Render(InvoiceDocument.Of(invoice, config.Current.Invoicing), company, await branding.GetLogoAsync(ct), pdfA: true);
+            return EInvoice.Embed(pdf, EInvoice.Xml(invoice, company));
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Invoice {Number}: the ZUGFeRD PDF could not be made, a plain PDF is stored.", invoice.Number);
+            return await RenderAsync(invoice, ct);
+        }
+    }
+
+    /// <summary>The e-invoice of an issued invoice as XML: EN 16931 (CII), or the XRechnung profile for public authorities.</summary>
+    public byte[] Xml(Invoice invoice, bool xrechnung) => EInvoice.Xml(invoice, config.Current.Company, xrechnung);
 
     /// <summary>The PDF as it looks now (a draft, or a preview); an issued invoice is read from the store with <see cref="PdfAsync"/>.</summary>
     public async Task<byte[]> RenderAsync(Invoice invoice, CancellationToken ct = default)
@@ -307,23 +341,65 @@ public sealed class InvoiceService(MbDbContext db, ConfigStore config, NumberSer
         await activity.LogAsync("Zahlung zurückgenommen", nameof(Invoice), invoice.Id, invoice.Number);
     }
 
-    public async Task CancelAsync(Invoice invoice, string? reason, CancellationToken ct = default)
+    /// <summary>
+    /// Cancels an issued invoice the way the tax office wants it: the invoice itself stays as it was, a cancellation invoice ("Stornorechnung") is written with
+    /// its own number from the same range, the same positions with negative quantities and a reference to the cancelled one. Both are issued in one transaction.
+    /// Returns the cancellation invoice.
+    /// </summary>
+    public async Task<Invoice> CancelAsync(Invoice invoice, string? reason, CancellationToken ct = default)
     {
-        if (invoice.Status is not (InvoiceStatus.Open or InvoiceStatus.Paid))
+        if (invoice.Status is not (InvoiceStatus.Open or InvoiceStatus.Paid) || invoice.Kind != InvoiceKind.Invoice)
         {
             throw new InvoiceException("Nur eine ausgestellte Rechnung kann storniert werden.");
         }
 
+        var wasPaid = invoice.Status == InvoiceStatus.Paid;
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        var storno = NewDraft();
+        storno.Kind = InvoiceKind.Cancellation;
+        storno.Title = "Stornorechnung";
+        storno.CancelsInvoiceId = invoice.Id;
+        storno.CancelsNumber = invoice.Number;
+        storno.CustomerId = invoice.CustomerId;
+        storno.Customer = invoice.Customer;
+        storno.RecipientName = invoice.RecipientName;
+        storno.RecipientContact = invoice.RecipientContact;
+        storno.RecipientStreet = invoice.RecipientStreet;
+        storno.RecipientPostalCode = invoice.RecipientPostalCode;
+        storno.RecipientCity = invoice.RecipientCity;
+        storno.RecipientCountry = invoice.RecipientCountry;
+        storno.RecipientEmail = invoice.RecipientEmail;
+        storno.BuyerReference = invoice.BuyerReference;
+        storno.ServiceFrom = invoice.ServiceFrom;
+        storno.ServiceTo = invoice.ServiceTo;
+        storno.PaymentTermDays = 0;
+        storno.IntroText = $"Hiermit stornieren wir unsere Rechnung {invoice.Number} vom {Fmt.Date(invoice.InvoiceDate)}."
+            + (string.IsNullOrWhiteSpace(reason) ? "" : $"\nGrund: {reason.Trim()}");
+        storno.PaymentTerms = wasPaid ? "Den bereits gezahlten Betrag erstatten wir Ihnen auf Ihr Konto." : $"Die Rechnung {invoice.Number} ist damit ausgeglichen. Es ist nichts mehr zu zahlen.";
+        storno.ClosingText = invoice.ClosingText;
+        storno.TaxExempt = invoice.TaxExempt;
+        storno.Lines = [.. invoice.Lines.OrderBy(l => l.Position).Select(l => { var copy = CopyLine(l, new InvoiceLine()); copy.Quantity = -l.Quantity; return copy; })];
+        Recalculate(storno);
+        db.Invoice.Add(storno);
+        await db.SaveChangesAsync(ct);
+        await IssueAsync(storno, ct);
+
+        // The pair settles itself: the cancellation is closed at once, the invoice is cancelled and points to it.
+        storno.Status = InvoiceStatus.Paid;
+        storno.PaidDate = storno.InvoiceDate;
         invoice.Status = InvoiceStatus.Cancelled;
         invoice.CancelledDate = clock.GetUtcNow().UtcDateTime;
         invoice.CancelReason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
+        invoice.CancellationInvoiceId = storno.Id;
         if (invoice.SendState is SendState.Pending or SendState.Failed)
         {
             invoice.SendState = SendState.None;
         }
 
         await db.SaveChangesAsync(ct);
-        await activity.LogAsync("Rechnung storniert", nameof(Invoice), invoice.Id, $"{invoice.Number}{(invoice.CancelReason is null ? "" : ": " + invoice.CancelReason)}");
+        await transaction.CommitAsync(ct);
+        await activity.LogAsync("Rechnung storniert", nameof(Invoice), invoice.Id, $"{invoice.Number} durch {storno.Number}{(invoice.CancelReason is null ? "" : ": " + invoice.CancelReason)}");
+        return storno;
     }
 
     /// <summary>A new draft with the recipient, the texts and the positions of <paramref name="source"/>, dated today.</summary>

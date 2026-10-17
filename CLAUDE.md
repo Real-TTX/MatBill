@@ -22,11 +22,13 @@ Test changes by **rebuilding the container and redeploying the stack**. Wait for
 
 ## Layout
 
-- `src/MatBill.Core`: no web types. `Billing/` (InvoiceMath: tax once per rate; Recurrence: dates counted from the anchor; NumberPattern: `{JJJJ}{JJ}{MM}{NNNN}`; Amount: German input), `Security/`.
-- `src/MatBill`: `Pages/` (Invoices, Recurring, Customers, Products, Branding, Notifications, Admin, Account, Share, Offline), `Services/` (InvoiceService, RecurringService +
-  BillingScheduler, MailService, NumberService, InvoicePdf (QuestPDF), BrandingService, NotificationService, ShareService, Backup/), `Data/` (MbDbContext, entities, migrations),
+- `src/MatBill.Core`: no web types. `Billing/` (InvoiceMath: tax once per rate; Recurrence: dates counted from the anchor; NumberPattern: `{JJJJ}{JJ}{MM}{NNNN}`; Amount: German input), `Security/`,
+  `Banking/` (StatementLine + dedup keys, SepaPurpose, CsvStatement: read/guess/map any bank CSV, CamtStatement, Mt940Statement, StatementFormats.Detect, PaymentMatcher).
+- `src/MatBill`: `Pages/` (Invoices, Quotes, Recurring, Expenses, Banking, Export, Customers, Products, Branding, Notifications, Admin, Account, Share, Offline), `Services/` (InvoiceService, QuoteService,
+  RecurringService + BillingScheduler, ExpenseService, BankingService + MatchingService, EnableBanking (client, BankSyncService, BankingScheduler), ExportService, EInvoice (ZUGFeRD),
+  MailService, NumberService, InvoicePdf (QuestPDF), BrandingService, NotificationService, ShareService, DemoData, Backup/), `Data/` (MbDbContext, entities incl. `Finance.cs`, migrations),
   `UiKit/` + `Controls/` (shell, list, table, toolbar, pager, `mb-*` tag helpers), `wwwroot/` (app.css, app.js, sw.js, manifest, icons, `ui/` = MatUi).
-- The editor: `Pages/Shared/_DocumentEditor.cshtml` (+ `_DocumentLine`) is the editable paper for invoices and series templates (`DocumentEditorModel`, `EditorMode`);
+- The editor: `Pages/Shared/_DocumentEditor.cshtml` (+ `_DocumentLine`) is the editable paper for invoices, quotes and series templates (`DocumentEditorModel`, `EditorMode`);
   `_DocumentView` is the read-only paper (issued invoices, share links, branding preview), drawn from `InvoiceDocument`, the same model as the PDF.
 - `tests/MatBill.Tests` (Core unit tests, Integration against PostgreSQL), `tests/e2e/flow.js` (Playwright).
 
@@ -38,10 +40,20 @@ Test changes by **rebuilding the container and redeploying the stack**. Wait for
 - **A series is a template.** `RecurringService.RunAsync` builds the invoice with `RecurringPreview.Of` (the same code as the preview), issues it and steps the series in one
   transaction; `(RecurringInvoiceId, RecurringDate)` is unique. Failures: `FailedAttempts`, `RetryAfterDate` (15 min doubling, 5 attempts), a `RecurringRun`, a notification.
   `RescheduleAsync` keeps a failed due date; `ResumeAsync` continues from today. Mails of series: `SendState` Pending/Failed, `MailService.SendPendingAsync`.
+- **Cancelling** (`InvoiceService.CancelAsync`) issues a second invoice, `Kind = Cancellation`, own number, negated quantities, `CancelsInvoiceId`/`CancelsNumber`;
+  the original gets `Status = Cancelled` and `CancellationInvoiceId`. A cancellation cannot be cancelled. `InvoiceDocument.Kind` (Invoice/Cancellation/Quote) drives labels in PDF and view.
+- **E-invoice:** `IssuedPdfAsync` renders PDF/A-3B and embeds the CII XML (`EInvoice.Xml`, ZUGFeRD-csharp, Comfort = EN 16931, or XRechnung) as `factur-x.xml`;
+  on failure it falls back to a plain PDF and logs. `EInvoice.Read` reads an XML or a PDF with embedded XML (PdfPig) back into an expense draft.
+- **Quotes** have their own number range (`quote`) and become an invoice draft (`QuoteService.ToInvoiceAsync`, once). **Expenses**: one per uploaded file
+  (`ExpenseService.CreateFromFilesAsync`), `NeedsReview` unless read from an e-invoice; amounts via `ExpenseService.Amounts(net, gross, rate)`.
+- **Banking:** a transaction's `Amount` is signed (credit > 0). `ImportKey` (`ref:` bank reference, else `fp:` sha256 fingerprint + occurrence) is unique per account, so a
+  statement imported twice adds nothing. `PaymentMatcher` scores candidates (number in purpose 60, exact amount 40, unique amount 20, skonto ≤ 3 % 15, name/IBAN 25,
+  paid before the document −30); `Auto` assigns at ≥ 80 with a lead of 20. Assigning marks the invoice/expense paid, unassigning reopens it. No partial payments.
+  Online: Enable Banking (JWT RS256 signed with the app's key, `kid` = app id; the key is stored protected in `BankingConfig`), sync every `SyncHours` by `BankingScheduler`.
 - Money: `numeric(18,2)` totals, unit price `numeric(18,4)`, quantity `numeric(18,3)`; positions rounded to cents, tax per rate on the sum (`InvoiceMath`); the editor's
   script repeats the same arithmetic. Amounts in forms are strings in German format, read with `Amount.TryParse`.
 - Database: tables PascalCase, `Id` bigint, audit columns filled by `MbDbContext`, `UpdateState` soft delete (`ISoftDeletable`: User, Customer, Product, Invoice,
-  RecurringInvoice), enums as text, `Token` uuid for secrets (`UserSession`, `ShareLink`, `StoredFile`). Configuration (company, invoicing, mail, storage, security,
+  RecurringInvoice), enums as text, `Token` uuid for secrets (`UserSession`, `ShareLink`, `StoredFile`, `BankConnection`). Configuration (company, invoicing, mail, banking, storage, security,
   backup) is JSON in `/data/config/app.json` (`ConfigStore`), logic in the database. No automatic EF retry.
 
 ## UI conventions
@@ -63,6 +75,9 @@ Test changes by **rebuilding the container and redeploying the stack**. Wait for
 - An editor page binds `Id` with `SupportsGet`; a new form posts `id=0`, which the property turns into null.
 - `MatUi` transitions border colours: wait a moment before a screenshot after switching the editor view.
 - The dev compose has an explicit subnet (`10.253.55.0/24`).
+- Don't insert `\n` with sed into C# files: it becomes a real line break inside string literals.
+- A PageModel property named `File` hides `PageModel.File(...)`; the import page calls its upload `Statement`.
+- Fold names before comparing (`PaymentMatcher.Fold`: ä→ae, ß→ss): banks write "Mueller" for "Müller".
 
 ## Git
 

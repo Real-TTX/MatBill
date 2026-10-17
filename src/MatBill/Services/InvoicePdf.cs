@@ -21,7 +21,8 @@ public static class InvoicePdf
     private const string Line = "#e5e7eb";
     private const string Soft = "#f5f6f8";
 
-    public static byte[] Render(InvoiceDocument doc, CompanyConfig company, LogoImage? logo)
+    /// <summary>The PDF; with <paramref name="pdfA"/> it is PDF/A-3b, the archive format that a ZUGFeRD e-invoice is made of (<see cref="EInvoice"/> adds the XML).</summary>
+    public static byte[] Render(InvoiceDocument doc, CompanyConfig company, LogoImage? logo, bool pdfA = false)
     {
         var accent = IsColour(company.AccentColor) ? company.AccentColor : "#1d4ed8";
         return Document.Create(container => container.Page(page =>
@@ -33,9 +34,9 @@ public static class InvoicePdf
             page.PageColor(Colors.White);
             page.DefaultTextStyle(x => x.FontSize(9.5f).FontColor(Ink).LineHeight(1.35f));
 
-            if (doc.IsDraft || doc.IsCancelled)
+            if (doc.Stamp is { } stamp)
             {
-                page.Foreground().AlignCenter().AlignMiddle().Rotate(-30).Text(doc.IsDraft ? "ENTWURF" : "STORNIERT").FontSize(84).Bold().FontColor("#eef0f4");
+                page.Foreground().AlignCenter().AlignMiddle().Rotate(-30).Text(stamp).FontSize(84).Bold().FontColor("#eef0f4");
             }
 
             page.Content().Column(col =>
@@ -60,7 +61,7 @@ public static class InvoicePdf
                 {
                     col.Item().PaddingTop(8, Unit.Millimetre).Background(Soft).Padding(4, Unit.Millimetre).Column(box =>
                     {
-                        box.Item().Text("Zahlungsbedingungen").SemiBold();
+                        box.Item().Text(doc.TermsLabel).SemiBold();
                         box.Item().PaddingTop(2).Text(doc.PaymentTerms.Trim()).FontColor("#374151");
                     });
                 }
@@ -79,7 +80,10 @@ public static class InvoicePdf
             });
 
             page.Footer().Element(c => Footer(c, company, accent));
-        })).GeneratePdf();
+        }))
+        .WithMetadata(new DocumentMetadata { Title = $"{doc.Title} {doc.Number}".Trim(), Author = company.Name, Subject = doc.Title, Creator = "MatBill", Language = "de-DE" })
+        .WithSettings(pdfA ? new DocumentSettings { PDFA_Conformance = PDFA_Conformance.PDFA_3B } : new DocumentSettings())
+        .GeneratePdf();
     }
 
     private static void Head(IContainer container, CompanyConfig company, LogoImage? logo)
@@ -136,8 +140,13 @@ public static class InvoicePdf
             {
                 col.Item().Text(doc.Title).FontSize(20).Bold();
                 col.Item().PaddingTop(3, Unit.Millimetre);
-                Fact(col, "Rechnungsnummer", doc.Number ?? (doc.IsDraft ? "wird beim Ausstellen vergeben" : "–"));
-                Fact(col, "Rechnungsdatum", doc.InvoiceDate is { } d ? Fmt.Date(d) : "–");
+                Fact(col, doc.NumberLabel, doc.Number ?? (doc.IsDraft ? "wird beim Ausstellen vergeben" : "–"));
+                Fact(col, doc.DateLabel, doc.InvoiceDate is { } d ? Fmt.Date(d) : "–");
+                if (doc.Kind == DocumentKind.Cancellation && doc.CancelsNumber is { } cancels)
+                {
+                    Fact(col, "Storno zu Rechnung", cancels);
+                }
+
                 if (doc.ServiceText is { } service)
                 {
                     Fact(col, doc.ServiceLabel, service);
@@ -148,10 +157,25 @@ public static class InvoicePdf
                     Fact(col, "Kundennummer", doc.CustomerNumber);
                 }
 
-                Fact(col, "Zahlungsziel", doc.PaymentTermDays == 0 ? "sofort" : $"{doc.PaymentTermDays} Tage");
-                if (doc.DueDate is { } due)
+                if (!string.IsNullOrWhiteSpace(doc.BuyerReference))
                 {
-                    Fact(col, "Fällig am", Fmt.Date(due));
+                    Fact(col, "Ihre Referenz", doc.BuyerReference);
+                }
+
+                if (doc.Kind == DocumentKind.Quote)
+                {
+                    if (doc.ValidUntil is { } valid)
+                    {
+                        Fact(col, "Gültig bis", Fmt.Date(valid));
+                    }
+                }
+                else if (doc.Kind == DocumentKind.Invoice)
+                {
+                    Fact(col, "Zahlungsziel", doc.PaymentTermDays == 0 ? "sofort" : $"{doc.PaymentTermDays} Tage");
+                    if (doc.DueDate is { } due)
+                    {
+                        Fact(col, "Fällig am", Fmt.Date(due));
+                    }
                 }
             });
         });

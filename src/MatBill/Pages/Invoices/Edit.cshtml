@@ -139,8 +139,11 @@
                         <dl class="mat-kv">
                             <dt>Betrag</dt><dd>@Fmt.Money(invoice.GrossTotal)</dd>
                             <dt>Ausgestellt</dt><dd>@Fmt.Moment(invoice.IssuedDate)</dd>
+                            @if (invoice.Kind == InvoiceKind.Invoice)
+                            {
                             <dt>Fällig am</dt><dd class="@(invoice.IsOverdue(Model.Today) ? "mb-warn-text" : "")">@Fmt.Date(invoice.DueDate)@(invoice.IsOverdue(Model.Today) ? $" · seit {Model.Today.DayNumber - invoice.DueDate.DayNumber} Tagen überfällig" : "")</dd>
-                            @if (invoice.PaidDate is not null)
+                            }
+                            @if (invoice.PaidDate is not null && invoice.Kind == InvoiceKind.Invoice)
                             {
                                 <dt>Bezahlt am</dt><dd>@Fmt.Date(invoice.PaidDate)</dd>
                             }
@@ -149,8 +152,21 @@
                                 <dt>Storniert</dt><dd>@Fmt.Moment(invoice.CancelledDate)@(invoice.CancelReason is null ? "" : $" · {invoice.CancelReason}")</dd>
                             }
                             <dt>Kunde</dt><dd>@if (invoice.Customer is not null) { <a href="/Customers/Edit?id=@invoice.Customer.Id">@invoice.Customer.Name</a> } else { @invoice.RecipientName }</dd>
+                            @if (invoice.CancelsInvoiceId is { } cancelled)
+                            {
+                                <dt>Storno zu</dt><dd><a href="/Invoices/Edit?id=@cancelled">Rechnung @invoice.CancelsNumber</a></dd>
+                            }
+                            @if (invoice.CancellationInvoiceId is { } storno)
+                            {
+                                <dt>Storniert durch</dt><dd><a href="/Invoices/Edit?id=@storno">Stornorechnung</a></dd>
+                            }
+                            @if (invoice.QuoteId is { } quoteId)
+                            {
+                                <dt>Aus Angebot</dt><dd><a href="/Quotes/Edit?id=@quoteId">Angebot öffnen</a></dd>
+                            }
+                            <dt>E-Rechnung</dt><dd><a href="/invoices/@invoice.Id/xml">ZUGFeRD-XML</a> · <a href="/invoices/@invoice.Id/xml?xrechnung=1">XRechnung</a></dd>
                         </dl>
-                        @if (invoice.Status == InvoiceStatus.Open)
+                        @if (invoice.Status == InvoiceStatus.Open && invoice.Kind == InvoiceKind.Invoice)
                         {
                             <form method="post" class="mat-form mat-stack">
                                 <div class="mat-field">
@@ -196,7 +212,7 @@
                         </div>
                     </div>
                 }
-                else if (invoice.Status != InvoiceStatus.Cancelled)
+                else if (invoice.Status != InvoiceStatus.Cancelled && invoice.Kind == InvoiceKind.Invoice)
                 {
                     <details class="mat-card mb-repeat">
                         <summary class="mat-card__head">@Ui.Icon("repeat")<h2 class="mat-card__title">Wiederholung einrichten</h2></summary>
@@ -248,11 +264,11 @@
                 <button type="submit" class="mat-btn mat-btn--ghost" asp-page-handler="Reopen" asp-route-id="@invoice.Id" data-confirm="Die Zahlung zurücknehmen? Die Rechnung ist danach wieder offen." data-confirm-ok="Zurücknehmen">@Ui.Icon("undo")<span>Zahlung zurücknehmen</span></button>
             }
             <a class="mat-btn mat-btn--ghost" href="/Invoices">@Ui.Icon("back")<span>Zurück</span></a>
-            @if (invoice.Status is InvoiceStatus.Open or InvoiceStatus.Paid)
+            @if (invoice.Status is InvoiceStatus.Open or InvoiceStatus.Paid && invoice.Kind == InvoiceKind.Invoice)
             {
                 <span class="mat-btn-row__spacer"></span>
                 <button type="submit" class="mat-btn mat-btn--danger" asp-page-handler="Cancel" asp-route-id="@invoice.Id"
-                        data-prompt="Warum wird die Rechnung storniert? (optional)" data-prompt-title="Rechnung stornieren" data-prompt-ok="Stornieren" data-prompt-into="reason">@Ui.Icon("ban")<span>Stornieren</span></button>
+                        data-prompt="Es wird eine Stornorechnung mit eigener Nummer angelegt, die diese Rechnung ausgleicht. Grund (optional):" data-prompt-title="Rechnung stornieren" data-prompt-ok="Stornorechnung anlegen" data-prompt-into="reason">@Ui.Icon("ban")<span>Stornieren</span></button>
             }
         </form>
     }

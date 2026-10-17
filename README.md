@@ -1,7 +1,8 @@
 # MatBill
 
 Rechnungen schreiben, versenden und wiederholen: ein minimalistischer, dokumentbasierter Rechnungseditor auf einer DIN-A4-Vorschau, wiederkehrende
-Rechnungen mit automatischer Erstellung und Versand, als installierbare Web-App (PWA). ASP.NET Core 10 Razor Pages, PostgreSQL 17, ein Container
+Rechnungen mit automatischer Erstellung und Versand, Angebote, Ausgaben mit Belegen, Banking mit automatischer Zuordnung der Zahlungen, E-Rechnung
+(ZUGFeRD/XRechnung) und Export für Finanzamt oder Steuerberater, als installierbare Web-App (PWA). ASP.NET Core 10 Razor Pages, PostgreSQL 17, ein Container
 (Port **2505**) plus Datenbank. Das Aussehen folgt MatDesign (MatUi).
 
 ![Übersicht](docs/images/dashboard.png)
@@ -37,6 +38,52 @@ Rechnungen mit automatischer Erstellung und Versand, als installierbare Web-App 
   versucht und kann jederzeit von Hand wiederholt werden. Verpasste Termine (Server aus) werden nachgeholt, kein Termin wird doppelt berechnet.
 - **Benachrichtigungen** (Glocke oben rechts): anstehende Rechnungen, erstellte und versendete Rechnungen, Probleme.
 
+### Storno und E-Rechnung
+
+![Stornorechnung](docs/images/storno.png)
+
+- **Stornieren** legt eine **Stornorechnung** mit eigener Nummer und negativen Beträgen an, die auf die Originalrechnung verweist; das Original wird
+  als storniert markiert und bleibt unverändert (GoBD). Danach wird die Rechnung bei Bedarf neu geschrieben (Duplizieren).
+- **ZUGFeRD 2.3 (Profil EN 16931):** Jede ausgestellte Rechnung ist eine PDF/A-3 mit eingebetteter `factur-x.xml`. Die XML gibt es auch einzeln,
+  ebenso als **XRechnung** für öffentliche Auftraggeber (Leitweg-ID beim Kunden als „Käuferreferenz“).
+
+### Angebote
+
+![Angebot](docs/images/quote.png)
+
+- Derselbe A4-Editor wie für Rechnungen, mit eigenem Nummernkreis (`AN-{JJJJ}-{NNNN}`), Gültigkeit und Angebotsbedingungen.
+- Ausstellen, als PDF versenden, als angenommen oder abgelehnt markieren, neue Version anlegen und mit einem Klick **in eine Rechnung umwandeln**.
+
+### Ausgaben
+
+![Ausgabe](docs/images/expense.png)
+
+- **Belege per Drag & Drop** (PDF, Bilder, XML) in die Liste ziehen: Je Datei entsteht eine Ausgabe mit dem Beleg. E-Rechnungen (ZUGFeRD, XRechnung)
+  werden ausgelesen (Lieferant, Nummer, Datum, Beträge); andere Belege sind als „zu prüfen“ markiert und werden nacheinander vervollständigt.
+- Kategorie, netto/brutto mit Steuersatz, Fälligkeit, bezahlt am; der Beleg wird neben dem Formular angezeigt.
+
+### Banking
+
+| Umsätze | Zuordnung |
+|---|---|
+| ![Banking](docs/images/banking.png) | ![Umsatz](docs/images/bank-transaction.png) |
+
+- **Universeller CSV-Import** jeder Bank: Spalten, Trennzeichen, Kodierung und Kopfzeile werden erkannt, die Zuordnung der Spalten lässt sich anpassen
+  und wird je Konto gemerkt. Außerdem **CAMT.052/053/054** (XML) und **MT940**. Doppelte Umsätze werden beim erneuten Import übersprungen.
+- **Online-Anbindung** über [Enable Banking](https://enablebanking.com) (PSD2, praktisch alle Banken in Europa): Bank wählen, beim Online-Banking
+  zustimmen, die Umsätze werden danach regelmäßig abgerufen. Dafür braucht es ein eigenes Konto bei Enable Banking (*Einstellungen › Banking*).
+- **Automatische Zuordnung:** Rechnungsnummer im Verwendungszweck, Betrag (auch mit Skonto), Name oder IBAN ergeben eine Punktzahl; eindeutige Treffer
+  werden automatisch zugeordnet und die Rechnung bzw. Ausgabe als bezahlt markiert. Für den Rest gibt es Vorschläge, eine Suche von Hand, „Ausgabe anlegen“
+  und „Ignorieren“ (Umbuchungen, Steuern, Privates).
+
+### Auswertung und Export
+
+![Auswertung](docs/images/report.png)
+
+- Einnahmen, Ausgaben, Umsatzsteuer, Vorsteuer und Zahllast je Monat, nach Belegdatum (Soll) oder Zahlung (Ist).
+- **Export als ZIP** für einen Zeitraum: alle Rechnungen und Belege als Dateien (sortierbar benannt `Datum_Nummer_Partner`), dazu `Rechnungen.csv`,
+  `Ausgaben.csv`, `Uebersicht.csv` und optional `Kontoumsaetze.csv` (Excel-tauglich).
+
 ### Installierbar und mobil
 
 | Übersicht | Editor | Rechnung |
@@ -67,7 +114,8 @@ docker compose up -d          # Release: ghcr.io/real-ttx/matbill:latest + Postg
 ```
 
 Dann `http://localhost:2505` öffnen: Der erste Besuch legt den Administrator an, danach im **Branding** Absender, Steuernummer und Bankverbindung eintragen.
-Zum Ausprobieren legt *Einstellungen › System › Beispieldaten anlegen* Kunden, Produkte, Rechnungen und zwei Serien an.
+Zum Ausprobieren legt *Einstellungen › System › Beispieldaten anlegen* die Firma „MatBill Demo“ mit Logo, Kunden, Produkte, Angebote, Rechnungen
+(auch eine Stornierte), zwei Serien, Ausgaben und ein Geschäftskonto mit zugeordneten Umsätzen an.
 
 Hinter einem Reverse Proxy mit HTTPS: `MATBILL__Server__PublicUrl` (für Freigabelinks) und `MATBILL__Server__ForceSecureCookie=true` setzen.
 

@@ -15,6 +15,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.*">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="PdfPig" Version="0.1.*" />
     <!-- Draws the QR code of the authenticator app set-up as SVG (pure managed, no external service) -->
     <PackageReference Include="QRCoder" Version="1.*" />
     <!-- Draws the invoices as PDF (community licence, set in Program.cs) -->
@@ -25,6 +26,7 @@
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
     <!-- SMB client: the files of the invoices and backups on a NAS -->
     <PackageReference Include="SMBLibrary" Version="1.5.7.1" />
+    <PackageReference Include="ZUGFeRD-csharp" Version="18.0.1" />
   </ItemGroup>
 
   <ItemGroup>

@@ -9,6 +9,9 @@ public enum EditorMode
     Invoice,
     /// <summary>The template of a series: number and dates are set by each run.</summary>
     Template,
+
+    /// <summary>A draft quote: a number of its own range on issue, valid for a number of days.</summary>
+    Quote,
 }
 
 /// <summary>What the editable document (<c>_DocumentEditor</c>) draws: the fields as the form holds them and the frame around them (branding, number).</summary>

@@ -1,0 +1,27 @@
+@page
+@model MatBill.Pages.Expenses.IndexModel
+
+<div class="mb-stats">
+    @Ui.Kpi("Ausgaben " + DateTime.Today.Year, Fmt.Money(Model.YearNet), "netto", "euro", href: $"/Expenses?jahr={DateTime.Today.Year}")
+    @Ui.Kpi("Vorsteuer " + DateTime.Today.Year, Fmt.Money(Model.YearTax), "aus den Belegen", "file-text")
+    @Ui.Kpi("Noch zu zahlen", Fmt.Money(Model.OpenSum), "offene Ausgaben", "clock", href: "/Expenses?status=offen")
+    @Ui.Kpi("Zu prüfen", Model.ToReview.ToString(), Model.ToReview == 0 ? "alles geprüft" : "hochgeladene Belege", "alert", href: "/Expenses?status=pruefen", bad: Model.ToReview > 0)
+</div>
+
+<form method="post" asp-page-handler="Upload" enctype="multipart/form-data" class="mb-dropform" data-upload-form>
+    <div class="mat-upload mb-drop" data-upload data-max-size="20MB" data-max-files="50" data-paste>
+        <input class="mat-upload__input" type="file" id="Files" name="Files" multiple accept=".pdf,.png,.jpg,.jpeg,.heic,.webp,.xml" aria-label="Belege hochladen" data-upload-autosubmit />
+    </div>
+    <p class="mat-hint">Belege hier ablegen, einfügen oder auswählen: PDF, Fotos, E-Rechnungen (ZUGFeRD, XRechnung). Jede Datei wird zu einer Ausgabe; E-Rechnungen werden vollständig ausgelesen.</p>
+    <noscript><button type="submit" class="mat-btn mat-btn--secondary">@Ui.Icon("upload")<span>Hochladen</span></button></noscript>
+</form>
+
+<div class="mat-list">
+    <partial name="_Toolbar" model="Model.Toolbar" />
+    <partial name="_Table" model="Model.Table" />
+    <partial name="_Pager" model="Model.Pager" />
+    <div class="mat-actions">
+        <a class="mat-btn mat-btn--primary" href="/Expenses/Edit">@Ui.Icon("plus")<span>Ausgabe erfassen</span></a>
+        <a class="mat-btn mat-btn--secondary" href="/Export">@Ui.Icon("download")<span>Export für das Finanzamt</span></a>
+    </div>
+</div>

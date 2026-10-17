@@ -1,0 +1,88 @@
+@page
+@using MatBill.Core.Billing
+@model MatBill.Pages.Expenses.EditModel
+@{
+    var categories = Model.Categories.Select(c => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem(c, c)).ToList();
+    var rates = InvoiceMath.CommonTaxRates.Select(r => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem($"{Amount.Quantity(r)} %", Amount.Quantity(r))).ToList();
+    var entries = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> { new("Brutto (wie auf dem Beleg)", "brutto"), new("Netto", "netto") };
+    var e = Model.Expense;
+}
+
+@if (e?.NeedsReview == true)
+{
+    <div class="mat-alert mat-alert--warning" role="status">@Ui.Icon("alert")<div class="mat-alert__body">Dieser Beleg wurde hochgeladen und ist noch nicht geprüft. @(e.FromEInvoice ? "Die Angaben stammen aus der E-Rechnung des Lieferanten." : "Die Angaben sind aus dem Text des Belegs geraten: bitte prüfen.") Nach dem Speichern geht es zum nächsten Beleg.</div></div>
+}
+
+<div class="mb-split mb-split--receipt">
+    <form class="mat-form" method="post" enctype="multipart/form-data" novalidate>
+        <input type="hidden" name="Id" value="@Model.Id" />
+        <mb-summary />
+        <mb-card title="Beleg" icon="file-text" sub="@(e is null ? null : e.Number)">
+            <div class="mat-form__grid">
+                <mb-input for="Input.Supplier" label="Lieferant" required="true" list="supplier-list" autocomplete="off" />
+                <mb-input for="Input.ExpenseDate" label="Belegdatum" type="date" required="true" />
+                <mb-input for="Input.SupplierInvoiceNumber" label="Rechnungsnummer des Lieferanten" autocomplete="off" />
+                <mb-select for="Input.Category" label="Kategorie" items="categories" />
+                <mb-input for="Input.Description" label="Wofür" full="true" autocomplete="off" />
+            </div>
+            <datalist id="supplier-list">@foreach (var s in Model.Suppliers) { <option value="@s"></option> }</datalist>
+        </mb-card>
+
+        <mb-card title="Betrag" icon="euro" sub="@(e is null ? null : $"netto {Fmt.Money(e.NetAmount)} · USt. {Fmt.Money(e.TaxAmount)} · brutto {Fmt.Money(e.GrossAmount)}")">
+            <div class="mat-form__grid">
+                <mb-radios for="Input.Entry" label="Eingegeben wird" items="entries" />
+                <mb-input for="Input.Amount" label="Betrag" required="true" inputmode="decimal" hint="Der andere Betrag und die Steuer werden berechnet." autocomplete="off" />
+                <mb-select for="Input.TaxRate" label="Umsatzsteuer" items="rates" />
+                <mb-input for="Input.DueDate" label="Fällig am (optional)" type="date" />
+                <mb-switch for="Input.Paid" label="Bezahlt" full="true" />
+                <mb-input for="Input.PaidDate" label="Bezahlt am" type="date" show-if="Input.Paid" show-value="true" />
+            </div>
+            @if (Model.Payment is { } p)
+            {
+                <p class="mat-hint">Bezahlt durch die Buchung vom @Fmt.Date(p.BookingDate) auf „@p.BankAccount?.Name“ (<a href="/Banking/Transaction?id=@p.Id">Umsatz ansehen</a>).</p>
+            }
+        </mb-card>
+
+        <mb-card title="Datei und Notiz" icon="paperclip">
+            <div class="mat-field">
+                <label class="mat-label" for="Receipt">@(e?.ReceiptFile is null ? "Beleg hochladen" : "Anderen Beleg hochladen")</label>
+                <div class="mat-upload" data-upload data-max-size="20MB" data-max-files="1" data-paste><input class="mat-upload__input" type="file" id="Receipt" name="Receipt" accept=".pdf,.png,.jpg,.jpeg,.heic,.webp,.xml" /></div>
+                <span class="mat-error" aria-live="polite">@ViewData.ModelState["Receipt"]?.Errors.FirstOrDefault()?.ErrorMessage</span>
+            </div>
+            <mb-textarea for="Input.Note" label="Notiz (intern)" rows="3" />
+        </mb-card>
+
+        @if (e is null)
+        {
+            <mb-buttons back-href="/Expenses" />
+        }
+        else
+        {
+            <mb-buttons back-href="/Expenses" delete-url="@Url.Page("/Expenses/Edit", "Delete", new { id = Model.Id })" delete-confirm="Diese Ausgabe löschen? Die Belegdatei bleibt im Speicher, eine Zuordnung zu einer Buchung wird aufgehoben." />
+        }
+    </form>
+
+    <aside aria-label="Beleg">
+        <div class="mat-card mb-receipt">
+            <div class="mat-card__head">@Ui.Icon("eye")<h2 class="mat-card__title">Beleg</h2>@if (e?.ReceiptFile is not null) { <a class="mat-card__sub" href="/expenses/@e.Id/receipt?download=1">herunterladen</a> }</div>
+            <div class="mat-card__body">
+                @if (e?.ReceiptFile is null)
+                {
+                    <p class="mat-muted">Noch keine Datei. Lade den Beleg links hoch.</p>
+                }
+                else if (Model.ReceiptIsImage)
+                {
+                    <img class="mb-receipt__image" src="/expenses/@e.Id/receipt" alt="Beleg @e.Number" />
+                }
+                else if (Model.ReceiptIsPdf)
+                {
+                    <iframe class="mb-receipt__frame" src="/expenses/@e.Id/receipt" title="Beleg @e.Number"></iframe>
+                }
+                else
+                {
+                    <p><a href="/expenses/@e.Id/receipt?download=1">@e.ReceiptFile.FileName</a> (@Fmt.FileSize(e.ReceiptFile.SizeBytes))</p>
+                }
+            </div>
+        </div>
+    </aside>
+</div>

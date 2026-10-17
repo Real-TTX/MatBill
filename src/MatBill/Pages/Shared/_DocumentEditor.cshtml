@@ -9,6 +9,7 @@
     var input = Model.Input;
     var company = Model.Company;
     var template = Model.Mode == EditorMode.Template;
+    var quote = Model.Mode == EditorMode.Quote;
     var totals = DocumentInputs.Totals(input, Model.TaxExempt);
     var rates = InvoiceMath.CommonTaxRates;
     var lines = input.Lines.ToList();
@@ -17,7 +18,7 @@
         .Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
 }
 
-<article class="mb-paper mb-doc @(Model.Stamp is null ? "" : "is-draft")" data-stamp="@Model.Stamp" aria-label="@(template ? "Vorlage der Rechnung" : "Rechnung")">
+<article class="mb-paper mb-doc @(Model.Stamp is null ? "" : "is-draft")" data-stamp="@Model.Stamp" aria-label="@(template ? "Vorlage der Rechnung" : quote ? "Angebot" : "Rechnung")">
     <header class="mb-doc__head">
         <div class="mb-doc__logo">
             @if (Model.LogoUrl is not null)
@@ -75,10 +76,10 @@
 
         <section class="mb-doc__part mb-doc__meta" aria-label="Rechnungsdaten">
             <span class="mb-doc__caption mb-label">Rechnungsdaten</span>
-            <div class="mb-field"><label class="mb-label" for="Input_Title">Titel</label><input class="mb-in mb-in--title mb-doc__title" id="Input_Title" name="Input.Title" value="@(input.Title ?? "Rechnung")" maxlength="80" /></div>
+            <div class="mb-field"><label class="mb-label" for="Input_Title">Titel</label><input class="mb-in mb-in--title mb-doc__title" id="Input_Title" name="Input.Title" value="@(input.Title ?? (quote ? "Angebot" : "Rechnung"))" maxlength="80" /></div>
             <dl class="mb-doc__facts">
                 <div>
-                    <dt>Rechnungsnummer</dt>
+                    <dt>@(quote ? "Angebotsnummer" : "Rechnungsnummer")</dt>
                     <dd class="is-muted" title="Die Nummer wird beim Ausstellen vergeben.">@(template ? "fortlaufend" : Model.NumberPreview ?? "beim Ausstellen")</dd>
                 </div>
                 @if (template)
@@ -89,9 +90,12 @@
                 else
                 {
                     <div>
-                        <dt><label for="Input_InvoiceDate">Rechnungsdatum</label></dt>
-                        <dd><div class="mat-picker" data-picker="date"><input class="mat-picker__input" id="Input_InvoiceDate" name="Input.InvoiceDate" value="@Fmt.Iso(input.InvoiceDate)" required data-msg-required="Bitte wähle das Rechnungsdatum." /></div></dd>
+                        <dt><label for="Input_InvoiceDate">@(quote ? "Angebotsdatum" : "Rechnungsdatum")</label></dt>
+                        <dd><div class="mat-picker" data-picker="date"><input class="mat-picker__input" id="Input_InvoiceDate" name="Input.InvoiceDate" value="@Fmt.Iso(input.InvoiceDate)" required data-msg-required="Bitte wähle das Datum." /></div></dd>
                     </div>
+                }
+                @if (Model.Mode == EditorMode.Invoice)
+                {
                     <div>
                         <dt><label for="Input_ServiceFrom">Leistungsdatum</label></dt>
                         <dd><div class="mat-picker" data-picker="date" data-clearable data-placeholder="wie Rechnungsdatum"><input class="mat-picker__input" id="Input_ServiceFrom" name="Input.ServiceFrom" value="@Fmt.Iso(input.ServiceFrom)" /></div></dd>
@@ -102,12 +106,12 @@
                     </div>
                 }
                 <div>
-                    <dt><label for="Input_PaymentTermDays">Zahlungsziel</label></dt>
-                    <dd><span class="mb-doc__inline"><input class="mb-in mb-in--num mb-in--days" type="number" min="0" max="365" step="1" inputmode="numeric" id="Input_PaymentTermDays" name="Input.PaymentTermDays" value="@(input.PaymentTermDays ?? Model.Invoicing.PaymentTermDays)" /> Tage</span></dd>
+                    <dt><label for="Input_PaymentTermDays">@(quote ? "Gültigkeit" : "Zahlungsziel")</label></dt>
+                    <dd><span class="mb-doc__inline"><input class="mb-in mb-in--num mb-in--days" type="number" min="0" max="365" step="1" inputmode="numeric" id="Input_PaymentTermDays" name="Input.PaymentTermDays" value="@(input.PaymentTermDays ?? (quote ? Model.Invoicing.QuoteValidityDays : Model.Invoicing.PaymentTermDays))" /> Tage</span></dd>
                 </div>
                 @if (!template)
                 {
-                    <div><dt>Fällig am</dt><dd data-due>@(input.InvoiceDate is { } d ? Fmt.Date(InvoiceMath.DueDate(d, input.PaymentTermDays ?? 0)) : "–")</dd></div>
+                    <div><dt>@(quote ? "Gültig bis" : "Fällig am")</dt><dd data-due>@(input.InvoiceDate is { } d ? Fmt.Date(InvoiceMath.DueDate(d, input.PaymentTermDays ?? 0)) : "–")</dd></div>
                 }
             </dl>
         </section>
@@ -147,9 +151,16 @@
     }
 
     <div class="mb-doc__terms">
-        <label class="mb-doc__caption" for="Input_PaymentTerms">Zahlungsbedingungen</label>
+        <label class="mb-doc__caption" for="Input_PaymentTerms">@(quote ? "Bedingungen" : "Zahlungsbedingungen")</label>
         <textarea class="mb-in" id="Input_PaymentTerms" name="Input.PaymentTerms" rows="2" data-autogrow maxlength="2000" placeholder="Zum Beispiel: Zahlbar innerhalb von {Tage} Tagen ohne Abzug." aria-describedby="terms-hint">@input.PaymentTerms</textarea>
-        <span class="mat-hint" id="terms-hint">{Tage} wird zum Zahlungsziel (<span data-term-days>@(input.PaymentTermDays ?? Model.Invoicing.PaymentTermDays)</span>), {Faellig} zum Fälligkeitsdatum.</span>
+        @if (quote)
+        {
+            <span class="mat-hint" id="terms-hint">{Gueltig} wird zum Datum, bis zu dem das Angebot gilt.</span>
+        }
+        else
+        {
+            <span class="mat-hint" id="terms-hint">{Tage} wird zum Zahlungsziel (<span data-term-days>@(input.PaymentTermDays ?? Model.Invoicing.PaymentTermDays)</span>), {Faellig} zum Fälligkeitsdatum.</span>
+        }
     </div>
 
     <div class="mb-doc__closing">

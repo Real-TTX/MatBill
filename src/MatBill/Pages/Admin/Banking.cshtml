@@ -1,0 +1,39 @@
+@page
+@model MatBill.Pages.Admin.BankingModel
+
+<form class="mat-form" method="post" asp-page-handler="" novalidate>
+    <mb-summary />
+    @if (Model.TestResult is not null)
+    {
+        <div class="mat-alert mat-alert--@(Model.TestOk ? "success" : "danger")" role="status">@Ui.Icon(Model.TestOk ? "check-circle" : "alert")<div class="mat-alert__body">@Model.TestResult</div></div>
+    }
+
+    <mb-card title="Zuordnung" icon="check-square">
+        <div class="mat-form__grid">
+            <mb-switch for="Input.AutoMatch" label="Zahlungen automatisch zuordnen, wenn es eindeutig ist" full="true" />
+            <p class="mat-hint mat-field--full">Eindeutig heißt: Die Rechnungsnummer steht im Verwendungszweck und der Betrag stimmt, oder Betrag und Name passen und es gibt nur einen solchen offenen Posten. Alles andere wird vorgeschlagen.</p>
+        </div>
+    </mb-card>
+
+    <mb-card title="Online-Abruf (Enable Banking)" icon="link">
+        <p class="mat-muted">
+            Enable Banking verbindet über PSD2 mit (fast) allen Banken in Europa, ohne dass MatBill Zugangsdaten sieht. Lege unter enablebanking.com eine Anwendung an
+            (Umgebung „Production“; Konditionen siehe enablebanking.com), lade dort den öffentlichen Schlüssel hoch und trage hier die Anwendungs-ID und den privaten Schlüssel ein.
+            Als Redirect-URL der Anwendung gibst du an:
+        </p>
+        <div class="mat-input-group">
+            <input class="mat-input mat-mono" id="callback" value="@Model.CallbackUrl" readonly aria-label="Redirect-URL" />
+            <button type="button" class="mat-btn mat-btn--secondary" data-copy="#callback">@Ui.Icon("copy")<span>Kopieren</span></button>
+        </div>
+        <div class="mat-form__grid">
+            <mb-input for="Input.AppId" label="Anwendungs-ID (Application ID)" autocomplete="off" full="true" />
+            <mb-textarea for="Input.PrivateKey" label="Privater Schlüssel (PEM)" rows="5" full="true" hint="@(Model.HasKey ? "Ein Schlüssel ist gespeichert (verschlüsselt). Leer lassen, um ihn zu behalten." : "Wird verschlüsselt gespeichert.")" autocomplete="off" spellcheck="false" />
+            <mb-input for="Input.Country" label="Land für die Bankauswahl" maxlength="2" />
+            <mb-input for="Input.SyncHours" label="Abruf alle (Stunden)" type="number" min="1" max="48" step="1" hint="Banken erlauben ohne Bestätigung etwa vier Abrufe am Tag." />
+        </div>
+        <div class="mat-actions"><button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="Test">@Ui.Icon("refresh")<span>Speichern und Verbindung testen</span></button></div>
+        <p class="mat-hint">Ohne Online-Zugang funktioniert der Import von Kontoauszügen (CSV, CAMT.053, MT940) mit jeder Bank.</p>
+    </mb-card>
+
+    <mb-buttons back-href="/" />
+</form>

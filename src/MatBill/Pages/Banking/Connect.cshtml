@@ -1,0 +1,49 @@
+@page
+@model MatBill.Pages.Banking.ConnectModel
+
+@if (!Model.Configured)
+{
+    <div class="mat-alert mat-alert--info" role="note">@Ui.Icon("info")<div class="mat-alert__body">Für den Online-Abruf braucht MatBill einen Zugang zu Enable Banking. Ein Administrator richtet ihn unter <a href="/Admin/Banking">Einstellungen › Banking</a> ein. Bis dahin funktioniert der <a href="/Banking/Import">Import von Kontoauszügen</a> mit jeder Bank.</div></div>
+}
+else
+{
+    @if (Model.Problem is not null)
+    {
+        <div class="mat-alert mat-alert--danger" role="alert">@Ui.Icon("x-circle")<div class="mat-alert__body">@Model.Problem</div></div>
+    }
+
+    <form method="get" class="mat-toolbar" role="toolbar" aria-label="Land">
+        <div class="mat-field">
+            <label class="mat-label" for="country">Land der Bank</label>
+            <select class="mat-select" id="country" name="country" data-submit-on-change>
+                @foreach (var (code, name) in new[] { ("DE", "Deutschland"), ("AT", "Österreich"), ("CH", "Schweiz"), ("NL", "Niederlande"), ("FR", "Frankreich"), ("BE", "Belgien"), ("LU", "Luxemburg"), ("IT", "Italien"), ("ES", "Spanien"), ("PL", "Polen"), ("DK", "Dänemark"), ("SE", "Schweden"), ("FI", "Finnland") })
+                {
+                    <option value="@code" selected="@(Model.Country == code)">@name</option>
+                }
+            </select>
+        </div>
+    </form>
+
+    <form method="post" class="mat-form" novalidate>
+        <input type="hidden" name="Country" value="@Model.Country" />
+        <mb-card title="Bank wählen" icon="building" sub="@($"{Model.Banks.Count} Banken")">
+            <div class="mat-field">
+                <label class="mat-label" for="Bank">Bank</label>
+                <div class="mat-picker" data-picker="select" data-search data-placeholder="Bank suchen …">
+                    <input class="mat-picker__input" id="Bank" name="Bank" required data-msg-required="Bitte wähle deine Bank." />
+                    <div class="mat-picker__options" hidden>
+                        @foreach (var b in Model.Banks)
+                        {
+                            <button type="button" class="mat-picker__option" data-value="@b.Name"><span class="mat-picker__text"><span class="mat-picker__name">@b.Name</span>@if (b.Bic is not null) { <span class="mat-picker__desc">@b.Bic</span> }</span></button>
+                        }
+                    </div>
+                </div>
+            </div>
+            <p class="mat-hint">Du wirst zu deiner Bank weitergeleitet und bestätigst dort den Lesezugriff (90 Tage). Danach kommst du hierher zurück; die Konten werden angelegt und regelmäßig abgerufen. MatBill sieht deine Zugangsdaten nie.</p>
+        </mb-card>
+        <div class="mat-btn-row">
+            <button type="submit" class="mat-btn mat-btn--primary mb-needs-online" disabled="@(Model.Banks.Count == 0)">@Ui.Icon("external")<span>Zur Bank</span></button>
+            <a class="mat-btn mat-btn--secondary" href="/Banking">@Ui.Icon("back")<span>Zurück</span></a>
+        </div>
+    </form>
+}

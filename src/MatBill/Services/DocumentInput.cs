@@ -102,6 +102,26 @@ public static class DocumentInputs
         Lines = [.. i.Lines.OrderBy(l => l.Position).Select(LineOf)],
     };
 
+    /// <summary>A quote in the editor: its date is the date field, its validity the days field, its terms the terms field.</summary>
+    public static DocumentInput From(Quote q) => new()
+    {
+        CustomerId = q.CustomerId,
+        RecipientName = q.RecipientName,
+        RecipientContact = q.RecipientContact,
+        RecipientStreet = q.RecipientStreet,
+        RecipientPostalCode = q.RecipientPostalCode,
+        RecipientCity = q.RecipientCity,
+        RecipientCountry = q.RecipientCountry,
+        RecipientEmail = q.RecipientEmail,
+        Title = q.Title,
+        InvoiceDate = q.QuoteDate,
+        PaymentTermDays = q.ValidityDays,
+        IntroText = q.IntroText,
+        PaymentTerms = q.Terms,
+        ClosingText = q.ClosingText,
+        Lines = [.. q.Lines.OrderBy(l => l.Position).Select(LineOf)],
+    };
+
     public static DocumentInput From(RecurringInvoice s) => new()
     {
         CustomerId = s.CustomerId,

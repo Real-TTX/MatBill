@@ -30,7 +30,7 @@
 @media (min-width: 1100px) { .mb-split { grid-template-columns: minmax(0, 1fr) 22rem; } }
 
 /* ---- The number cards at the top of a page ---- */
-.mb-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: var(--mat-space-3); }
+.mb-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--mat-space-3); }
 .mb-stat .mat-stat__label { display: inline-flex; align-items: center; gap: var(--mat-space-2); }
 .mb-stat .mat-stat__label .mat-icon { color: var(--mat-text-faint); }
 .mb-stat .mat-stat__value { font-variant-numeric: tabular-nums; }
@@ -366,3 +366,30 @@ select.mb-in { appearance: none; -webkit-appearance: none; cursor: pointer; text
 .mb-editor__side .mat-kv, .mb-split > aside .mat-kv { grid-template-columns: minmax(0, 1fr); gap: 2px; }
 .mb-editor__side .mat-kv dd, .mb-split > aside .mat-kv dd { margin-bottom: var(--mat-space-3); }
 .mb-logo--detailed { background: none; }
+
+/* ---- Banking: the accounts above the bookings ---- */
+.mb-accounts { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: var(--mat-space-3); }
+.mb-account .mat-card__body { display: grid; gap: var(--mat-space-1); }
+.mb-account__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--mat-space-1) var(--mat-space-2); }
+.mb-account__name { font-weight: 600; color: var(--mat-text); text-decoration: none; overflow-wrap: break-word; min-width: 0; }
+.mb-account__name:hover { color: var(--mat-accent-text); }
+.mb-account__iban { font-size: var(--mat-fs-sm); color: var(--mat-text-muted); }
+.mb-account__balance { font-size: var(--mat-fs-xl); font-weight: 700; margin-top: var(--mat-space-1); }
+.mb-account__meta { font-size: var(--mat-fs-xs); margin: 0; }
+.mb-account__actions { display: flex; flex-wrap: wrap; gap: var(--mat-space-2); margin-top: var(--mat-space-2); }
+
+/* ---- the score of a suggestion ---- */
+.mb-score { flex: none; display: inline-grid; place-items: center; min-width: 2.4rem; height: 2rem; padding: 0 var(--mat-space-2); border-radius: var(--mat-radius-pill); background: var(--mat-surface-3); color: var(--mat-text-muted); font-weight: 700; font-variant-numeric: tabular-nums; }
+.mb-score.is-mid { background: var(--mat-warning-bg); color: var(--mat-warning-text); }
+.mb-score.is-high { background: var(--mat-success-bg); color: var(--mat-success-text); }
+.mb-note > form { flex: none; align-self: center; }
+
+/* ---- Expenses: the drop zone and the receipt beside the form ---- */
+.mb-dropform { display: grid; gap: var(--mat-space-1); }
+.mb-drop .mat-upload__zone { min-height: 7rem; }
+.mb-dropform.is-busy { opacity: .6; pointer-events: none; }
+@media (min-width: 1100px) { .mb-split--receipt { grid-template-columns: minmax(0, 1fr) minmax(22rem, 34rem); } }
+.mb-receipt { position: sticky; top: calc(var(--mat-topbar-h) + var(--mat-space-4)); }
+.mb-receipt__image { display: block; max-width: 100%; height: auto; border: 1px solid var(--mat-border); border-radius: var(--mat-radius-sm); }
+.mb-receipt__frame { display: block; width: 100%; height: min(75vh, 52rem); border: 1px solid var(--mat-border); border-radius: var(--mat-radius-sm); background: var(--mat-surface-2); }
+select.mb-multi { min-height: 7rem; padding-block: var(--mat-space-1); }

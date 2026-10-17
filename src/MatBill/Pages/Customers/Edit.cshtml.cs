@@ -42,6 +42,9 @@ public sealed class EditModel(MbDbContext db, NumberService numbers, ActivityLog
         [StringLength(30)]
         public string? VatId { get; set; }
 
+        [StringLength(100)]
+        public string? BuyerReference { get; set; }
+
         [Range(0, 365, ErrorMessage = "Zwischen 0 und 365 Tagen.")]
         public int? PaymentTermDays { get; set; }
 
@@ -81,7 +84,7 @@ public sealed class EditModel(MbDbContext db, NumberService numbers, ActivityLog
             Input = new InputModel
             {
                 Kind = c.Kind, Name = c.Name, ContactName = c.ContactName, Email = c.Email, Phone = c.Phone, Street = c.Street, PostalCode = c.PostalCode, City = c.City,
-                Country = c.Country, VatId = c.VatId, PaymentTermDays = c.PaymentTermDays, Note = c.Note,
+                Country = c.Country, VatId = c.VatId, BuyerReference = c.BuyerReference, PaymentTermDays = c.PaymentTermDays, Note = c.Note,
             };
         }
 
@@ -120,6 +123,7 @@ public sealed class EditModel(MbDbContext db, NumberService numbers, ActivityLog
         customer.City = Clean(Input.City);
         customer.Country = Clean(Input.Country) ?? "Deutschland";
         customer.VatId = Clean(Input.VatId);
+        customer.BuyerReference = Clean(Input.BuyerReference);
         customer.PaymentTermDays = Input.PaymentTermDays;
         customer.Note = Clean(Input.Note);
         await db.SaveChangesAsync();

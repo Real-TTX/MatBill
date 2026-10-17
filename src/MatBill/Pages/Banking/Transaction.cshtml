@@ -1,0 +1,122 @@
+@page
+@model MatBill.Pages.Banking.TransactionModel
+@{
+    var t = Model.Transaction;
+    var incoming = t.Amount >= 0;
+    var kind = incoming ? "invoice" : "expense";
+    var categories = Model.Categories;
+}
+
+<div class="mb-split">
+    <div class="mb-cards">
+        <mb-card title="Umsatz" icon="credit-card" sub="@(incoming ? "Eingang" : "Ausgang")">
+            <dl class="mat-kv">
+                <dt>Betrag</dt><dd class="mb-money"><strong>@Fmt.Money(t.Amount)</strong></dd>
+                <dt>Buchungstag</dt><dd>@Fmt.Date(t.BookingDate)@(t.ValueDate is { } v && v != t.BookingDate ? $" (Valuta {Fmt.Date(v)})" : "")</dd>
+                <dt>@(incoming ? "Zahler" : "Empfänger")</dt><dd>@(t.CounterpartyName ?? "–")</dd>
+                <dt>IBAN</dt><dd class="mat-mono">@(t.CounterpartyIban ?? "–")</dd>
+                <dt>Verwendungszweck</dt><dd class="mb-prewrap">@(t.Purpose ?? "–")</dd>
+                @if (t.EndToEndId is not null) { <dt>End-to-End-Referenz</dt><dd class="mat-mono">@t.EndToEndId</dd> }
+                <dt>Konto</dt><dd>@t.BankAccount?.Name</dd>
+            </dl>
+        </mb-card>
+
+        @if (t.State == MatchState.Matched)
+        {
+            <mb-card title="Zugeordnet" icon="check-circle" sub="@(t.MatchedAutomatically ? $"automatisch ({t.MatchScore} Punkte)" : "von Hand")">
+                @if (t.Invoice is { } i)
+                {
+                    <p>Rechnung <a href="/Invoices/Edit?id=@i.Id">@i.Number</a> an @i.RecipientName über @Fmt.Money(i.GrossTotal) · @Labels.Of(i.Status)</p>
+                }
+                else if (t.Expense is { } e)
+                {
+                    <p>Ausgabe <a href="/Expenses/Edit?id=@e.Id">@e.Number</a> bei @e.Supplier über @Fmt.Money(e.GrossAmount)</p>
+                }
+                <form method="post" class="mat-actions">
+                    <button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="Unassign" asp-route-id="@t.Id" data-confirm="Zuordnung aufheben? Die @(incoming ? "Rechnung" : "Ausgabe") ist danach wieder offen." data-confirm-ok="Aufheben">@Ui.Icon("undo")<span>Zuordnung aufheben</span></button>
+                </form>
+            </mb-card>
+        }
+        else
+        {
+            <mb-card title="Vorschläge" icon="check-square" sub="@(Model.Candidates.Count == 0 ? "keine" : Ui.CountNoun(Model.Candidates.Count, incoming ? "Rechnungen" : "Ausgaben"))">
+                @if (Model.Candidates.Count == 0)
+                {
+                    <p class="mat-muted">Keine @(incoming ? "offene Rechnung" : "offene Ausgabe") passt zu diesem Umsatz. Wähle unten von Hand@(incoming ? "" : ", erfasse eine neue Ausgabe") oder ignoriere ihn.</p>
+                }
+                else
+                {
+                    <ul class="mb-notes">
+                        @foreach (var c in Model.Candidates.Take(6))
+                        {
+                            <li class="mb-note">
+                                <span class="mb-score @(c.Score >= 80 ? "is-high" : c.Score >= 50 ? "is-mid" : "")">@c.Score</span>
+                                <div class="mb-note__body">
+                                    <span class="mb-note__title">@(c.Item.Number ?? "ohne Nummer") · @c.Item.PartyName · @Fmt.Money(c.Item.Amount)</span>
+                                    <span class="mb-note__meta">@string.Join(" · ", c.Reasons)</span>
+                                </div>
+                                <form method="post">
+                                    <input type="hidden" name="kind" value="@kind" />
+                                    <input type="hidden" name="itemId" value="@c.Item.Id" />
+                                    <button type="submit" class="mat-btn mat-btn--primary mat-btn--sm" asp-page-handler="Assign" asp-route-id="@t.Id">@Ui.Icon("check")<span>Zuordnen</span></button>
+                                </form>
+                            </li>
+                        }
+                    </ul>
+                }
+            </mb-card>
+        }
+    </div>
+
+    @if (t.State != MatchState.Matched)
+    {
+        <aside class="mb-cards" aria-label="Von Hand zuordnen">
+            <div class="mat-card">
+                <div class="mat-card__head">@Ui.Icon("search")<h2 class="mat-card__title">Von Hand</h2></div>
+                <form method="post" class="mat-card__body mat-form mat-stack">
+                    <input type="hidden" name="kind" value="@kind" />
+                    <div class="mat-field">
+                        <label class="mat-label" for="itemId">@(incoming ? "Offene Rechnung" : "Offene Ausgabe")</label>
+                        <div class="mat-picker" data-picker="select" data-search data-placeholder="suchen …">
+                            <input class="mat-picker__input" id="itemId" name="itemId" required data-msg-required="Bitte wähle etwas aus." />
+                            <div class="mat-picker__options" hidden>
+                                @foreach (var o in Model.AllOpen.OrderBy(o => o.PartyName))
+                                {
+                                    <button type="button" class="mat-picker__option" data-value="@o.Id"><span class="mat-picker__text"><span class="mat-picker__name">@o.PartyName · @Fmt.Money(o.Amount)</span><span class="mat-picker__desc">@(o.Number ?? "ohne Nummer") vom @Fmt.Date(o.Date)</span></span></button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="Assign" asp-route-id="@t.Id" disabled="@(Model.AllOpen.Count == 0)">@Ui.Icon("check")<span>Zuordnen</span></button>
+                </form>
+            </div>
+
+            @if (!incoming)
+            {
+                <div class="mat-card">
+                    <div class="mat-card__head">@Ui.Icon("file-plus")<h2 class="mat-card__title">Als Ausgabe erfassen</h2></div>
+                    <form method="post" class="mat-card__body mat-form mat-stack">
+                        <div class="mat-field">
+                            <label class="mat-label" for="category">Kategorie</label>
+                            <select class="mat-select" id="category" name="category">@foreach (var c in categories) { <option value="@c">@c</option> }</select>
+                        </div>
+                        <button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="Expense" asp-route-id="@t.Id">@Ui.Icon("plus")<span>Ausgabe anlegen</span></button>
+                    </form>
+                </div>
+            }
+
+            <div class="mat-card">
+                <div class="mat-card__head">@Ui.Icon("ban")<h2 class="mat-card__title">Ignorieren</h2></div>
+                <form method="post" class="mat-card__body mat-form mat-stack">
+                    <p class="mat-muted">Für Umbuchungen zwischen eigenen Konten, Privatentnahmen, Steuerzahlungen und alles, was keinen Beleg in MatBill hat.</p>
+                    <div class="mat-field"><label class="mat-label" for="note">Notiz (optional)</label><input class="mat-input" id="note" name="note" value="@t.Note" maxlength="300" /></div>
+                    <button type="submit" class="mat-btn mat-btn--ghost" asp-page-handler="Ignore" asp-route-id="@t.Id">@Ui.Icon("ban")<span>Ignorieren</span></button>
+                </form>
+            </div>
+        </aside>
+    }
+</div>
+
+<div class="mat-btn-row">
+    <a class="mat-btn mat-btn--secondary" href="/Banking">@Ui.Icon("back")<span>Zurück</span></a>
+</div>

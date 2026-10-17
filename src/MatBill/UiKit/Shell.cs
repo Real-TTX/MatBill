@@ -29,7 +29,7 @@ public sealed class ShellModel
 
     public string Version { get; init; } = "";
 
-    public string Tagline { get; init; } = "Rechnungen";
+    public string Tagline { get; init; } = "Rechnungen und Finanzen";
 
     /// <summary>The unread notifications of the person (the badge of the bell); null draws no bell (a page without a person).</summary>
     public int? Unread { get; init; }
@@ -46,7 +46,7 @@ public sealed class ShellModel
 /// <summary>Counts shown as badges in the menu. Cached for a minute: a badge may be a little late, a page must not wait for queries.</summary>
 public sealed class NavCounts(IMemoryCache cache, MbDbContext db, TimeProvider clock)
 {
-    public sealed record Counts(int Overdue, int Drafts, int SeriesProblems, int SendProblems);
+    public sealed record Counts(int Overdue, int Drafts, int SeriesProblems, int SendProblems, int OpenBookings, int ExpensesToReview);
 
     public async Task<Counts> GetAsync()
         => (await cache.GetOrCreateAsync("nav-counts", async entry =>
@@ -57,7 +57,9 @@ public sealed class NavCounts(IMemoryCache cache, MbDbContext db, TimeProvider c
                 await db.Invoice.CountAsync(i => i.Status == InvoiceStatus.Open && i.DueDate < today),
                 await db.Invoice.CountAsync(i => i.Status == InvoiceStatus.Draft),
                 await db.RecurringInvoice.CountAsync(s => s.Status == RecurringStatus.Active && s.LastError != null),
-                await db.Invoice.CountAsync(i => i.Status != InvoiceStatus.Cancelled && i.SendState == SendState.Failed));
+                await db.Invoice.CountAsync(i => i.Status != InvoiceStatus.Cancelled && i.SendState == SendState.Failed),
+                await db.BankTransaction.CountAsync(t => t.State == MatchState.Open),
+                await db.Expense.CountAsync(e => e.NeedsReview));
         }))!;
 
     public void Invalidate() => cache.Remove("nav-counts");
@@ -110,10 +112,17 @@ public sealed class ShellFactory(ICurrentUser user, NavCounts counts, Notificati
                 new("Neue Rechnung", "/Invoices/Edit", "plus", Primary: true),
                 new("Übersicht", "/", "dashboard"),
             ]),
-            new("Rechnungen",
+            new("Verkauf",
             [
+                new("Angebote", "/Quotes", "file-document"),
                 new("Rechnungen", "/Invoices", "file-text", invoiceBadge),
                 new("Wiederkehrend", "/Recurring", "refresh", c.SeriesProblems > 0 ? NavBadge.Count(c.SeriesProblems, "error", "Serien mit Fehler") : null),
+            ]),
+            new("Finanzen",
+            [
+                new("Ausgaben", "/Expenses", "euro", c.ExpensesToReview > 0 ? NavBadge.Count(c.ExpensesToReview, "warn", "Belege zu prüfen") : null),
+                new("Banking", "/Banking", "credit-card", c.OpenBookings > 0 ? NavBadge.Count(c.OpenBookings, "accent", "Umsätze ohne Zuordnung") : null),
+                new("Auswertung", "/Export", "bar-chart"),
             ]),
             new("Stammdaten",
             [
@@ -123,7 +132,7 @@ public sealed class ShellFactory(ICurrentUser user, NavCounts counts, Notificati
         };
         if (user.IsAdmin)
         {
-            groups[2] = groups[2] with { Items = [.. groups[2].Items, new("Branding", "/Branding", "palette")] };
+            groups[3] = groups[3] with { Items = [.. groups[3].Items, new("Branding", "/Branding", "palette")] };
         }
 
         return new NavSet("work", "Rechnungen", "file-text", groups);
@@ -137,6 +146,7 @@ public sealed class ShellFactory(ICurrentUser user, NavCounts counts, Notificati
             new("Freigaben", "/Admin/Shares", "share"),
             new("Rechnungen", "/Admin/Invoicing", "sliders"),
             new("E-Mail", "/Admin/Mail", "mail"),
+            new("Banking", "/Admin/Banking", "credit-card"),
         ]),
         new("System",
         [

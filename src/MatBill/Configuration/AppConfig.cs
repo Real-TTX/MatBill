@@ -24,6 +24,8 @@ public sealed class AppConfig
     public SecurityConfig Security { get; set; } = new();
 
     public BackupConfig Backup { get; set; } = new();
+
+    public BankingConfig Banking { get; set; } = new();
 }
 
 /// <summary>
@@ -86,6 +88,27 @@ public sealed class CompanyConfig
 public sealed class InvoicingConfig
 {
     /// <summary>The pattern of invoice numbers (see <see cref="Core.Billing.NumberPattern"/>).</summary>
+    public string QuoteNumberPattern { get; set; } = "AN-{JJJJ}-{NNNN}";
+
+    /// <summary>The own receipt numbers of expenses ("Belegnummer").</summary>
+    public string ExpenseNumberPattern { get; set; } = "BE-{JJJJ}-{NNNN}";
+
+    public int QuoteValidityDays { get; set; } = 30;
+
+    public string QuoteIntroText { get; set; } = "Guten Tag,\ngerne bieten wir Ihnen folgende Leistungen an:";
+
+    public string QuoteTerms { get; set; } = "Dieses Angebot ist gültig bis {Gueltig}. Wir freuen uns auf Ihren Auftrag.";
+
+    /// <summary>The categories of expenses (one list for the select and the reports).</summary>
+    public List<string> ExpenseCategories { get; set; } =
+    [
+        "Büro und Material", "Software und Abos", "Telefon und Internet", "Fremdleistungen", "Wareneinkauf", "Reisen", "Bewirtung", "Fahrzeug",
+        "Miete und Nebenkosten", "Werbung", "Versicherungen", "Fortbildung", "Bankgebühren", "Sonstiges",
+    ];
+
+    /// <summary>Every issued invoice is a ZUGFeRD e-invoice: a PDF/A-3 with the structured data (EN 16931) inside.</summary>
+    public bool ZugferdPdf { get; set; } = true;
+
     public string InvoiceNumberPattern { get; set; } = "RE-{JJJJ}-{NNNN}";
 
     public string CustomerNumberPattern { get; set; } = "K-{NNNN}";
@@ -142,6 +165,10 @@ public sealed class MailConfig
     public string Subject { get; set; } = "Rechnung {Nummer} von {Firma}";
 
     public string Body { get; set; } = "Guten Tag,\n\nanbei erhalten Sie unsere Rechnung {Nummer} über {Betrag}, fällig am {Faellig}.\n\nMit freundlichen Grüßen\n{Firma}";
+
+    public string QuoteSubject { get; set; } = "Angebot {Nummer} von {Firma}";
+
+    public string QuoteBody { get; set; } = "Guten Tag,\n\nanbei erhalten Sie unser Angebot {Nummer} über {Betrag}, gültig bis {Gueltig}.\n\nMit freundlichen Grüßen\n{Firma}";
 
     [JsonIgnore]
     public bool IsConfigured => !string.IsNullOrWhiteSpace(Host) && !string.IsNullOrWhiteSpace(FromAddress);
@@ -220,4 +247,27 @@ public sealed class BackupConfig
 
     /// <summary>The scratch folder of a backup; empty: {data}/tmp.</summary>
     public string TempDirectory { get; set; } = "";
+}
+
+/// <summary>
+/// The online connection to the banks through Enable Banking (PSD2, all European banks): the id of the application and its private key (protected with the key
+/// ring), from enablebanking.com. Statements can always be imported as files as well.
+/// </summary>
+public sealed class BankingConfig
+{
+    public string EnableBankingAppId { get; set; } = "";
+
+    public string EnableBankingKeyProtected { get; set; } = "";
+
+    /// <summary>The country whose banks are offered first.</summary>
+    public string Country { get; set; } = "DE";
+
+    /// <summary>Assign payments to invoices and expenses by themselves when it is clear (else they are suggested).</summary>
+    public bool AutoMatch { get; set; } = true;
+
+    /// <summary>How often connected accounts are fetched, in hours (banks allow about four fetches a day without the person).</summary>
+    public int SyncHours { get; set; } = 6;
+
+    [JsonIgnore]
+    public bool IsOnlineConfigured => !string.IsNullOrWhiteSpace(EnableBankingAppId) && !string.IsNullOrWhiteSpace(EnableBankingKeyProtected);
 }

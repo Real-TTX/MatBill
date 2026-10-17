@@ -15,6 +15,11 @@ public sealed class NumberService(MbDbContext db, ConfigStore config)
 
     public const string CustomerRange = "customer";
 
+    public const string ExpenseRange = "expense";
+
+    public Task<string> NextExpenseNumberAsync(DateOnly date, CancellationToken ct = default)
+        => NextAsync(ExpenseRange, config.Current.Invoicing.ExpenseNumberPattern, date, ct);
+
     public Task<string> NextInvoiceNumberAsync(DateOnly date, CancellationToken ct = default)
         => NextAsync(InvoiceRange, config.Current.Invoicing.InvoiceNumberPattern, date, ct);
 
@@ -22,15 +27,18 @@ public sealed class NumberService(MbDbContext db, ConfigStore config)
         => NextAsync(CustomerRange, config.Current.Invoicing.CustomerNumberPattern, date, ct);
 
     /// <summary>The number the next invoice of <paramref name="date"/> would get, without taking it (the preview in a draft).</summary>
-    public async Task<string> PeekInvoiceNumberAsync(DateOnly date, CancellationToken ct = default)
+    public Task<string> PeekInvoiceNumberAsync(DateOnly date, CancellationToken ct = default)
+        => PeekAsync(InvoiceRange, config.Current.Invoicing.InvoiceNumberPattern, date, ct);
+
+    public async Task<string> PeekAsync(string name, string pattern, DateOnly date, CancellationToken ct = default)
     {
-        var pattern = config.Current.Invoicing.InvoiceNumberPattern;
         var period = NumberPattern.PeriodKey(pattern, date);
-        var last = await db.NumberSequence.AsNoTracking().Where(s => s.Name == InvoiceRange && s.Period == period).Select(s => (long?)s.LastValue).FirstOrDefaultAsync(ct) ?? 0;
+        var last = await db.NumberSequence.AsNoTracking().Where(s => s.Name == name && s.Period == period).Select(s => (long?)s.LastValue).FirstOrDefaultAsync(ct) ?? 0;
         return NumberPattern.Format(pattern, date, last + 1);
     }
 
-    private async Task<string> NextAsync(string name, string pattern, DateOnly date, CancellationToken ct)
+    /// <summary>The next number of any range (quotes, receipts of expenses ...).</summary>
+    public async Task<string> NextAsync(string name, string pattern, DateOnly date, CancellationToken ct = default)
     {
         var period = NumberPattern.PeriodKey(pattern, date);
         var now = DateTime.UtcNow;

@@ -1,0 +1,107 @@
+@page
+@model MatBill.Pages.Quotes.EditModel
+@{
+    var quote = Model.Quote;
+    var draft = quote.IsDraft;
+}
+
+<div class="mb-editor" data-editor data-view="@Model.EditorView" data-doc-accent="@Model.Editor?.Company.AccentColor" @(draft ? "" : "data-readonly")>
+    <div class="mb-editor__head">
+        <div class="mb-editor__title">
+            <h1>@ViewData["Title"]</h1>
+            @Labels.Pill(quote, Model.Today)
+        </div>
+        @if (draft)
+        {
+            <div class="mat-seg" role="group" aria-label="Ansicht des Editors">
+                <button type="button" class="mat-seg__btn" data-view-set="document" aria-pressed="@(Model.EditorView == "document" ? "true" : "false")">@Ui.Icon("file-document")<span>Dokument</span></button>
+                <button type="button" class="mat-seg__btn" data-view-set="form" aria-pressed="@(Model.EditorView == "form" ? "true" : "false")">@Ui.Icon("list")<span>Formular</span></button>
+            </div>
+        }
+    </div>
+
+    @if (draft)
+    {
+        <form method="post" asp-page-handler="Save" asp-route-id="@quote.Id" novalidate>
+            <mb-summary title="Bitte prüfe das Angebot." />
+            <div class="mat-alert mat-alert--info mb-restore" data-restore hidden>
+                @Ui.Icon("history")
+                <div class="mat-alert__body">In diesem Browser gibt es ungespeicherte Eingaben vom <span data-restore-when></span>.</div>
+                <div class="mat-alert__actions">
+                    <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" data-restore-apply>@Ui.Icon("undo")<span>Wiederherstellen</span></button>
+                    <button type="button" class="mat-btn mat-btn--ghost mat-btn--sm" data-restore-discard>Verwerfen</button>
+                </div>
+            </div>
+            <div class="mb-editor__grid">
+                <div class="mb-editor__main"><partial name="_DocumentEditor" model="Model.Editor" /></div>
+                <aside class="mb-editor__side" aria-label="Hinweise zum Angebot">
+                    <div class="mat-card">
+                        <div class="mat-card__head">@Ui.Icon("info")<h2 class="mat-card__title">Angebotsentwurf</h2></div>
+                        <div class="mat-card__body">
+                            <p class="mat-muted">Beim Ausstellen bekommt das Angebot die Nummer @Model.Editor!.NumberPreview und eine PDF. Nimmt der Kunde es an, wird mit einem Klick eine Rechnung daraus.</p>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+            <div class="mat-btn-row mat-btn-row--sticky mb-editor__foot">
+                <button type="submit" class="mat-btn mat-btn--primary" asp-page-handler="Issue" asp-route-id="@quote.Id" data-confirm="Angebot jetzt ausstellen? Es bekommt die Nummer @Model.Editor.NumberPreview." data-confirm-ok="Ausstellen">@Ui.Icon("check")<span>Ausstellen</span></button>
+                <button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="Save" asp-route-id="@quote.Id">@Ui.Icon("save")<span>Speichern</span></button>
+                @if (!Model.IsNew)
+                {
+                    <a class="mat-btn mat-btn--ghost" href="/quotes/@quote.Id/pdf" target="_blank" rel="noopener">@Ui.Icon("eye")<span>PDF-Vorschau</span></a>
+                }
+                <a class="mat-btn mat-btn--ghost" href="/Quotes">@Ui.Icon("back")<span>Zurück</span></a>
+                @if (!Model.IsNew)
+                {
+                    <span class="mat-btn-row__spacer"></span>
+                    <button type="submit" class="mat-btn mat-btn--danger" formnovalidate asp-page-handler="Delete" asp-route-id="@quote.Id" data-confirm="Diesen Entwurf löschen?" data-confirm-ok="Löschen">@Ui.Icon("trash")<span>Löschen</span></button>
+                }
+            </div>
+        </form>
+        <script type="application/json" id="mb-editor-data">@Html.Raw(Model.EditorJson)</script>
+    }
+    else
+    {
+        <div class="mb-editor__grid">
+            <div class="mb-editor__main"><partial name="_DocumentView" model="Model.View" /></div>
+            <aside class="mb-editor__side" aria-label="Status des Angebots">
+                <div class="mat-card">
+                    <div class="mat-card__head">@Ui.Icon("info")<h2 class="mat-card__title">Status</h2>@Labels.Pill(quote, Model.Today)</div>
+                    <div class="mat-card__body">
+                        <dl class="mat-kv">
+                            <dt>Betrag</dt><dd>@Fmt.Money(quote.GrossTotal)</dd>
+                            <dt>Ausgestellt</dt><dd>@Fmt.Moment(quote.IssuedDate)</dd>
+                            <dt>Gültig bis</dt><dd class="@(quote.IsExpired(Model.Today) ? "mb-warn-text" : "")">@Fmt.Date(quote.ValidUntil)</dd>
+                            @if (quote.AnsweredDate is not null) { <dt>Antwort</dt><dd>@Labels.Of(quote.Status) am @Fmt.Date(quote.AnsweredDate)</dd> }
+                            @if (quote.SentDate is not null) { <dt>Versendet</dt><dd>@Fmt.Moment(quote.SentDate)</dd> }
+                            @if (quote.InvoiceId is { } invoiceId) { <dt>Rechnung</dt><dd><a href="/Invoices/Edit?id=@invoiceId">Zur Rechnung</a></dd> }
+                            <dt>Kunde</dt><dd>@if (quote.Customer is not null) { <a href="/Customers/Edit?id=@quote.Customer.Id">@quote.Customer.Name</a> } else { @quote.RecipientName }</dd>
+                        </dl>
+                    </div>
+                </div>
+            </aside>
+        </div>
+        <form method="post" class="mat-btn-row mat-btn-row--sticky mb-editor__foot">
+            @if (quote.Status is QuoteStatus.Open or QuoteStatus.Accepted)
+            {
+                <button type="submit" class="mat-btn mat-btn--primary" asp-page-handler="Invoice" asp-route-id="@quote.Id">@Ui.Icon("file-plus")<span>In Rechnung umwandeln</span></button>
+            }
+            <a class="mat-btn mat-btn--secondary" href="/quotes/@quote.Id/pdf?download=1">@Ui.Icon("download")<span>PDF</span></a>
+            @if (quote.Status != QuoteStatus.Invoiced)
+            {
+                <a class="mat-btn mat-btn--secondary" href="/Quotes/Send?id=@quote.Id">@Ui.Icon("send")<span>Per E-Mail senden</span></a>
+            }
+            @if (quote.Status == QuoteStatus.Open)
+            {
+                <button type="submit" class="mat-btn mat-btn--ghost" asp-page-handler="Accept" asp-route-id="@quote.Id">@Ui.Icon("check")<span>Angenommen</span></button>
+            }
+            <button type="submit" class="mat-btn mat-btn--ghost" asp-page-handler="Duplicate" asp-route-id="@quote.Id">@Ui.Icon("copy")<span>Neue Version</span></button>
+            <a class="mat-btn mat-btn--ghost" href="/Quotes">@Ui.Icon("back")<span>Zurück</span></a>
+            @if (quote.Status is QuoteStatus.Open or QuoteStatus.Accepted)
+            {
+                <span class="mat-btn-row__spacer"></span>
+                <button type="submit" class="mat-btn mat-btn--danger" asp-page-handler="Decline" asp-route-id="@quote.Id" data-confirm="Das Angebot als abgelehnt markieren?" data-confirm-ok="Abgelehnt">@Ui.Icon("ban")<span>Abgelehnt</span></button>
+            }
+        </form>
+    }
+</div>

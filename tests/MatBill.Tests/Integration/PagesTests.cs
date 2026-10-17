@@ -56,7 +56,9 @@ public sealed class PagesTests : IClassFixture<AppFixture>
             "/Products", "/Products/Edit", $"/Products/Edit?id={product}", "/Branding", "/Notifications", "/Notifications?unread=true",
             "/Admin/Users", "/Admin/Users/Edit", "/Admin/Shares", $"/Admin/Shares/Edit?id={share}", "/Admin/Invoicing", "/Admin/Mail",
             "/Admin/Storage", "/Admin/Backup", "/Admin/Backup/Plans", "/Admin/Backup/Plans/Edit", "/Admin/Backup/Targets", "/Admin/Backup/Targets/Edit", "/Admin/Backup/Restore", "/Admin/Security", "/Admin/Activity",
-            "/Admin/System", "/Account/Profile", "/Account/Security",
+            "/Admin/System", "/Account/Profile", "/Account/Security", "/Admin/Banking",
+            "/Quotes", "/Quotes/Edit", "/Quotes?status=offen", "/Expenses", "/Expenses/Edit", "/Expenses?status=pruefen", "/Banking", "/Banking/Import", "/Banking/Accounts/Edit",
+            "/Banking/Connect", "/Banking?status=offen", "/Export", "/Export?basis=ist",
         ];
 
         var failures = new List<string>();

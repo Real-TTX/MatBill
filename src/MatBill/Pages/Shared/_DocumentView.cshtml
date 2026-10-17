@@ -10,7 +10,7 @@
     var showTax = d.Totals.Taxes.Count > 1;
     var senderLines = new[] { company.Street, string.Join(" ", new[] { company.PostalCode, company.City }.Where(s => !string.IsNullOrWhiteSpace(s))), company.Email, company.Website }
         .Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
-    var stamp = d.IsDraft ? "ENTWURF" : d.IsCancelled ? "STORNIERT" : null;
+    var stamp = d.Stamp;
 }
 <article class="mb-paper mb-paper--view mb-doc @(showTax ? "has-tax" : "") @(d.IsCancelled ? "is-cancelled" : d.IsDraft ? "is-draft" : "")" data-stamp="@stamp" aria-label="@d.Title @d.Number">
     <header class="mb-doc__head">
@@ -46,8 +46,12 @@
         <section class="mb-doc__meta" aria-label="Rechnungsdaten">
             <h2 class="mb-doc__title">@d.Title</h2>
             <dl class="mb-doc__facts">
-                <div><dt>Rechnungsnummer</dt><dd>@(d.Number ?? "–")</dd></div>
-                <div><dt>Rechnungsdatum</dt><dd>@Fmt.Date(d.InvoiceDate)</dd></div>
+                <div><dt>@d.NumberLabel</dt><dd>@(d.Number ?? "–")</dd></div>
+                <div><dt>@d.DateLabel</dt><dd>@Fmt.Date(d.InvoiceDate)</dd></div>
+                @if (d.Kind == DocumentKind.Cancellation && d.CancelsNumber is { } cancels)
+                {
+                    <div><dt>Storno zu Rechnung</dt><dd>@cancels</dd></div>
+                }
                 @if (d.ServiceText is { } service)
                 {
                     <div><dt>@d.ServiceLabel</dt><dd>@service</dd></div>
@@ -56,8 +60,19 @@
                 {
                     <div><dt>Kundennummer</dt><dd>@d.CustomerNumber</dd></div>
                 }
-                <div><dt>Zahlungsziel</dt><dd>@(d.PaymentTermDays == 0 ? "sofort" : $"{d.PaymentTermDays} Tage")</dd></div>
-                <div><dt>Fällig am</dt><dd>@Fmt.Date(d.DueDate)</dd></div>
+                @if (!string.IsNullOrWhiteSpace(d.BuyerReference))
+                {
+                    <div><dt>Ihre Referenz</dt><dd>@d.BuyerReference</dd></div>
+                }
+                @if (d.Kind == DocumentKind.Quote)
+                {
+                    <div><dt>Gültig bis</dt><dd>@Fmt.Date(d.ValidUntil)</dd></div>
+                }
+                else if (d.Kind == DocumentKind.Invoice)
+                {
+                    <div><dt>Zahlungsziel</dt><dd>@(d.PaymentTermDays == 0 ? "sofort" : $"{d.PaymentTermDays} Tage")</dd></div>
+                    <div><dt>Fällig am</dt><dd>@Fmt.Date(d.DueDate)</dd></div>
+                }
             </dl>
         </section>
     </div>
@@ -102,7 +117,7 @@
     @if (!string.IsNullOrWhiteSpace(d.PaymentTerms))
     {
         <div class="mb-doc__terms">
-            <span class="mb-doc__caption">Zahlungsbedingungen</span>
+            <span class="mb-doc__caption">@d.TermsLabel</span>
             <p class="mb-doc__text">@d.PaymentTerms</p>
         </div>
     }

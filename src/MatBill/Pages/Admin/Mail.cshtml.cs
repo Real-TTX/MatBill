@@ -33,6 +33,10 @@ public sealed class MailModel(ConfigStore config, SecretProtector secrets, MailS
 
         [Required(ErrorMessage = "Bitte schreib einen Text.")]
         public string Body { get; set; } = "";
+
+        public string? QuoteSubject { get; set; }
+
+        public string? QuoteBody { get; set; }
     }
 
     [BindProperty]
@@ -52,7 +56,7 @@ public sealed class MailModel(ConfigStore config, SecretProtector secrets, MailS
         var m = config.Current.Mail;
         Input = new InputModel
         {
-            Host = m.Host, Port = m.Port, Security = m.Security, UserName = m.UserName, FromAddress = m.FromAddress, FromName = m.FromName, Bcc = m.Bcc, Subject = m.Subject, Body = m.Body,
+            Host = m.Host, Port = m.Port, Security = m.Security, UserName = m.UserName, FromAddress = m.FromAddress, FromName = m.FromName, Bcc = m.Bcc, Subject = m.Subject, Body = m.Body, QuoteSubject = m.QuoteSubject, QuoteBody = m.QuoteBody,
         };
         TestTo = current.IsAuthenticated ? User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value : null;
         Prepare();
@@ -117,6 +121,8 @@ public sealed class MailModel(ConfigStore config, SecretProtector secrets, MailS
             c.Mail.Bcc = Input.Bcc?.Trim() ?? "";
             c.Mail.Subject = Input.Subject.Trim();
             c.Mail.Body = Input.Body.Replace("\r\n", "\n", StringComparison.Ordinal);
+            c.Mail.QuoteSubject = Input.QuoteSubject?.Trim() ?? "";
+            c.Mail.QuoteBody = (Input.QuoteBody ?? "").Replace("\r\n", "\n", StringComparison.Ordinal);
         });
     }
 

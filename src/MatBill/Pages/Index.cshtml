@@ -24,6 +24,7 @@
     @Ui.Kpi("Überfällig", Fmt.Money(Model.Overdue), Model.OverdueCount == 0 ? "nichts überfällig" : Ui.CountNoun(Model.OverdueCount, "Rechnungen"), "alert", href: "/Invoices?status=ueberfaellig", bad: Model.OverdueCount > 0)
     @Ui.Kpi("Bezahlt im " + Model.Today.ToString("MMMM", Fmt.Culture), Fmt.Money(Model.PaidThisMonth), "Zahlungseingang", "check-circle", href: "/Invoices?status=bezahlt")
     @Ui.Kpi("Umsatz " + Model.Today.Year, Fmt.Money(Model.RevenueThisYear), "netto, ausgestellt", "trending-up", href: $"/Invoices?jahr={Model.Today.Year}")
+    @Ui.Kpi("Ergebnis " + Model.Today.Year, Fmt.Money(Model.RevenueThisYear - Model.ExpensesThisYear), $"Ausgaben {Fmt.Money(Model.ExpensesThisYear)} netto", "bar-chart", href: "/Export", bad: Model.RevenueThisYear < Model.ExpensesThisYear)
 </div>
 
 @if (Model.SeriesProblems.Count > 0 || Model.SendProblems.Count > 0)
@@ -41,6 +42,21 @@
                 {
                     <li><a href="/Invoices/Edit?id=@i.Id">Rechnung @i.Number</a> wurde nicht versendet: @i.SendError</li>
                 }
+            </ul>
+        </div>
+    </div>
+}
+
+@if (Model.OpenBookings > 0 || Model.ExpensesToReview > 0 || Model.OpenQuotes > 0)
+{
+    <div class="mat-alert mat-alert--info" role="note">
+        @Ui.Icon("info")
+        <div class="mat-alert__body">
+            <strong>Zu erledigen:</strong>
+            <ul class="mat-alert__list">
+                @if (Model.OpenBookings > 0) { <li><a href="/Banking?status=offen">@Model.OpenBookings Kontoumsätze ohne Zuordnung</a></li> }
+                @if (Model.ExpensesToReview > 0) { <li><a href="/Expenses?status=pruefen">@Model.ExpensesToReview hochgeladene Belege prüfen</a></li> }
+                @if (Model.OpenQuotes > 0) { <li><a href="/Quotes?status=offen">@Model.OpenQuotes offene Angebote warten auf Antwort</a></li> }
             </ul>
         </div>
     </div>

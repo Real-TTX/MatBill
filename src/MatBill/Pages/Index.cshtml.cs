@@ -27,6 +27,14 @@ public sealed class IndexModel(MbDbContext db, ConfigStore config, ICurrentUser 
 
     public int Drafts { get; private set; }
 
+    public decimal ExpensesThisYear { get; private set; }
+
+    public int OpenBookings { get; private set; }
+
+    public int ExpensesToReview { get; private set; }
+
+    public int OpenQuotes { get; private set; }
+
     public List<Invoice> Recent { get; private set; } = [];
 
     public List<Invoice> OverdueList { get; private set; } = [];
@@ -59,7 +67,11 @@ public sealed class IndexModel(MbDbContext db, ConfigStore config, ICurrentUser 
         Overdue = await db.Invoice.Where(i => i.Status == InvoiceStatus.Open && i.DueDate < Today).SumAsync(i => i.GrossTotal);
         OverdueCount = await db.Invoice.CountAsync(i => i.Status == InvoiceStatus.Open && i.DueDate < Today);
         PaidThisMonth = await db.Invoice.Where(i => i.Status == InvoiceStatus.Paid && i.PaidDate >= monthStart).SumAsync(i => i.GrossTotal);
-        RevenueThisYear = await db.Invoice.Where(i => (i.Status == InvoiceStatus.Open || i.Status == InvoiceStatus.Paid) && i.InvoiceDate >= yearStart).SumAsync(i => i.NetTotal);
+        RevenueThisYear = await db.Invoice.Where(i => i.Status != InvoiceStatus.Draft && i.InvoiceDate >= yearStart).SumAsync(i => i.NetTotal);
+        ExpensesThisYear = await db.Expense.Where(e => e.ExpenseDate >= yearStart).SumAsync(e => e.NetAmount);
+        OpenBookings = await db.BankTransaction.CountAsync(t => t.State == MatchState.Open);
+        ExpensesToReview = await db.Expense.CountAsync(e => e.NeedsReview);
+        OpenQuotes = await db.Quote.CountAsync(q => q.Status == QuoteStatus.Open && q.ValidUntil >= Today);
         Drafts = await db.Invoice.CountAsync(i => i.Status == InvoiceStatus.Draft);
         IsEmpty = !await db.Invoice.AnyAsync();
 

@@ -65,7 +65,7 @@ async function confirmDialog(page) {
   }
   await page.goto(base + '/');
   check(await page.locator('h1', { hasText: 'Übersicht' }).count() === 1, 'the overview opens');
-  check(await page.locator('.mb-stat').count() === 4, 'four number cards on the overview');
+  check(await page.locator('.mb-stat').count() === 5, 'five number cards on the overview');
   await shot(page, 'dashboard');
 
   console.log('A new invoice on the document');
@@ -138,6 +138,84 @@ async function confirmDialog(page) {
     check(response.ok() && await page.locator('h1').count() === 1, url + ' opens');
     await shot(page, file);
   }
+
+  console.log('A quote');
+  await page.goto(base + '/Quotes/Edit');
+  await page.click('#Input_RecipientName');
+  await page.keyboard.type('Müller');
+  await page.locator('#Input_RecipientName-list .mb-combo__option').first().waitFor({ timeout: 3000 });
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await page.locator('[data-line] [data-field="Name"]').first().click();
+  await page.keyboard.type('Bera');
+  await page.locator('[data-line] .mb-combo__option').first().waitFor({ timeout: 3000 });
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  check((await page.locator('.mb-doc__facts').innerText()).includes('Gültig bis'), 'a quote shows how long it stands');
+  await page.locator('button', { hasText: 'Ausstellen' }).first().click();
+  await confirmDialog(page);
+  await page.waitForLoadState('networkidle');
+  await page.locator('.mb-paper--view').waitFor({ timeout: 15000 });
+  check(/Angebot AN-\d{4}-\d{4}/.test(await page.locator('h1').innerText()), 'the issued quote has its number: ' + await page.locator('h1').innerText());
+  await shot(page, 'quote');
+  await page.locator('button', { hasText: 'In Rechnung umwandeln' }).click();
+  await page.waitForURL(/Invoices\/Edit\?id=\d+/, { timeout: 15000 });
+  check(await page.locator('[data-line]').count() >= 1, 'the quote became an invoice draft with its positions');
+
+  console.log('Cancelling');
+  await page.goto(base + '/Invoices/Edit?id=' + id);
+  await page.locator('button', { hasText: 'Stornieren' }).click();
+  const prompt = page.locator('dialog[open]').last();
+  await prompt.waitFor({ state: 'visible', timeout: 5000 });
+  await prompt.locator('input, textarea').first().fill('Test');
+  await prompt.locator('.mat-btn--primary, .mat-btn--danger').last().click();
+  await page.waitForLoadState('networkidle');
+  check((await page.locator('h1').innerText()).includes('RE-'), 'the cancellation invoice opens');
+  check((await page.locator('.mb-paper--view').innerText()).includes('Stornorechnung'), 'it is a cancellation invoice');
+  await shot(page, 'storno');
+
+  console.log('An expense from an e-invoice');
+  const zugferd = await page.request.get(base + '/invoices/' + id + '/pdf');
+  const receipt = path.join(require('os').tmpdir(), 'matbill-e2e-zugferd.pdf');
+  fs.writeFileSync(receipt, await zugferd.body());
+  await page.goto(base + '/Expenses');
+  await page.setInputFiles('#Files', receipt);
+  await page.waitForURL(/Expenses\/Edit\?id=\d+/, { timeout: 20000 });
+  check((await page.inputValue('#Input_Supplier')).length > 0, 'the supplier was read from the e-invoice: ' + await page.inputValue('#Input_Supplier'));
+  check((await page.locator('.mat-alert--warning:not(.mb-offline)').innerText()).includes('E-Rechnung'), 'the expense says it came from an e-invoice');
+  await shot(page, 'expense');
+
+  console.log('Banking');
+  await page.goto(base + '/Banking/Accounts/Edit');
+  await page.fill('#Input_Name', 'Testkonto');
+  await page.locator('button', { hasText: 'Speichern' }).first().click();
+  await page.waitForURL(/Banking\/Import/, { timeout: 15000 });
+  const open = await page.request.get(base + '/Invoices?status=offen');
+  const openHtml = await open.text();
+  const number = (openHtml.match(/RE-\d{4}-\d{4}/) || [])[0];
+  const csvPath = path.join(require('os').tmpdir(), 'matbill-e2e-umsaetze.csv');
+  fs.writeFileSync(csvPath, 'Buchungstag;Betrag;Beguenstigter/Zahlungspflichtiger;Verwendungszweck\n' + new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ';1,00;Jemand;Rechnung ' + number + '\n');
+  await page.setInputFiles('#Statement', csvPath);
+  await page.locator('button', { hasText: 'Weiter' }).click();
+  await page.waitForLoadState('networkidle');
+  check((await page.locator('form.mat-form').innerText()).includes('Spalten prüfen'), 'a CSV shows the columns it recognized');
+  await shot(page, 'bank-import');
+  await page.locator('button', { hasText: 'importieren' }).click();
+  await page.waitForURL(/Banking/, { timeout: 15000 });
+  await page.goto(base + '/Banking');
+  check(await page.locator('#transaction-table tbody tr').count() >= 1, 'the bookings are listed');
+  await shot(page, 'banking');
+  await page.locator('#transaction-table tbody tr a').first().click();
+  await page.waitForLoadState('networkidle');
+  check(await page.locator('h1').count() === 1, 'a booking opens with its suggestions');
+  await shot(page, 'bank-transaction');
+
+  console.log('Report and export');
+  await page.goto(base + '/Export');
+  check(await page.locator('table.mat-table tbody tr').count() === 12, 'the report has twelve months');
+  await shot(page, 'report');
+  const [download] = await Promise.all([page.waitForEvent('download'), page.locator('button', { hasText: 'ZIP herunterladen' }).click()]);
+  check(download.suggestedFilename().endsWith('.zip'), 'the export is a ZIP: ' + download.suggestedFilename());
 
   console.log('A phone');
   const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: 'de-DE', storageState: await context.storageState() });
