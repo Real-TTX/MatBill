@@ -9,7 +9,8 @@ const jobs = [
   // [source, target, size]: the tile of logo.svg keeps its round corners, the maskable icon is the full square (the system cuts its own shape)
   ['logo.svg', 'img/icon-192.png', 192],
   ['logo.svg', 'img/icon-512.png', 512],
-  ['logo.svg', 'img/favicon-32.png', 32],
+  // small sizes take the plain receipt (favicon.svg): the details of the large logo turn into noise below 32 px
+  ['favicon.svg', 'img/favicon-32.png', 32],
   ['img/icon-maskable.svg', 'img/icon-maskable-192.png', 192],
   ['img/icon-maskable.svg', 'img/icon-maskable-512.png', 512],
   // iOS rounds the corners itself and shows transparency as black: the full square.

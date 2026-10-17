@@ -17,7 +17,7 @@ var NETWORK_TIMEOUT = 6000;
 self.addEventListener('install', function (event) {
   event.waitUntil(
     caches.open(STATIC)
-      .then(function (cache) { return cache.addAll([OFFLINE, '/favicon.svg', '/img/icon-192.png', '/manifest.webmanifest']); })
+      .then(function (cache) { return cache.addAll([OFFLINE, '/favicon.svg', '/logo.svg', '/img/icon-192.png', '/manifest.webmanifest']); })
       .then(function () { return self.skipWaiting(); })
   );
 });

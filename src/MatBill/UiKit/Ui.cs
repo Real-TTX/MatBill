@@ -35,11 +35,16 @@ public static partial class Ui
         return new HtmlString($"<svg class=\"{cls}\" aria-hidden=\"true\" focusable=\"false\"><use href=\"#mat-i-{name}\"></use></svg>");
     }
 
-    /// <summary>The logo tile of MatBill: the receipt on the blue of the app.</summary>
+    /// <summary>
+    /// The logo tile of MatBill, by size: small and medium tiles (the menu) draw the plain receipt from the sprite, large ones (sign-in, setup, error pages)
+    /// the detailed logo with its positions, total and the badge of recurring invoices; details below about 40 px are only noise.
+    /// </summary>
     public static IHtmlContent Logo(string size = "md")
-        => new HtmlString(
-            $"<span class=\"mat-logo mat-logo--{size}\" role=\"img\" aria-label=\"MatBill\">" +
-            "<svg class=\"mat-icon\" aria-hidden=\"true\" focusable=\"false\"><use href=\"#mat-i-mb-logo\"></use></svg></span>");
+        => size is "lg" or "xl"
+            ? new HtmlString($"<span class=\"mat-logo mat-logo--{size} mb-logo--detailed\"><img src=\"/logo.svg\" alt=\"MatBill\" width=\"56\" height=\"56\" /></span>")
+            : new HtmlString(
+                $"<span class=\"mat-logo mat-logo--{size}\" role=\"img\" aria-label=\"MatBill\">" +
+                "<svg class=\"mat-icon\" aria-hidden=\"true\" focusable=\"false\"><use href=\"#mat-i-mb-logo\"></use></svg></span>");
 
     /// <summary>The first letters of a name, for an avatar.</summary>
     public static string Initials(string name) => Services.Fmt.Initials(name);
