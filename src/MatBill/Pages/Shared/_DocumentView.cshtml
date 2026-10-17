@@ -1,0 +1,128 @@
+@using MatBill.Core.Billing
+@model DocumentViewModel
+@*
+    An invoice as it was issued, read only: the same paper as the editor, drawn from the model the PDF is drawn from (InvoiceDocument).
+    Used for issued invoices and behind a share link.
+*@
+@{
+    var d = Model.Doc;
+    var company = Model.Company;
+    var showTax = d.Totals.Taxes.Count > 1;
+    var senderLines = new[] { company.Street, string.Join(" ", new[] { company.PostalCode, company.City }.Where(s => !string.IsNullOrWhiteSpace(s))), company.Email, company.Website }
+        .Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
+    var stamp = d.IsDraft ? "ENTWURF" : d.IsCancelled ? "STORNIERT" : null;
+}
+<article class="mb-paper mb-paper--view mb-doc @(showTax ? "has-tax" : "") @(d.IsCancelled ? "is-cancelled" : d.IsDraft ? "is-draft" : "")" data-stamp="@stamp" aria-label="@d.Title @d.Number">
+    <header class="mb-doc__head">
+        <div class="mb-doc__logo">
+            @if (Model.LogoUrl is not null)
+            {
+                <img src="@Model.LogoUrl" alt="@company.Name" />
+            }
+            else
+            {
+                <div class="mb-doc__company">@company.Name</div>
+            }
+        </div>
+        <address class="mb-doc__sender">
+            <strong>@company.Name</strong>
+            @foreach (var line in senderLines)
+            {
+                <br />@line
+            }
+        </address>
+    </header>
+
+    <div class="mb-doc__top">
+        <section class="mb-doc__recipient" aria-label="Empfänger">
+            <div class="mb-doc__senderline">@company.SenderLine</div>
+            <div class="mb-doc__address">
+                @foreach (var line in d.RecipientLines)
+                {
+                    <p>@line</p>
+                }
+            </div>
+        </section>
+        <section class="mb-doc__meta" aria-label="Rechnungsdaten">
+            <h2 class="mb-doc__title">@d.Title</h2>
+            <dl class="mb-doc__facts">
+                <div><dt>Rechnungsnummer</dt><dd>@(d.Number ?? "–")</dd></div>
+                <div><dt>Rechnungsdatum</dt><dd>@Fmt.Date(d.InvoiceDate)</dd></div>
+                @if (d.ServiceText is { } service)
+                {
+                    <div><dt>@d.ServiceLabel</dt><dd>@service</dd></div>
+                }
+                @if (!string.IsNullOrWhiteSpace(d.CustomerNumber))
+                {
+                    <div><dt>Kundennummer</dt><dd>@d.CustomerNumber</dd></div>
+                }
+                <div><dt>Zahlungsziel</dt><dd>@(d.PaymentTermDays == 0 ? "sofort" : $"{d.PaymentTermDays} Tage")</dd></div>
+                <div><dt>Fällig am</dt><dd>@Fmt.Date(d.DueDate)</dd></div>
+            </dl>
+        </section>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(d.IntroText))
+    {
+        <p class="mb-doc__text">@d.IntroText</p>
+    }
+
+    <div class="mb-lines">
+        <div class="mb-lines__head" aria-hidden="true"><span>Leistung</span><span>Menge</span><span>Einzelpreis</span>@if (showTax) { <span>USt.</span> }<span>Gesamtpreis</span></div>
+        <div class="mb-lines__body" role="list" aria-label="Positionen">
+            @foreach (var l in d.Lines)
+            {
+                <div class="mb-line" role="listitem">
+                    <div><div class="mb-line__name">@l.Name</div>@if (!string.IsNullOrWhiteSpace(l.Description)) { <div class="mb-line__desc">@l.Description</div> }</div>
+                    <div data-label="Menge">@Amount.Quantity(l.Quantity) @l.Unit</div>
+                    <div data-label="Einzelpreis">@Fmt.Money(l.UnitPrice)</div>
+                    @if (showTax) { <div data-label="USt.">@Amount.Quantity(l.TaxRate) %</div> }
+                    <div data-label="Gesamtpreis">@Fmt.Money(l.Net)</div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <dl class="mb-doc__totals">
+        <div><dt>Zwischensumme</dt><dd>@Fmt.Money(d.Totals.Net)</dd></div>
+        @if (!d.TaxExempt)
+        {
+            foreach (var g in d.Totals.Taxes.Where(t => t.Rate > 0))
+            {
+                <div><dt>@(d.Totals.Taxes.Count(t => t.Rate > 0) > 1 ? $"Umsatzsteuer {Amount.Quantity(g.Rate)} % auf {Fmt.Money(g.Net)}" : $"Umsatzsteuer ({Amount.Quantity(g.Rate)} %)")</dt><dd>@Fmt.Money(g.Tax)</dd></div>
+            }
+        }
+        <div class="mb-doc__grand"><dt>Gesamtbetrag</dt><dd>@Fmt.Money(d.Totals.Gross)</dd></div>
+    </dl>
+    @if (d.TaxExempt && !string.IsNullOrWhiteSpace(d.TaxExemptNote))
+    {
+        <p class="mb-doc__note">@d.TaxExemptNote</p>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(d.PaymentTerms))
+    {
+        <div class="mb-doc__terms">
+            <span class="mb-doc__caption">Zahlungsbedingungen</span>
+            <p class="mb-doc__text">@d.PaymentTerms</p>
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(d.ClosingText) || !string.IsNullOrWhiteSpace(company.Signature))
+    {
+        <div class="mb-doc__closing">
+            <p class="mb-doc__text">@d.ClosingText</p>
+            @if (!string.IsNullOrWhiteSpace(company.Signature))
+            {
+                <span class="mb-doc__signature" aria-hidden="true">@company.Signature</span>
+            }
+        </div>
+    }
+
+    <footer class="mb-doc__foot">
+        <div class="mb-doc__footcols">
+            <p>@company.SenderLine@if (!string.IsNullOrWhiteSpace(company.Manager)) { <br />@company.Manager }@if (!string.IsNullOrWhiteSpace(company.Register)) { <br />@company.Register }</p>
+            <p>@company.BankName@if (!string.IsNullOrWhiteSpace(company.Iban)) { <br />@("IBAN " + company.Iban) }@if (!string.IsNullOrWhiteSpace(company.Bic)) { <br />@("BIC " + company.Bic) }</p>
+            <p>@if (!string.IsNullOrWhiteSpace(company.TaxNumber)) { @("Steuernummer " + company.TaxNumber)<br /> }@if (!string.IsNullOrWhiteSpace(company.VatId)) { @("USt-IdNr. " + company.VatId) }</p>
+        </div>
+    </footer>
+</article>

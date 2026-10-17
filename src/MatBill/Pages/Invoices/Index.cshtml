@@ -1,0 +1,18 @@
+@page
+@model MatBill.Pages.Invoices.IndexModel
+
+<div class="mb-stats">
+    @Ui.Kpi("Offen", Fmt.Money(Model.OpenSum), "noch nicht bezahlt", "clock", href: "/Invoices?status=offen")
+    @Ui.Kpi("Überfällig", Fmt.Money(Model.OverdueSum), Model.OverdueCount == 0 ? "nichts überfällig" : Ui.CountNoun(Model.OverdueCount, "Rechnungen"), "alert", href: "/Invoices?status=ueberfaellig", bad: Model.OverdueCount > 0)
+    @Ui.Kpi("In dieser Auswahl", Fmt.Money(Model.ShownGross), "ausgestellt, ohne Stornos", "euro")
+</div>
+
+<div class="mat-list">
+    <partial name="_Toolbar" model="Model.Toolbar" />
+    <partial name="_Table" model="Model.Table" />
+    <partial name="_Pager" model="Model.Pager" />
+    <div class="mat-actions">
+        <a class="mat-btn mat-btn--primary" href="/Invoices/Edit">@Ui.Icon("plus")<span>Neue Rechnung</span></a>
+        <a class="mat-btn mat-btn--secondary" href="/Recurring">@Ui.Icon("repeat")<span>Wiederkehrende Rechnungen</span></a>
+    </div>
+</div>

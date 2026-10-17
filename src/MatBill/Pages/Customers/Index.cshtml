@@ -1,0 +1,11 @@
+@page
+@model MatBill.Pages.Customers.IndexModel
+
+<div class="mat-list">
+    <partial name="_Toolbar" model="Model.Toolbar" />
+    <partial name="_Table" model="Model.Table" />
+    <partial name="_Pager" model="Model.Pager" />
+    <div class="mat-actions">
+        <a class="mat-btn mat-btn--primary" href="/Customers/Edit">@Ui.Icon("user-plus")<span>Neuer Kunde</span></a>
+    </div>
+</div>

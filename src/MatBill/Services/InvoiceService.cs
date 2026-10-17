@@ -1,0 +1,389 @@
+using MatBill.Configuration;
+using MatBill.Core.Billing;
+using MatBill.Data;
+using MatBill.Data.Entities;
+using Microsoft.EntityFrameworkCore;
+
+namespace MatBill.Services;
+
+/// <summary>A problem of a form: the key of the field (or empty for the whole form) and the message.</summary>
+public sealed record FieldProblem(string Key, string Message);
+
+/// <summary>
+/// The life of an invoice: a draft is written and changed freely; issuing it gives it its number, fixes the date and stores the PDF, and from then on it is never
+/// changed again (it is paid, or cancelled and written anew). The pages and the series go through this class, so the rules live in one place.
+/// </summary>
+public sealed class InvoiceService(MbDbContext db, ConfigStore config, NumberService numbers, BrandingService branding, Storage.FileStoreService files,
+    ActivityLogger activity, TimeProvider clock)
+{
+    public DateOnly Today => Fmt.Today(clock);
+
+    /// <summary>A new draft with the texts of the configuration, for <paramref name="customer"/> if one is given. Not saved.</summary>
+    public Invoice NewDraft(Customer? customer = null)
+    {
+        var defaults = config.Current.Invoicing;
+        var invoice = new Invoice
+        {
+            Title = "Rechnung",
+            InvoiceDate = Today,
+            PaymentTermDays = customer?.PaymentTermDays ?? defaults.PaymentTermDays,
+            IntroText = defaults.IntroText,
+            PaymentTerms = defaults.PaymentTerms,
+            ClosingText = defaults.ClosingText,
+            TaxExempt = config.Current.Company.SmallBusiness,
+        };
+        if (customer is not null)
+        {
+            FillRecipient(invoice, customer);
+        }
+
+        invoice.DueDate = InvoiceMath.DueDate(invoice.InvoiceDate, invoice.PaymentTermDays);
+        return invoice;
+    }
+
+    public static void FillRecipient(Invoice invoice, Customer customer)
+    {
+        invoice.CustomerId = customer.Id;
+        invoice.Customer = customer;
+        invoice.RecipientName = customer.Name;
+        invoice.RecipientContact = customer.ContactName;
+        invoice.RecipientStreet = customer.Street;
+        invoice.RecipientPostalCode = customer.PostalCode;
+        invoice.RecipientCity = customer.City;
+        invoice.RecipientCountry = customer.Country;
+        invoice.RecipientEmail = customer.Email;
+    }
+
+    /// <summary>Takes what the editor posted into a draft. Returns the problems of the input (a position with a price but no name, a number that is no number).</summary>
+    public List<FieldProblem> Apply(Invoice invoice, DocumentInput input)
+    {
+        if (!invoice.IsDraft)
+        {
+            throw new InvalidOperationException("An issued invoice cannot be changed.");
+        }
+
+        var problems = new List<FieldProblem>();
+        invoice.CustomerId = input.CustomerId;
+        invoice.RecipientName = Clean(input.RecipientName);
+        invoice.RecipientContact = Clean(input.RecipientContact);
+        invoice.RecipientStreet = Clean(input.RecipientStreet);
+        invoice.RecipientPostalCode = Clean(input.RecipientPostalCode);
+        invoice.RecipientCity = Clean(input.RecipientCity);
+        invoice.RecipientCountry = Clean(input.RecipientCountry) ?? "Deutschland";
+        invoice.RecipientEmail = Clean(input.RecipientEmail);
+        invoice.Title = Clean(input.Title) ?? "Rechnung";
+        invoice.InvoiceDate = input.InvoiceDate ?? Today;
+        invoice.ServiceFrom = input.ServiceFrom;
+        invoice.ServiceTo = input.ServiceTo is { } to && input.ServiceFrom is { } from && to < from ? from : input.ServiceTo;
+        invoice.PaymentTermDays = Math.Clamp(input.PaymentTermDays ?? config.Current.Invoicing.PaymentTermDays, 0, 365);
+        invoice.DueDate = InvoiceMath.DueDate(invoice.InvoiceDate, invoice.PaymentTermDays);
+        invoice.IntroText = CleanText(input.IntroText);
+        invoice.PaymentTerms = CleanText(input.PaymentTerms);
+        invoice.ClosingText = CleanText(input.ClosingText);
+        invoice.TaxExempt = config.Current.Company.SmallBusiness;
+
+        ApplyLines(invoice.Lines, input.Lines, () => new InvoiceLine(), problems);
+        Recalculate(invoice);
+        return problems;
+    }
+
+    /// <summary>
+    /// Every invoice belongs to a customer: a recipient that was typed instead of chosen becomes one (or is linked to the customer of that exact name), with the
+    /// address of the invoice. A customer chosen in the editor gets the e-mail address of the invoice when it had none.
+    /// </summary>
+    public async Task LinkCustomerAsync(Invoice invoice, CancellationToken ct = default)
+    {
+        Customer? customer = invoice.CustomerId is { } id ? await db.Customer.FirstOrDefaultAsync(c => c.Id == id, ct) : null;
+        if (customer is null && !string.IsNullOrWhiteSpace(invoice.RecipientName))
+        {
+            var name = invoice.RecipientName.Trim();
+            customer = await db.Customer.FirstOrDefaultAsync(c => c.Name.ToLower() == name.ToLower(), ct);
+            if (customer is null)
+            {
+                customer = new Customer
+                {
+                    Number = await numbers.NextCustomerNumberAsync(Today, ct),
+                    Name = name,
+                    ContactName = invoice.RecipientContact,
+                    Street = invoice.RecipientStreet,
+                    PostalCode = invoice.RecipientPostalCode,
+                    City = invoice.RecipientCity,
+                    Country = invoice.RecipientCountry ?? "Deutschland",
+                    Email = invoice.RecipientEmail,
+                };
+                db.Customer.Add(customer);
+            }
+        }
+
+        if (customer is not null && string.IsNullOrWhiteSpace(customer.Email) && !string.IsNullOrWhiteSpace(invoice.RecipientEmail))
+        {
+            customer.Email = invoice.RecipientEmail;
+        }
+
+        // A new customer has no id yet: the navigation gives the invoice its key when both are saved.
+        invoice.Customer = customer;
+        if (customer is null || customer.Id > 0)
+        {
+            invoice.CustomerId = customer?.Id;
+        }
+    }
+
+    /// <summary>Takes the posted positions into <paramref name="target"/> (an invoice or a series): rows that are empty are dropped, the order is the posted order.</summary>
+    public static void ApplyLines<T>(List<T> target, IReadOnlyList<LineInput> posted, Func<T> create, List<FieldProblem> problems) where T : LineBase
+    {
+        var kept = posted.Select((line, index) => (line, index)).Where(p => !p.line.IsEmpty).ToList();
+        while (target.Count > kept.Count)
+        {
+            target.RemoveAt(target.Count - 1);
+        }
+
+        for (var i = 0; i < kept.Count; i++)
+        {
+            var (input, index) = kept[i];
+            if (i >= target.Count)
+            {
+                target.Add(create());
+            }
+
+            var line = target[i];
+            line.Position = i + 1;
+            line.ProductId = input.ProductId;
+            line.Name = Clean(input.Name) ?? "";
+            line.Description = CleanText(input.Description);
+            line.Unit = Clean(input.Unit);
+
+            if (line.Name.Length == 0)
+            {
+                problems.Add(new($"Input.Lines[{index}].Name", $"Position {i + 1}: Bitte beschreibe die Leistung."));
+            }
+
+            if (string.IsNullOrWhiteSpace(input.Quantity))
+            {
+                line.Quantity = 1m;
+            }
+            else if (Amount.TryParse(input.Quantity, out var quantity) && quantity is >= -999_999 and <= 999_999)
+            {
+                line.Quantity = Math.Round(quantity, 3, MidpointRounding.AwayFromZero);
+            }
+            else
+            {
+                problems.Add(new($"Input.Lines[{index}].Quantity", $"Position {i + 1}: Die Menge ist keine Zahl."));
+            }
+
+            if (string.IsNullOrWhiteSpace(input.UnitPrice))
+            {
+                line.UnitPrice = 0m;
+            }
+            else if (Amount.TryParse(input.UnitPrice, out var price) && price is >= -99_999_999 and <= 99_999_999)
+            {
+                line.UnitPrice = Math.Round(price, 4, MidpointRounding.AwayFromZero);
+            }
+            else
+            {
+                problems.Add(new($"Input.Lines[{index}].UnitPrice", $"Position {i + 1}: Der Preis ist kein Betrag."));
+            }
+
+            line.TaxRate = Amount.TryParse(input.TaxRate, out var rate) && rate is >= 0 and <= 100 ? rate : 19m;
+        }
+    }
+
+    public static void Recalculate(Invoice invoice)
+    {
+        var totals = InvoiceMath.Totals(invoice.Lines.Select(l => l.Amounts), invoice.TaxExempt);
+        invoice.NetTotal = totals.Net;
+        invoice.TaxTotal = totals.Tax;
+        invoice.GrossTotal = totals.Gross;
+    }
+
+    /// <summary>What keeps a draft from being issued: a recipient, at least one position, a name for each.</summary>
+    public static List<FieldProblem> CheckIssuable(Invoice invoice)
+    {
+        var problems = new List<FieldProblem>();
+        if (string.IsNullOrWhiteSpace(invoice.RecipientName))
+        {
+            problems.Add(new("Input.RecipientName", "Wähle einen Kunden oder trage den Empfänger ein."));
+        }
+
+        if (invoice.Lines.Count == 0)
+        {
+            problems.Add(new("", "Eine Rechnung braucht mindestens eine Position."));
+        }
+
+        if (invoice.Lines.Any(l => string.IsNullOrWhiteSpace(l.Name)))
+        {
+            problems.Add(new("", "Jede Position braucht eine Bezeichnung."));
+        }
+
+        return problems;
+    }
+
+    /// <summary>
+    /// Issues a draft: the next number, the status Open, the PDF stored for good. Runs in one transaction (the number goes back to the range when anything fails).
+    /// The caller has applied and saved the draft before; <paramref name="invoice"/> must be tracked by this context.
+    /// </summary>
+    public async Task IssueAsync(Invoice invoice, CancellationToken ct = default)
+    {
+        if (!invoice.IsDraft)
+        {
+            throw new InvalidOperationException("Only a draft can be issued.");
+        }
+
+        var problems = CheckIssuable(invoice);
+        if (problems.Count > 0)
+        {
+            throw new InvoiceException(problems[0].Message);
+        }
+
+        var ownTransaction = db.Database.CurrentTransaction is null;
+        await using var transaction = ownTransaction ? await db.Database.BeginTransactionAsync(ct) : null;
+        invoice.Customer ??= invoice.CustomerId is { } customerId ? await db.Customer.FirstOrDefaultAsync(c => c.Id == customerId, ct) : null;
+        invoice.Number = await numbers.NextInvoiceNumberAsync(invoice.InvoiceDate, ct);
+        invoice.Status = InvoiceStatus.Open;
+        invoice.IssuedDate = clock.GetUtcNow().UtcDateTime;
+        invoice.TaxExempt = config.Current.Company.SmallBusiness;
+        invoice.ServiceFrom ??= invoice.InvoiceDate;
+        invoice.DueDate = InvoiceMath.DueDate(invoice.InvoiceDate, invoice.PaymentTermDays);
+        Recalculate(invoice);
+
+        var pdf = await RenderAsync(invoice, ct);
+        invoice.PdfFile = await files.SaveAsync(pdf, PdfName(invoice), "application/pdf", ct);
+        await db.SaveChangesAsync(ct);
+        if (transaction is not null)
+        {
+            // Inside a caller's transaction (a series) the caller logs, once its transaction stands.
+            await transaction.CommitAsync(ct);
+            await activity.LogAsync("Rechnung ausgestellt", nameof(Invoice), invoice.Id, $"{invoice.Number} · {invoice.RecipientName} · {Fmt.Money(invoice.GrossTotal)}");
+        }
+    }
+
+    /// <summary>The PDF as it looks now (a draft, or a preview); an issued invoice is read from the store with <see cref="PdfAsync"/>.</summary>
+    public async Task<byte[]> RenderAsync(Invoice invoice, CancellationToken ct = default)
+        => InvoicePdf.Render(InvoiceDocument.Of(invoice, config.Current.Invoicing), config.Current.Company, await branding.GetLogoAsync(ct));
+
+    /// <summary>The PDF of an invoice: the stored one of an issued invoice (it never changes), a fresh one of a draft.</summary>
+    public async Task<byte[]> PdfAsync(Invoice invoice, CancellationToken ct = default)
+    {
+        if (!invoice.IsDraft && invoice.PdfFileId is { } fileId)
+        {
+            var file = invoice.PdfFile ?? await db.StoredFile.AsNoTracking().FirstAsync(f => f.Id == fileId, ct);
+            try
+            {
+                return await files.ReadAllAsync(file, ct);
+            }
+            catch (Exception ex) when (ex is Storage.StorageException or IOException)
+            {
+                // The stored file is gone (a restore without files): draw it again from the data, which is the same invoice.
+            }
+        }
+
+        return await RenderAsync(invoice, ct);
+    }
+
+    public static string PdfName(Invoice invoice) => Storage.FileStoreService.SafeFileName($"{(invoice.Number ?? "Entwurf")} {invoice.RecipientName}.pdf".Trim());
+
+    public async Task MarkPaidAsync(Invoice invoice, DateOnly paidOn, CancellationToken ct = default)
+    {
+        if (invoice.Status != InvoiceStatus.Open)
+        {
+            throw new InvoiceException("Nur eine offene Rechnung kann als bezahlt markiert werden.");
+        }
+
+        invoice.Status = InvoiceStatus.Paid;
+        invoice.PaidDate = paidOn;
+        await db.SaveChangesAsync(ct);
+        await activity.LogAsync("Rechnung bezahlt", nameof(Invoice), invoice.Id, $"{invoice.Number} am {Fmt.Date(paidOn)}");
+    }
+
+    public async Task ReopenAsync(Invoice invoice, CancellationToken ct = default)
+    {
+        if (invoice.Status != InvoiceStatus.Paid)
+        {
+            throw new InvoiceException("Nur eine bezahlte Rechnung kann wieder geöffnet werden.");
+        }
+
+        invoice.Status = InvoiceStatus.Open;
+        invoice.PaidDate = null;
+        await db.SaveChangesAsync(ct);
+        await activity.LogAsync("Zahlung zurückgenommen", nameof(Invoice), invoice.Id, invoice.Number);
+    }
+
+    public async Task CancelAsync(Invoice invoice, string? reason, CancellationToken ct = default)
+    {
+        if (invoice.Status is not (InvoiceStatus.Open or InvoiceStatus.Paid))
+        {
+            throw new InvoiceException("Nur eine ausgestellte Rechnung kann storniert werden.");
+        }
+
+        invoice.Status = InvoiceStatus.Cancelled;
+        invoice.CancelledDate = clock.GetUtcNow().UtcDateTime;
+        invoice.CancelReason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
+        if (invoice.SendState is SendState.Pending or SendState.Failed)
+        {
+            invoice.SendState = SendState.None;
+        }
+
+        await db.SaveChangesAsync(ct);
+        await activity.LogAsync("Rechnung storniert", nameof(Invoice), invoice.Id, $"{invoice.Number}{(invoice.CancelReason is null ? "" : ": " + invoice.CancelReason)}");
+    }
+
+    /// <summary>A new draft with the recipient, the texts and the positions of <paramref name="source"/>, dated today.</summary>
+    public async Task<Invoice> DuplicateAsync(Invoice source, CancellationToken ct = default)
+    {
+        var copy = NewDraft();
+        copy.CustomerId = source.CustomerId;
+        copy.RecipientName = source.RecipientName;
+        copy.RecipientContact = source.RecipientContact;
+        copy.RecipientStreet = source.RecipientStreet;
+        copy.RecipientPostalCode = source.RecipientPostalCode;
+        copy.RecipientCity = source.RecipientCity;
+        copy.RecipientCountry = source.RecipientCountry;
+        copy.RecipientEmail = source.RecipientEmail;
+        copy.Title = source.Title;
+        copy.PaymentTermDays = source.PaymentTermDays;
+        copy.DueDate = InvoiceMath.DueDate(copy.InvoiceDate, copy.PaymentTermDays);
+        copy.IntroText = source.IntroText;
+        copy.PaymentTerms = source.PaymentTerms;
+        copy.ClosingText = source.ClosingText;
+        copy.Lines = [.. source.Lines.OrderBy(l => l.Position).Select(l => CopyLine(l, new InvoiceLine()))];
+        Recalculate(copy);
+        db.Invoice.Add(copy);
+        await db.SaveChangesAsync(ct);
+        return copy;
+    }
+
+    public static T CopyLine<T>(LineBase from, T to) where T : LineBase
+    {
+        to.Position = from.Position;
+        to.ProductId = from.ProductId;
+        to.Name = from.Name;
+        to.Description = from.Description;
+        to.Quantity = from.Quantity;
+        to.Unit = from.Unit;
+        to.UnitPrice = from.UnitPrice;
+        to.TaxRate = from.TaxRate;
+        return to;
+    }
+
+    public async Task DeleteDraftAsync(Invoice invoice, CancellationToken ct = default)
+    {
+        if (!invoice.IsDraft)
+        {
+            throw new InvoiceException("Eine ausgestellte Rechnung kann nicht gelöscht werden. Storniere sie stattdessen.");
+        }
+
+        db.Invoice.Remove(invoice);
+        await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>The invoice with its positions and customer, tracked; null when there is none.</summary>
+    public Task<Invoice?> FindAsync(long id, CancellationToken ct = default)
+        => db.Invoice.Include(i => i.Lines.OrderBy(l => l.Position)).Include(i => i.Customer).Include(i => i.PdfFile).FirstOrDefaultAsync(i => i.Id == id, ct);
+
+    internal static string? Clean(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    /// <summary>A text of several lines: trimmed at the ends, the line breaks kept and made uniform.</summary>
+    internal static string? CleanText(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Replace("\r\n", "\n", StringComparison.Ordinal).Trim();
+}
+
+/// <summary>A rule of invoices was broken; the message is for the person.</summary>
+public sealed class InvoiceException(string message) : Exception(message);

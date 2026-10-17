@@ -1,0 +1,41 @@
+@page
+@model MatBill.Pages.Admin.Shares.EditModel
+@{
+    var l = Model.Link;
+}
+
+<mb-card title="Link" icon="share" sub="@(Model.Active ? "gültig" : l.RevokedDate is not null ? "widerrufen" : "abgelaufen")">
+    <dl class="mat-kv">
+        <dt>Zeigt</dt><dd><a href="/Invoices/Edit?id=@l.InvoiceId">Rechnung @l.Invoice?.Number</a>@(l.Invoice is null ? "" : " · " + l.Invoice.RecipientName)</dd>
+        <dt>Titel</dt><dd>@l.Title</dd>
+        <dt>Für</dt><dd>@(l.RecipientName ?? "–")</dd>
+        <dt>Nachricht</dt><dd class="mb-prewrap">@(l.Message ?? "–")</dd>
+        <dt>Angelegt</dt><dd>@Fmt.Moment(l.CreateDate)</dd>
+        <dt>Gültig bis</dt><dd>@Fmt.Date(l.ExpiresDate)</dd>
+        <dt>Passwort</dt><dd>@(l.PasswordHash is null ? "keins" : "ja")</dd>
+        <dt>Aufrufe</dt><dd>@l.ViewCount@(l.LastViewDate is { } last ? ", zuletzt " + Fmt.Moment(last) : "")</dd>
+    </dl>
+    @if (Model.Active)
+    {
+        <div class="mat-field">
+            <label class="mat-label" for="share-url">Adresse</label>
+            <div class="mat-input-group">
+                <input class="mat-input mat-mono" id="share-url" value="@Model.LinkUrl" readonly />
+                <button type="button" class="mat-btn mat-btn--secondary" data-copy="#share-url">@Ui.Icon("copy")<span>Kopieren</span></button>
+            </div>
+        </div>
+    }
+</mb-card>
+
+<form method="post" class="mat-form">
+    <div class="mat-btn-row">
+        <a class="mat-btn mat-btn--secondary" href="/Admin/Shares">@Ui.Icon("back")<span>Zurück</span></a>
+        @if (Model.Active)
+        {
+            <button type="submit" asp-page-handler="Revoke" asp-route-id="@l.Id" class="mat-btn mat-btn--secondary" data-confirm="Diesen Link widerrufen? Wer ihn hat, sieht nichts mehr." data-confirm-ok="Widerrufen">@Ui.Icon("x-circle")<span>Widerrufen</span></button>
+        }
+
+        <span class="mat-btn-row__spacer"></span>
+        <button type="submit" asp-page-handler="Delete" asp-route-id="@l.Id" class="mat-btn mat-btn--danger" data-confirm="Diesen Link löschen?" data-confirm-ok="Löschen">@Ui.Icon("trash")<span>Löschen</span></button>
+    </div>
+</form>

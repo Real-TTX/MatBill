@@ -1,0 +1,76 @@
+# MatBill - development stack: builds the image from the source in this folder.
+#   ./scripts/redeploy.ps1            (rebuilds the container and redeploys the stack)
+#   docker compose -f docker-compose.dev.yml up -d --build
+#
+# Web:      http://localhost:2505
+# pgAdmin:  http://localhost:2506   (admin@matbill.example.com / matbill; server "db", user postgres, password matbill)
+# Postgres: localhost:12505         (for tests and tools)
+name: matbill-dev
+
+services:
+  matbill:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        Channel: ${MATBILL_CHANNEL:-local}
+        BuildNumber: ${MATBILL_BUILD_NUMBER:-0}
+        BuildDate: ${MATBILL_BUILD_DATE:-}
+    image: matbill:dev
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "2505:2505"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      TZ: Europe/Berlin
+    volumes:
+      - matbill-data:/data
+
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: matbill
+      POSTGRES_DB: matbill
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d matbill"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    ports:
+      # Only for local tests and tools.
+      - "12505:5432"
+    volumes:
+      - matbill-db:/var/lib/postgresql/data
+
+  # Database UI of the development stack. Add the server "db" (user postgres, password matbill).
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@matbill.example.com
+      PGADMIN_DEFAULT_PASSWORD: matbill
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "2506:80"
+    depends_on:
+      - db
+    volumes:
+      - matbill-pgadmin:/var/lib/pgadmin
+
+# An explicit subnet: on a PC with many stacks Docker runs out of its default address pools ("all predefined address pools
+# have been fully subnetted"). Override with MATBILL_DEV_SUBNET if this range collides with something.
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: ${MATBILL_DEV_SUBNET:-10.253.55.0/24}
+
+volumes:
+  matbill-data:
+  matbill-db:
+  matbill-pgadmin:

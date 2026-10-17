@@ -1,0 +1,59 @@
+@page
+@model MatBill.Pages.Notifications.IndexModel
+
+<div class="mat-list">
+    <div class="mat-toolbar" role="toolbar" aria-label="Benachrichtigungen: Werkzeuge">
+        <div class="mat-seg" role="group" aria-label="Anzeigen">
+            <a class="mat-seg__btn" href="/Notifications" aria-pressed="@(!Model.UnreadOnly ? "true" : "false")">Alle</a>
+            <a class="mat-seg__btn" href="/Notifications?unread=true" aria-pressed="@(Model.UnreadOnly ? "true" : "false")">Ungelesen (@Model.Unread)</a>
+        </div>
+        <span class="mat-toolbar__spacer"></span>
+    </div>
+
+    @if (Model.Items.Count == 0)
+    {
+        <div class="mat-empty">
+            <span class="mat-empty__icon">@Ui.Icon("bell")</span>
+            <div class="mat-empty__title">@(Model.UnreadOnly ? "Alles gelesen" : "Noch keine Benachrichtigungen")</div>
+            <p>Hier erscheinen anstehende Rechnungen deiner Serien, erstellte und versendete Rechnungen und Probleme.</p>
+        </div>
+    }
+    else
+    {
+        <div class="mat-card">
+            <div class="mat-card__body">
+                <ul class="mb-notes">
+                    @foreach (var n in Model.Items)
+                    {
+                        var tone = Labels.Tone(n.Tone);
+                        <li class="mb-note @(n.ReadDate is null ? "is-unread" : "")">
+                            @Ui.Icon(Labels.Icon(n.Tone), "mb-note__icon mb-note__icon--" + tone)
+                            <div class="mb-note__body">
+                                @if (n.Url is not null)
+                                {
+                                    <form method="post" asp-page-handler="Open" asp-route-id="@n.Id">
+                                        <button type="submit" class="mb-note__title">@n.Title</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <span class="mb-note__title">@n.Title</span>
+                                }
+                                @if (n.Text is not null) { <span>@n.Text</span> }
+                                <span class="mb-note__meta">@Fmt.Ago(n.OccurredDate, Model.Now)</span>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    }
+    <partial name="_Pager" model="Model.Pager" />
+
+    <form method="post" class="mat-actions">
+        @if (Model.Unread > 0)
+        {
+            <button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="ReadAll">@Ui.Icon("check")<span>Alle als gelesen markieren</span></button>
+        }
+    </form>
+</div>

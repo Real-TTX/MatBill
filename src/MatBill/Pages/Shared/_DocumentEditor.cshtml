@@ -1,0 +1,173 @@
+@using MatBill.Core.Billing
+@model DocumentEditorModel
+@*
+    The editable A4 document: every value is a field at the place where it stands on the paper. It is drawn inside the page's form; app.js adds the
+    suggestions (customers, products), the positions and the sums. In the form view (data-view="form" on the editor) the same fields become an ordinary form.
+    Every field has its label: hidden on the paper (the paper itself says what a value is), visible in the form.
+*@
+@{
+    var input = Model.Input;
+    var company = Model.Company;
+    var template = Model.Mode == EditorMode.Template;
+    var totals = DocumentInputs.Totals(input, Model.TaxExempt);
+    var rates = InvoiceMath.CommonTaxRates;
+    var lines = input.Lines.ToList();
+    var blank = new LineInput { Quantity = "1", TaxRate = Amount.Quantity(Model.Invoicing.DefaultTaxRate) };
+    var senderLines = new[] { company.Street, string.Join(" ", new[] { company.PostalCode, company.City }.Where(s => !string.IsNullOrWhiteSpace(s))), company.Email, company.Website }
+        .Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
+}
+
+<article class="mb-paper mb-doc @(Model.Stamp is null ? "" : "is-draft")" data-stamp="@Model.Stamp" aria-label="@(template ? "Vorlage der Rechnung" : "Rechnung")">
+    <header class="mb-doc__head">
+        <div class="mb-doc__logo">
+            @if (Model.LogoUrl is not null)
+            {
+                <img src="@Model.LogoUrl" alt="@company.Name" />
+            }
+            else
+            {
+                <div class="mb-doc__company">@(string.IsNullOrWhiteSpace(company.Name) ? "Ihr Firmenname" : company.Name)</div>
+            }
+            @if (Model.CanEditBranding && (Model.LogoUrl is null || string.IsNullOrWhiteSpace(company.Name)))
+            {
+                <a class="mb-doc__brandlink" href="/Branding">Logo und Absender im Branding festlegen</a>
+            }
+        </div>
+        <address class="mb-doc__sender">
+            <strong>@company.Name</strong>
+            @foreach (var line in senderLines)
+            {
+                <br />@line
+            }
+        </address>
+    </header>
+
+    <div class="mb-doc__top">
+        <section class="mb-doc__part mb-doc__recipient" aria-labelledby="doc-to">
+            <div class="mb-doc__senderline">@company.SenderLine</div>
+            <span class="mb-doc__caption" id="doc-to">An</span>
+            <input type="hidden" name="Input.CustomerId" value="@input.CustomerId" />
+            <div class="mb-doc__address">
+                <div class="mb-field mb-combo">
+                    <label class="mb-label" for="Input_RecipientName">Empfänger (Kunde suchen oder neuen Namen eingeben)</label>
+                    <input class="mb-in mb-in--strong" id="Input_RecipientName" name="Input.RecipientName" value="@input.RecipientName" placeholder="Kunde auswählen …" autocomplete="off" maxlength="200"
+                           aria-describedby="Input_RecipientName-error" aria-invalid="@(ViewData.ModelState["Input.RecipientName"]?.Errors.Count > 0 ? "true" : null)" />
+                    <span class="mat-error" id="Input_RecipientName-error" aria-live="polite">@ViewData.ModelState["Input.RecipientName"]?.Errors.FirstOrDefault()?.ErrorMessage</span>
+                </div>
+                <p class="mat-hint" data-new-customer-hint hidden>@(template ? "Wähle einen Kunden aus der Liste." : "Neuer Empfänger: Er wird beim Speichern als Kunde angelegt.")</p>
+                @if (!template)
+                {
+                    <div class="mb-field"><label class="mb-label" for="Input_RecipientContact">Ansprechpartner</label><input class="mb-in" id="Input_RecipientContact" name="Input.RecipientContact" value="@input.RecipientContact" placeholder="z. Hd. …" maxlength="200" /></div>
+                    <div class="mb-field"><label class="mb-label" for="Input_RecipientStreet">Straße und Hausnummer</label><input class="mb-in" id="Input_RecipientStreet" name="Input.RecipientStreet" value="@input.RecipientStreet" placeholder="Straße" maxlength="200" autocomplete="off" /></div>
+                    <div class="mb-pair">
+                        <div class="mb-field"><label class="mb-label" for="Input_RecipientPostalCode">PLZ</label><input class="mb-in" id="Input_RecipientPostalCode" name="Input.RecipientPostalCode" value="@input.RecipientPostalCode" placeholder="PLZ" maxlength="20" inputmode="numeric" autocomplete="off" /></div>
+                        <div class="mb-field"><label class="mb-label" for="Input_RecipientCity">Ort</label><input class="mb-in" id="Input_RecipientCity" name="Input.RecipientCity" value="@input.RecipientCity" placeholder="Ort" maxlength="100" autocomplete="off" /></div>
+                    </div>
+                    <div class="mb-field"><label class="mb-label" for="Input_RecipientCountry">Land</label><input class="mb-in mb-in--small" id="Input_RecipientCountry" name="Input.RecipientCountry" value="@(input.RecipientCountry ?? "Deutschland")" maxlength="100" /></div>
+                    <div class="mb-field"><label class="mb-label" for="Input_RecipientEmail">E-Mail für den Versand</label><input class="mb-in mb-in--small" type="email" inputmode="email" id="Input_RecipientEmail" name="Input.RecipientEmail" value="@input.RecipientEmail" placeholder="E-Mail für den Versand (erscheint nicht auf der Rechnung)" maxlength="200" /></div>
+                }
+                else
+                {
+                    <p class="mat-hint">Die Anschrift kommt bei jeder Rechnung aus den Kundendaten, damit Änderungen am Kunden mitgenommen werden.</p>
+                }
+            </div>
+        </section>
+
+        <section class="mb-doc__part mb-doc__meta" aria-label="Rechnungsdaten">
+            <span class="mb-doc__caption mb-label">Rechnungsdaten</span>
+            <div class="mb-field"><label class="mb-label" for="Input_Title">Titel</label><input class="mb-in mb-in--title mb-doc__title" id="Input_Title" name="Input.Title" value="@(input.Title ?? "Rechnung")" maxlength="80" /></div>
+            <dl class="mb-doc__facts">
+                <div>
+                    <dt>Rechnungsnummer</dt>
+                    <dd class="is-muted" title="Die Nummer wird beim Ausstellen vergeben.">@(template ? "fortlaufend" : Model.NumberPreview ?? "beim Ausstellen")</dd>
+                </div>
+                @if (template)
+                {
+                    <div><dt>Rechnungsdatum</dt><dd class="is-muted">Tag der Ausführung</dd></div>
+                    <div><dt>Leistungszeitraum</dt><dd class="is-muted">@(Model.StatePeriod ? "Zeitraum des Intervalls" : "Tag der Ausführung")</dd></div>
+                }
+                else
+                {
+                    <div>
+                        <dt><label for="Input_InvoiceDate">Rechnungsdatum</label></dt>
+                        <dd><div class="mat-picker" data-picker="date"><input class="mat-picker__input" id="Input_InvoiceDate" name="Input.InvoiceDate" value="@Fmt.Iso(input.InvoiceDate)" required data-msg-required="Bitte wähle das Rechnungsdatum." /></div></dd>
+                    </div>
+                    <div>
+                        <dt><label for="Input_ServiceFrom">Leistungsdatum</label></dt>
+                        <dd><div class="mat-picker" data-picker="date" data-clearable data-placeholder="wie Rechnungsdatum"><input class="mat-picker__input" id="Input_ServiceFrom" name="Input.ServiceFrom" value="@Fmt.Iso(input.ServiceFrom)" /></div></dd>
+                    </div>
+                    <div>
+                        <dt><label for="Input_ServiceTo">Leistung bis</label></dt>
+                        <dd><div class="mat-picker" data-picker="date" data-clearable data-placeholder="optional"><input class="mat-picker__input" id="Input_ServiceTo" name="Input.ServiceTo" value="@Fmt.Iso(input.ServiceTo)" /></div></dd>
+                    </div>
+                }
+                <div>
+                    <dt><label for="Input_PaymentTermDays">Zahlungsziel</label></dt>
+                    <dd><span class="mb-doc__inline"><input class="mb-in mb-in--num mb-in--days" type="number" min="0" max="365" step="1" inputmode="numeric" id="Input_PaymentTermDays" name="Input.PaymentTermDays" value="@(input.PaymentTermDays ?? Model.Invoicing.PaymentTermDays)" /> Tage</span></dd>
+                </div>
+                @if (!template)
+                {
+                    <div><dt>Fällig am</dt><dd data-due>@(input.InvoiceDate is { } d ? Fmt.Date(InvoiceMath.DueDate(d, input.PaymentTermDays ?? 0)) : "–")</dd></div>
+                }
+            </dl>
+        </section>
+    </div>
+
+    <div class="mb-doc__intro">
+        <label class="mb-label" for="Input_IntroText">Einleitung</label>
+        <textarea class="mb-in" id="Input_IntroText" name="Input.IntroText" rows="2" data-autogrow maxlength="4000" placeholder="Einleitender Text, zum Beispiel ein Dank für den Auftrag">@input.IntroText</textarea>
+    </div>
+
+    <div class="mb-lines" data-lines data-caption="Positionen">
+        <div class="mb-lines__head" aria-hidden="true"><span>Leistung</span><span>Menge</span><span>Einzelpreis</span><span>USt.</span><span>Gesamtpreis</span><span></span></div>
+        <div class="mb-lines__body" data-lines-body role="list" aria-label="Positionen">
+            @for (var i = 0; i < lines.Count; i++)
+            {
+                <partial name="_DocumentLine" model="(lines[i], i, Model.TaxExempt)" />
+            }
+        </div>
+        <p class="mb-lines__empty" data-lines-empty hidden="@(lines.Count > 0)">Noch keine Position. Füge eine Leistung oder ein Produkt hinzu.</p>
+        <template data-line-template><partial name="_DocumentLine" model="(blank, -1, Model.TaxExempt)" /></template>
+        <button type="button" class="mb-add" data-line-add>@Ui.Icon("plus")<span>Position hinzufügen</span></button>
+    </div>
+
+    <dl class="mb-doc__totals" aria-live="polite">
+        <div><dt>Zwischensumme</dt><dd data-sum-net>@Fmt.Money(totals.Net)</dd></div>
+        <div data-tax-rows class="mb-doc__taxes">
+            @foreach (var g in totals.Taxes.Where(t => t.Rate > 0))
+            {
+                <div><dt>@(totals.Taxes.Count(t => t.Rate > 0) > 1 ? $"Umsatzsteuer {Amount.Quantity(g.Rate)} % auf {Fmt.Money(g.Net)}" : $"Umsatzsteuer ({Amount.Quantity(g.Rate)} %)")</dt><dd>@Fmt.Money(g.Tax)</dd></div>
+            }
+        </div>
+        <div class="mb-doc__grand"><dt>Gesamtbetrag</dt><dd data-sum-gross>@Fmt.Money(totals.Gross)</dd></div>
+    </dl>
+    @if (Model.TaxExempt)
+    {
+        <p class="mb-doc__note">@Model.Invoicing.SmallBusinessNote</p>
+    }
+
+    <div class="mb-doc__terms">
+        <label class="mb-doc__caption" for="Input_PaymentTerms">Zahlungsbedingungen</label>
+        <textarea class="mb-in" id="Input_PaymentTerms" name="Input.PaymentTerms" rows="2" data-autogrow maxlength="2000" placeholder="Zum Beispiel: Zahlbar innerhalb von {Tage} Tagen ohne Abzug." aria-describedby="terms-hint">@input.PaymentTerms</textarea>
+        <span class="mat-hint" id="terms-hint">{Tage} wird zum Zahlungsziel (<span data-term-days>@(input.PaymentTermDays ?? Model.Invoicing.PaymentTermDays)</span>), {Faellig} zum Fälligkeitsdatum.</span>
+    </div>
+
+    <div class="mb-doc__closing">
+        <div class="mb-field">
+            <label class="mb-label" for="Input_ClosingText">Schlusstext</label>
+            <textarea class="mb-in" id="Input_ClosingText" name="Input.ClosingText" rows="1" data-autogrow maxlength="2000" placeholder="Grußformel">@input.ClosingText</textarea>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(company.Signature))
+        {
+            <span class="mb-doc__signature" aria-hidden="true">@company.Signature</span>
+        }
+    </div>
+
+    <footer class="mb-doc__foot">
+        <div class="mb-doc__footcols">
+            <p>@company.SenderLine@if (!string.IsNullOrWhiteSpace(company.Manager)) { <br />@company.Manager }@if (!string.IsNullOrWhiteSpace(company.Register)) { <br />@company.Register }</p>
+            <p>@company.BankName@if (!string.IsNullOrWhiteSpace(company.Iban)) { <br />@("IBAN " + company.Iban) }@if (!string.IsNullOrWhiteSpace(company.Bic)) { <br />@("BIC " + company.Bic) }</p>
+            <p>@if (!string.IsNullOrWhiteSpace(company.TaxNumber)) { @("Steuernummer " + company.TaxNumber)<br /> }@if (!string.IsNullOrWhiteSpace(company.VatId)) { @("USt-IdNr. " + company.VatId) }</p>
+        </div>
+    </footer>
+</article>

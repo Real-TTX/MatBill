@@ -1,0 +1,52 @@
+@page
+@model MatBill.Pages.Admin.StorageModel
+@{
+    var modes = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
+    {
+        new("Im Volume des Containers", nameof(MatBill.Configuration.StorageMode.Local)),
+        new("Auf einem NAS (SMB-Freigabe)", nameof(MatBill.Configuration.StorageMode.Smb)),
+    };
+}
+
+<form class="mat-form" method="post" asp-page-handler="" novalidate>
+    <mb-summary />
+    @if (Model.Test is not null)
+    {
+        <div class="mat-alert mat-alert--@(Model.TestOk ? "success" : "danger")" role="status">@Ui.Icon(Model.TestOk ? "check-circle" : "alert")<div class="mat-alert__body">@Model.Test</div></div>
+    }
+
+    <mb-card title="Speicherort" icon="hard-drive">
+        <div class="mat-form__grid">
+            <mb-select for="Input.Mode" label="Neue Dateien ablegen" items="modes" full="true" hint="Die PDFs der ausgestellten Rechnungen und das Logo. Die Datenbank bleibt immer im Container-Volume." />
+            <mb-input for="Input.Host" label="Server" hint="Name oder Adresse des NAS, zum Beispiel nas.local (SMB, Port 445)" show-if="Input.Mode" show-value="Smb" />
+            <mb-input for="Input.Share" label="Freigabe" hint="Der Name des freigegebenen Ordners, zum Beispiel Rechnungen" show-if="Input.Mode" show-value="Smb" />
+            <mb-input for="Input.Path" label="Ordner in der Freigabe" show-if="Input.Mode" show-value="Smb" />
+            <mb-input for="Input.Domain" label="Domäne (optional)" autocomplete="off" show-if="Input.Mode" show-value="Smb" />
+            <mb-input for="Input.UserName" label="Benutzername" autocomplete="off" show-if="Input.Mode" show-value="Smb" />
+            <mb-input for="Input.Password" label="Passwort" type="password" autocomplete="new-password" show-if="Input.Mode" show-value="Smb" hint="@(Model.HasPassword ? "Leer lassen, um das gespeicherte Passwort zu behalten." : "Wird verschlüsselt gespeichert.")" />
+        </div>
+    </mb-card>
+
+    <mb-buttons back-href="/">
+        <button type="submit" formnovalidate asp-page-handler="Test" class="mat-btn mat-btn--secondary" data-show-if="Input.Mode" data-show-value="Smb">@Ui.Icon("activity")<span>Verbindung prüfen</span></button>
+        <button type="submit" formnovalidate asp-page-handler="Shares" class="mat-btn mat-btn--secondary" data-show-if="Input.Mode" data-show-value="Smb">@Ui.Icon("list")<span>Freigaben anzeigen</span></button>
+    </mb-buttons>
+</form>
+
+<mb-card title="Was liegt wo?" icon="folder">
+    <dl class="mat-kv">
+        <dt>Im Volume</dt><dd>@Ui.Plural(Model.Stored.LocalFiles, "Datei", "Dateien") · @Fmt.FileSize(Model.Stored.LocalBytes)</dd>
+        <dt>Auf dem NAS</dt><dd>@Ui.Plural(Model.Stored.SmbFiles, "Datei", "Dateien") · @Fmt.FileSize(Model.Stored.SmbBytes)</dd>
+    </dl>
+    <p class="mat-muted">Beim Wechsel des Speicherorts bleiben ältere Dateien dort, wo sie sind, und funktionieren weiter. Du kannst sie auch verschieben.</p>
+    <form method="post" class="mat-actions">
+        @if (Model.Stored.LocalFiles > 0)
+        {
+            <button type="submit" asp-page-handler="Move" asp-route-to="smb" class="mat-btn mat-btn--secondary" data-confirm="Alle Dateien aus dem Volume auf das NAS verschieben? Das kann bei vielen Dateien etwas dauern." data-confirm-ok="Verschieben">@Ui.Icon("upload")<span>Auf das NAS verschieben</span></button>
+        }
+        @if (Model.Stored.SmbFiles > 0)
+        {
+            <button type="submit" asp-page-handler="Move" asp-route-to="local" class="mat-btn mat-btn--secondary" data-confirm="Alle Dateien vom NAS zurück in das Volume holen?" data-confirm-ok="Zurückholen">@Ui.Icon("download")<span>Ins Volume zurückholen</span></button>
+        }
+    </form>
+</mb-card>

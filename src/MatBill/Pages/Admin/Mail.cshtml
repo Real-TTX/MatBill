@@ -1,0 +1,52 @@
+@page
+@using MatBill.Configuration
+@model MatBill.Pages.Admin.MailModel
+@{
+    var security = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
+    {
+        new("Automatisch (STARTTLS, wenn angeboten)", nameof(MailSecurity.Auto)),
+        new("STARTTLS (meist Port 587)", nameof(MailSecurity.StartTls)),
+        new("SSL/TLS (meist Port 465)", nameof(MailSecurity.SslOnConnect)),
+        new("Keine Verschlüsselung", nameof(MailSecurity.None)),
+    };
+}
+
+<form class="mat-form" method="post" asp-page-handler="" novalidate>
+    <mb-summary />
+    @if (Model.TestResult is not null)
+    {
+        <div class="mat-alert mat-alert--@(Model.TestOk ? "success" : "danger")" role="status">@Ui.Icon(Model.TestOk ? "check-circle" : "alert")<div class="mat-alert__body">@Model.TestResult</div></div>
+    }
+
+    <mb-card title="Mailserver (SMTP)" icon="server">
+        <div class="mat-form__grid">
+            <mb-input for="Input.Host" label="Server" hint="Zum Beispiel smtp.example.de. Leer: MatBill versendet keine Mails." autocomplete="off" />
+            <mb-input for="Input.Port" label="Port" type="number" min="1" max="65535" step="1" show-if="Input.Host" />
+            <mb-select for="Input.Security" label="Verschlüsselung" items="security" show-if="Input.Host" />
+            <mb-input for="Input.UserName" label="Benutzername" autocomplete="off" show-if="Input.Host" />
+            <mb-input for="Input.Password" label="Passwort" type="password" autocomplete="new-password" show-if="Input.Host" hint="@(Model.HasPassword ? "Leer lassen, um das gespeicherte Passwort zu behalten." : "Wird verschlüsselt gespeichert.")" />
+            <mb-input for="Input.FromAddress" label="Absenderadresse" type="email" inputmode="email" show-if="Input.Host" />
+            <mb-input for="Input.FromName" label="Absendername" show-if="Input.Host" hint="Leer: der Name des Unternehmens." />
+            <mb-input for="Input.Bcc" label="Blindkopie jeder Rechnung an" show-if="Input.Host" hint="Für das eigene Archiv, optional." autocomplete="off" />
+        </div>
+    </mb-card>
+
+    <mb-card title="Rechnungsmail" icon="mail">
+        <p class="mat-muted">Platzhalter: {Nummer}, {Kunde}, {Betrag}, {Datum}, {Faellig}, {Firma}. Die Rechnung hängt als PDF an.</p>
+        <div class="mat-form__grid">
+            <mb-input for="Input.Subject" label="Betreff" required="true" full="true" />
+            <mb-textarea for="Input.Body" label="Text" rows="8" required="true" full="true" />
+        </div>
+    </mb-card>
+
+    <mb-card title="Testnachricht" icon="send">
+        <div class="mat-form__grid">
+            <mb-input name="TestTo" for="TestTo" label="Empfänger" type="email" inputmode="email" hint="Speichert die Einstellungen und sendet eine kurze Nachricht." autocomplete="off" />
+        </div>
+        <div class="mat-actions">
+            <button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="Test">@Ui.Icon("send")<span>Speichern und Test senden</span></button>
+        </div>
+    </mb-card>
+
+    <mb-buttons back-href="/" />
+</form>

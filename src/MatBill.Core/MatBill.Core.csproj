@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The part of MatBill that has no web types: the arithmetic of invoices, the dates of a series, number ranges, TOTP, password hashing. Everything in here is covered by unit tests
+       without a browser or a database. -->
+
+  <PropertyGroup>
+    <RootNamespace>MatBill.Core</RootNamespace>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="MatBill.Tests" />
+  </ItemGroup>
+
+</Project>

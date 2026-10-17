@@ -1,0 +1,65 @@
+@using MatBill.Core.Billing
+@model (LineInput Line, int Index, bool TaxExempt)
+@*
+    One position of the editable document. Its fields carry data-field; app.js names them after their place (Input.Lines[2].Name) whenever positions are
+    added, moved or removed. A position drawn by the server already has its names (it works without the script); the template (Index -1) has none.
+*@
+@{
+    var l = Model.Line;
+    var i = Model.Index;
+    string? N(string field) => i < 0 ? null : $"Input.Lines[{i}].{field}";
+    string? Id(string field) => i < 0 ? null : $"line-{i}-{field}";
+    var n = i + 1;
+    var rate = l.TaxRate ?? "19";
+    var rates = InvoiceMath.CommonTaxRates.Select(r => Amount.Quantity(r)).ToList();
+    if (!rates.Contains(rate)) { rates.Insert(0, rate); }
+    var error = (string field) => i < 0 ? null : ViewContext.ViewData.ModelState[$"Input.Lines[{i}].{field}"]?.Errors.FirstOrDefault()?.ErrorMessage;
+}
+<div class="mb-line" data-line role="listitem" aria-label="Position @n">
+    <div class="mb-line__what">
+        <input type="hidden" data-field="ProductId" name="@N("ProductId")" id="@Id("ProductId")" value="@l.ProductId" />
+        <div class="mb-field mb-combo">
+            <label class="mb-label" data-for="Name" data-text="Position {n}: Leistung oder Produkt" for="@Id("Name")">Position @n: Leistung oder Produkt</label>
+            <input class="mb-in mb-in--strong" data-field="Name" name="@N("Name")" id="@Id("Name")" value="@l.Name" placeholder="Leistung oder Produkt suchen …" maxlength="300" aria-invalid="@(error("Name") is null ? null : "true")" />
+        </div>
+        <div class="mb-field">
+            <label class="mb-label" data-for="Description" data-text="Position {n}: Beschreibung" for="@Id("Description")">Position @n: Beschreibung</label>
+            <textarea class="mb-in mb-in--small" data-field="Description" name="@N("Description")" id="@Id("Description")" rows="1" data-autogrow maxlength="2000" placeholder="Beschreibung (optional)">@l.Description</textarea>
+        </div>
+    </div>
+    <div class="mb-line__qty">
+        <div class="mb-field">
+            <label class="mb-label" data-for="Quantity" data-text="Menge" for="@Id("Quantity")">Menge</label>
+            <input class="mb-in mb-in--num" data-field="Quantity" name="@N("Quantity")" id="@Id("Quantity")" value="@l.Quantity" inputmode="decimal" placeholder="1" maxlength="20" aria-invalid="@(error("Quantity") is null ? null : "true")" />
+        </div>
+        <div class="mb-field">
+            <label class="mb-label" data-for="Unit" data-text="Einheit" for="@Id("Unit")">Einheit</label>
+            <input class="mb-in" data-field="Unit" name="@N("Unit")" id="@Id("Unit")" value="@l.Unit" placeholder="Einheit" maxlength="30" />
+        </div>
+    </div>
+    <div class="mb-line__price mb-field">
+        <label class="mb-label" data-for="UnitPrice" data-text="Einzelpreis (netto)" for="@Id("UnitPrice")">Einzelpreis (netto)</label>
+        <input class="mb-in mb-in--num" data-field="UnitPrice" name="@N("UnitPrice")" id="@Id("UnitPrice")" value="@l.UnitPrice" inputmode="decimal" placeholder="0,00" maxlength="20" aria-invalid="@(error("UnitPrice") is null ? null : "true")" />
+    </div>
+    <div class="mb-line__tax mb-field">
+        <label class="mb-label" data-for="TaxRate" data-text="USt." for="@Id("TaxRate")">USt.</label>
+        <select class="mb-in mb-in--num" data-field="TaxRate" name="@N("TaxRate")" id="@Id("TaxRate")" disabled="@Model.TaxExempt">
+            @foreach (var r in rates)
+            {
+                <option value="@r" selected="@(r == rate)">@r %</option>
+            }
+        </select>
+    </div>
+    <div class="mb-line__total" data-line-total>@Fmt.Money(DocumentInputs.LineNet(l))</div>
+    <div class="mb-line__tools">
+        <div class="mb-line__more">
+            <button type="button" class="mb-tool" data-line-more aria-haspopup="true" aria-expanded="false" aria-label="Aktionen der Position">@Ui.Icon("more-horizontal")</button>
+            <div class="mb-line__menu" hidden>
+                <button type="button" data-line-action="up">@Ui.Icon("arrow-up")<span>Nach oben</span></button>
+                <button type="button" data-line-action="down">@Ui.Icon("arrow-down")<span>Nach unten</span></button>
+                <button type="button" data-line-action="copy">@Ui.Icon("copy")<span>Duplizieren</span></button>
+                <button type="button" data-line-action="remove" class="is-danger">@Ui.Icon("trash")<span>Entfernen</span></button>
+            </div>
+        </div>
+    </div>
+</div>

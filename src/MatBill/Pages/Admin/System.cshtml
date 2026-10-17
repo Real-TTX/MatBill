@@ -1,0 +1,67 @@
+@page
+@model MatBill.Pages.Admin.SystemModel
+
+<div class="mb-kpis">
+    @Ui.Kpi("Version", Model.Version, "seit " + Fmt.Moment(Model.Started) + " in Betrieb", "server", "accent")
+    @Ui.Kpi("Datenbank", Fmt.FileSize(Model.DatabaseBytes), Model.DatabaseVersion, "database", "busy")
+    @Ui.Kpi("Arbeitsspeicher", Fmt.FileSize(Model.Memory), "der Anwendung", "activity", "info")
+</div>
+
+<div class="mat-grid mat-grid--2">
+    <mb-card title="Anwendung" icon="server">
+        <dl class="mat-kv">
+            <dt>Laufzeit</dt><dd>@Model.Runtime</dd>
+            <dt>System</dt><dd>@Model.Os (@Model.Architecture)</dd>
+            <dt>Zeitzone</dt><dd>@Model.TimeZone</dd>
+            <dt>Datenordner</dt><dd class="mat-mono">@Model.DataDir</dd>
+            <dt>Dateispeicher</dt><dd>@(Model.Storage == MatBill.Configuration.StorageMode.Smb ? "NAS (SMB)" : "Volume") · <a href="/Admin/Storage">ändern</a></dd>
+            <dt>Sicherung</dt><dd>@(Model.BackupBusy ? "läuft gerade" : "bereit") · <a href="/Admin/Backup">öffnen</a></dd>
+        </dl>
+    </mb-card>
+
+    <mb-card title="Inhalt" icon="database">
+        <dl class="mat-kv">
+            @foreach (var (name, count) in Model.Counts)
+            {
+                <dt>@name</dt><dd>@Fmt.Integer(count)</dd>
+            }
+        </dl>
+    </mb-card>
+</div>
+
+<mb-card title="Datenordner" icon="folder">
+    <div class="mat-table-wrap">
+        <table class="mat-table" id="data-folders">
+            <caption class="mat-sr-only">Belegung des Datenordners</caption>
+            <thead><tr><th scope="col">Ordner</th><th scope="col" class="mat-hide-sm">Wofür</th><th scope="col" class="mat-num">Dateien</th><th scope="col" class="mat-num">Größe</th></tr></thead>
+            <tbody>
+                @foreach (var f in Model.Folders)
+                {
+                    <tr>
+                        <td data-label="Ordner">@f.Name</td>
+                        <td data-label="Wofür" class="mat-hide-sm">@f.Hint</td>
+                        <td data-label="Dateien" class="mat-num">@Fmt.Integer(f.Files)</td>
+                        <td data-label="Größe" class="mat-num">@Fmt.FileSize(f.Bytes)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</mb-card>
+
+<mb-card title="Aufräumen" icon="refresh">
+    <p class="mat-muted">Einmal am Tag entfernt MatBill beendete Sitzungen, abgelaufene Freigabe-Links und Protokolle, die älter als ein Jahr sind. Du kannst das auch jetzt tun.</p>
+    <form method="post" class="mat-actions">
+        <button type="submit" asp-page-handler="Maintain" class="mat-btn mat-btn--secondary">@Ui.Icon("refresh")<span>Jetzt aufräumen</span></button>
+    </form>
+</mb-card>
+
+@if (Model.CanCreateDemo)
+{
+    <mb-card title="Beispieldaten" icon="sparkles">
+        <p class="mat-muted">Zum Ausprobieren: Firmendaten, Kunden, Produkte, einige Rechnungen und zwei Serien. Das geht nur in einer leeren Installation.</p>
+        <form method="post" class="mat-actions">
+            <button type="submit" asp-page-handler="Demo" class="mat-btn mat-btn--secondary" data-confirm="Beispieldaten anlegen?" data-confirm-ok="Anlegen">@Ui.Icon("sparkles")<span>Beispieldaten anlegen</span></button>
+        </form>
+    </mb-card>
+}

@@ -1,0 +1,36 @@
+@page
+@using MatBill.Core.Billing
+@model MatBill.Pages.Admin.InvoicingModel
+@{
+    var rates = InvoiceMath.CommonTaxRates.Select(r => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem($"{Amount.Quantity(r)} %", Amount.Quantity(r))).ToList();
+}
+
+<form class="mat-form" method="post" novalidate>
+    <mb-summary />
+    <mb-card title="Nummernkreise" icon="list" sub="@($"nächste Rechnung: {Model.NextInvoice}")">
+        <p class="mat-muted">Platzhalter: {JJJJ} Jahr, {JJ} Jahr zweistellig, {MM} Monat, {NNNN} fortlaufender Zähler (so viele Stellen wie N). Mit dem Jahr im Muster beginnt der Zähler jedes Jahr neu. Entwürfe bekommen ihre Nummer erst beim Ausstellen, so bleibt der Kreis lückenlos.</p>
+        <div class="mat-form__grid">
+            <mb-input for="Input.InvoiceNumberPattern" label="Rechnungsnummern" required="true" hint="@($"Beispiel: {Model.InvoiceExample}")" autocomplete="off" />
+            <mb-input for="Input.CustomerNumberPattern" label="Kundennummern" required="true" hint="@($"Beispiel: {Model.CustomerExample}")" autocomplete="off" />
+        </div>
+    </mb-card>
+
+    <mb-card title="Neue Rechnungen" icon="file-text">
+        <div class="mat-form__grid">
+            <mb-input for="Input.PaymentTermDays" label="Zahlungsziel (Tage)" type="number" min="0" max="365" step="1" hint="Ein Kunde kann ein eigenes haben." />
+            <mb-select for="Input.DefaultTaxRate" label="Steuersatz neuer Positionen" items="rates" />
+            <mb-textarea for="Input.IntroText" label="Einleitung" rows="3" full="true" />
+            <mb-textarea for="Input.PaymentTerms" label="Zahlungsbedingungen" rows="3" full="true" hint="{Tage} wird zum Zahlungsziel, {Faellig} zum Fälligkeitsdatum." />
+            <mb-textarea for="Input.ClosingText" label="Schlusstext" rows="2" full="true" />
+            <mb-textarea for="Input.SmallBusinessNote" label="Hinweis für Kleinunternehmer" rows="2" full="true" hint="Steht unter den Summen, wenn im Branding „Kleinunternehmer“ eingeschaltet ist." />
+        </div>
+    </mb-card>
+
+    <mb-card title="Wiederkehrende Rechnungen" icon="repeat">
+        <div class="mat-form__grid">
+            <mb-input for="Input.NoticeDays" label="Hinweis vor der nächsten Rechnung (Tage)" type="number" min="0" max="30" step="1" hint="So viele Tage vorher bekommen alle eine Benachrichtigung. 0: keine." />
+        </div>
+    </mb-card>
+
+    <mb-buttons back-href="/" />
+</form>

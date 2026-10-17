@@ -1,0 +1,56 @@
+@model TableModel
+@*
+    The one table control. Every cell carries its data-label: on a phone the rows become cards. A table without rows shows the empty state instead.
+    Several tables can share a page: Model.Id makes the caption and the empty state unique.
+*@
+@if (Model.Rows.Count == 0)
+{
+    <div class="mat-empty" id="@Model.Id-empty">
+        <span class="mat-empty__icon">@Ui.Icon(Model.EmptyIcon)</span>
+        <div class="mat-empty__title">@Model.EmptyTitle</div>
+        <p>@Model.EmptyText</p>
+    </div>
+}
+else
+{
+    <div class="mat-table-wrap">
+        <table class="mat-table" id="@Model.Id">
+            <caption class="mat-sr-only">@Model.Caption</caption>
+            <thead>
+                <tr>
+                    @foreach (var c in Model.Columns)
+                    {
+                        <th scope="col" class="@(c.Numeric ? "mat-num" : "") @(c.HideOnPhone ? "mat-hide-sm" : "")">@c.Header</th>
+                    }
+                    @if (Model.HasActions)
+                    {
+                        <th scope="col"><span class="mat-sr-only">Aktionen</span></th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Rows)
+                {
+                    <tr>
+                        @for (var i = 0; i < Model.Columns.Count; i++)
+                        {
+                            var c = Model.Columns[i];
+                            <td data-label="@c.Header" class="@(c.Numeric ? "mat-num" : "") @(c.Mono ? "mat-mono" : "") @(c.HideOnPhone ? "mat-hide-sm" : "")">@row.Cells[i]</td>
+                        }
+                        @if (Model.HasActions)
+                        {
+                            <td class="mat-table__cell-actions">
+                                <div class="mat-table__actions">
+                                    @foreach (var a in row.Actions)
+                                    {
+                                        <a class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" href="@a.Href" aria-label="@a.Label" data-tip="@a.Label">@Ui.Icon(a.Icon)</a>
+                                    }
+                                </div>
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
