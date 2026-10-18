@@ -10,7 +10,7 @@
 <div class="mat-nav__switch mat-nav__switch--foot">
     <button type="button" class="mat-switcher" data-menu-toggle="nav-switch-menu" data-menu-place="top" aria-haspopup="menu" aria-expanded="false">
         <span class="mat-switcher__icon">@Ui.Icon(current.Icon)</span>
-        <span class="mat-switcher__text"><small data-nav-label="Menü">Menü</small><span class="mat-switcher__name">@current.Title</span></span>
+        <span class="mat-switcher__text"><small data-nav-label="@L["Shell.Menu"]">@L["Shell.Menu"]</small><span class="mat-switcher__name">@current.Title</span></span>
         @Ui.Icon("chevron-up", "mat-switcher__chev")
         <span class="mat-switcher__dot" hidden="@(!shell.Menus.Any(m => m != current && m.NeedsAttention))"></span>
     </button>

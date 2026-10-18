@@ -1,0 +1,25 @@
+{
+  "Js.Failed": { "en": "That did not work.", "de": "Das hat nicht geklappt." },
+
+  "Js.Connection.Back": { "en": "The connection is back.", "de": "Die Verbindung ist wieder da." },
+  "Js.Connection.Connecting": { "en": "Connecting …", "de": "Verbinde ..." },
+  "Js.Connection.StillOffline": { "en": "Still no connection. Retrying automatically.", "de": "Noch keine Verbindung. Es wird automatisch weiter versucht." },
+  "Js.Connection.StillOfflineToast": { "en": "Still no connection.", "de": "Noch keine Verbindung." },
+  "Js.Connection.CopyFrom": { "en": "You are seeing the state of {0}, {1}. Saving is possible as soon as the connection is back.", "de": "Du siehst den Stand vom {0}, {1} Uhr. Speichern ist möglich, sobald die Verbindung zurück ist." },
+  "Js.Connection.NotSaved": { "en": "No connection: nothing was saved. Your input stays on the page.", "de": "Keine Verbindung: Es wurde nichts gespeichert. Deine Eingaben bleiben auf der Seite." },
+
+  "Js.Bell.Label": { "en": "Notifications", "de": "Benachrichtigungen" },
+  "Js.Bell.Unread": { "en": "Notifications, {0} unread", "de": "Benachrichtigungen, {0} ungelesen" },
+
+  "Js.Editor.Line": { "en": "Line {0}", "de": "Position {0}" },
+  "Js.Editor.LineRemoved": { "en": "Line removed.", "de": "Position entfernt." },
+  "Js.Editor.NoProducts": { "en": "No products yet: just type the service.", "de": "Noch keine Produkte angelegt: einfach die Leistung eintragen." },
+  "Js.Editor.NewCustomer": { "en": "Create new customer “{0}”", "de": "Neuen Kunden „{0}“ anlegen" },
+  "Js.Editor.NoCustomers": { "en": "No customers yet: type a name to create one.", "de": "Noch keine Kunden: tippe einen Namen, um einen anzulegen." },
+  "Js.Editor.CustomerCreated": { "en": "Customer “{0}” created.", "de": "Kunde „{0}“ angelegt." },
+  "Js.Editor.RestoreWhen": { "en": "{0}, {1}", "de": "{0}, {1} Uhr" },
+  "Js.Editor.Restored": { "en": "The unsaved input is back. Save to keep it.", "de": "Die ungespeicherten Eingaben sind wieder da. Speichere, um sie zu behalten." },
+
+  "Js.Upload.One": { "en": "Uploading the receipt …", "de": "Der Beleg wird hochgeladen …" },
+  "Js.Upload.Many": { "en": "Uploading {0} receipts …", "de": "{0} Belege werden hochgeladen …" }
+}

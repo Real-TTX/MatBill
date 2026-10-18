@@ -5,7 +5,7 @@ namespace MatBill.UiKit;
 
 public sealed record FilterOption(string Value, string Label);
 
-/// <summary>One filter of the filter dialog: a select with an "Alle" option.</summary>
+/// <summary>One filter of the filter dialog: a select with an "All" option.</summary>
 public sealed record FilterField(string Name, string Label, IReadOnlyList<FilterOption> Options, string? Selected);
 
 public sealed record SortOption(string Value, string Label);
@@ -21,12 +21,12 @@ public sealed class ToolbarModel
 
     public required string Action { get; init; }
 
-    /// <summary>Names the list for screen readers ("Rechnungen").</summary>
-    public string Label { get; init; } = "Liste";
+    /// <summary>Names the list for screen readers ("Invoices").</summary>
+    public string Label { get; init; } = Localization.Text.T("Lists.Label");
 
     public string? Search { get; init; }
 
-    public string SearchPlaceholder { get; init; } = "Suchen";
+    public string SearchPlaceholder { get; init; } = Localization.Text.T("Common.Search");
 
     public IReadOnlyList<FilterField> Filters { get; init; } = [];
 
@@ -42,9 +42,9 @@ public sealed class ToolbarModel
 
     public int Matching { get; init; }
 
-    public string Noun { get; init; } = "Einträge";
+    public string Noun { get; init; } = "Ui.Noun.Entry";
 
-    /// <summary>Query values that are neither search, filter nor sort (the id of a project) and must survive an "Anwenden".</summary>
+    /// <summary>Query values that are neither search, filter nor sort (the id of a project) and must survive an "Apply".</summary>
     public IReadOnlyDictionary<string, string?> Keep { get; init; } = new Dictionary<string, string?>();
 
     public bool SearchActive => !string.IsNullOrWhiteSpace(Search);
@@ -169,9 +169,9 @@ public sealed record TableModel
 
     public required IReadOnlyList<TableRow> Rows { get; init; }
 
-    public string EmptyTitle { get; init; } = "Nichts gefunden";
+    public string EmptyTitle { get; init; } = Localization.Text.T("Lists.Empty.Title");
 
-    public string EmptyText { get; init; } = "Ändere die Suche oder den Filter.";
+    public string EmptyText { get; init; } = Localization.Text.T("Lists.Empty.Text");
 
     public string EmptyIcon { get; init; } = "search";
 

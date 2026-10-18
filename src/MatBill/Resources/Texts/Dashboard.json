@@ -1,0 +1,53 @@
+{
+  "Dashboard.Title": { "en": "Overview", "de": "Übersicht" },
+  "Dashboard.Greeting.Morning": { "en": "Good morning", "de": "Guten Morgen" },
+  "Dashboard.Greeting.Day": { "en": "Hello", "de": "Hallo" },
+  "Dashboard.Greeting.Evening": { "en": "Good evening", "de": "Guten Abend" },
+  "Dashboard.Greeting.Name": { "en": "{0}, {1}", "de": "{0}, {1}" },
+
+  "Dashboard.Setup.Title": { "en": "One more step to your first invoice:", "de": "Noch ein Schritt bis zur ersten Rechnung:" },
+  "Dashboard.Setup.AdminBefore": { "en": "Enter the company name, address, tax number and bank details in", "de": "Trage im" },
+  "Dashboard.Setup.AdminLink": { "en": "Branding", "de": "Branding" },
+  "Dashboard.Setup.AdminAfter": { "en": "– they appear on every invoice.", "de": "Firmennamen, Anschrift, Steuernummer und Bankverbindung ein. Sie stehen auf jeder Rechnung." },
+  "Dashboard.Setup.User": { "en": "An administrator has to enter the company name, tax number and bank details in Branding.", "de": "Ein Administrator muss im Branding Firmennamen, Steuernummer und Bankverbindung eintragen." },
+
+  "Dashboard.Kpi.Open": { "en": "Open", "de": "Offen" },
+  "Dashboard.Kpi.Overdue": { "en": "Overdue", "de": "Überfällig" },
+  "Dashboard.Kpi.NothingOverdue": { "en": "nothing overdue", "de": "nichts überfällig" },
+  "Dashboard.Kpi.PaidIn": { "en": "Paid in {0}", "de": "Bezahlt im {0}" },
+  "Dashboard.Kpi.PaymentsReceived": { "en": "Payments received", "de": "Zahlungseingang" },
+  "Dashboard.Kpi.Revenue": { "en": "Revenue {0}", "de": "Umsatz {0}" },
+  "Dashboard.Kpi.RevenueNote": { "en": "net, issued", "de": "netto, ausgestellt" },
+  "Dashboard.Kpi.Result": { "en": "Result {0}", "de": "Ergebnis {0}" },
+  "Dashboard.Kpi.ResultNote": { "en": "Expenses {0} net", "de": "Ausgaben {0} netto" },
+
+  "Dashboard.Problems.Title": { "en": "This needs a look:", "de": "Das braucht einen Blick:" },
+  "Dashboard.Problems.Series": { "en": "Series “{0}”", "de": "Serie „{0}“" },
+  "Dashboard.Problems.Invoice": { "en": "Invoice {0}", "de": "Rechnung {0}" },
+  "Dashboard.Problems.NotSent": { "en": "was not sent:", "de": "wurde nicht versendet:" },
+
+  "Dashboard.Todo.Title": { "en": "To do:", "de": "Zu erledigen:" },
+  "Dashboard.Todo.Bookings": { "en": "{0} bank transactions without a match", "de": "{0} Kontoumsätze ohne Zuordnung" },
+  "Dashboard.Todo.Receipts": { "en": "Review {0} uploaded receipts", "de": "{0} hochgeladene Belege prüfen" },
+  "Dashboard.Todo.Quotes": { "en": "{0} open quotes are waiting for an answer", "de": "{0} offene Angebote warten auf Antwort" },
+
+  "Dashboard.First.Title": { "en": "Your first invoice", "de": "Deine erste Rechnung" },
+  "Dashboard.First.Text": { "en": "Write it right on the document: type the customer, choose the lines, the totals and taxes calculate themselves.", "de": "Schreib sie direkt auf dem Dokument: Kunde eintippen, Positionen wählen, Summen und Steuern rechnen sich selbst." },
+  "Dashboard.First.New": { "en": "New invoice", "de": "Neue Rechnung" },
+  "Dashboard.First.Sample": { "en": "See sample data", "de": "Beispieldaten ansehen" },
+
+  "Dashboard.Upcoming.Title": { "en": "Next recurring invoices", "de": "Nächste Serienrechnungen" },
+  "Dashboard.Upcoming.None": { "en": "No active series. In an invoice, “Set up recurrence” creates one.", "de": "Keine Serie aktiv. In einer Rechnung richtest du mit „Wiederholung einrichten“ eine ein." },
+  "Dashboard.Upcoming.WillBeSent": { "en": "will be sent", "de": "wird versendet" },
+  "Dashboard.Upcoming.All": { "en": "All recurring invoices", "de": "Alle wiederkehrenden Rechnungen" },
+
+  "Dashboard.Overdue.Title": { "en": "Overdue", "de": "Überfällig" },
+  "Dashboard.Overdue.None": { "en": "Nothing overdue.", "de": "Nichts überfällig." },
+  "Dashboard.Overdue.Since": { "en": "due since {0} ({1} days)", "de": "fällig seit {0} ({1} Tage)" },
+
+  "Dashboard.Recent.Title": { "en": "Recently edited", "de": "Zuletzt bearbeitet" },
+  "Dashboard.Recent.None": { "en": "No invoices yet.", "de": "Noch keine Rechnung." },
+  "Dashboard.Recent.Caption": { "en": "Recently edited invoices", "de": "Zuletzt bearbeitete Rechnungen" },
+  "Dashboard.Recent.Number": { "en": "Number", "de": "Nummer" },
+  "Dashboard.Recent.Customer": { "en": "Customer", "de": "Kunde" }
+}

@@ -57,8 +57,10 @@ public sealed class IndexModel(MbDbContext db, ConfigStore config, ICurrentUser 
     {
         Today = Fmt.Today(clock);
         var hour = Fmt.Local(clock.GetUtcNow().UtcDateTime).Hour;
-        Greeting = (hour < 11 ? "Guten Morgen" : hour < 18 ? "Hallo" : "Guten Abend") + (current.Name is { Length: > 0 } name ? ", " + name.Split(' ')[0] : "");
-        Head("Übersicht", Greeting, ("Übersicht", null));
+        var hello = L[hour < 11 ? "Dashboard.Greeting.Morning" : hour < 18 ? "Dashboard.Greeting.Day" : "Dashboard.Greeting.Evening"].Value;
+        Greeting = current.Name is { Length: > 0 } name ? L["Dashboard.Greeting.Name", hello, name.Split(' ')[0]].Value : hello;
+        var title = L["Dashboard.Title"].Value;
+        Head(title, Greeting, (title, null));
 
         var monthStart = new DateOnly(Today.Year, Today.Month, 1);
         var yearStart = new DateOnly(Today.Year, 1, 1);

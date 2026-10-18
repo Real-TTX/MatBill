@@ -4,12 +4,12 @@
 *@
 @if (Model.Pages > 1)
 {
-    <nav class="mat-pager" aria-label="Seiten">
-        <span class="mat-pager__info">@Model.From bis @Model.To von @Model.Total</span>
+    <nav class="mat-pager" aria-label="@L["Lists.Pager.Label"]">
+        <span class="mat-pager__info">@L["Lists.Pager.Info", Model.From, Model.To, Model.Total]</span>
         <div class="mat-pager__pages">
             @if (Model.Page > 1)
             {
-                <a class="mat-pager__btn" href="@Model.Url(Model.Page - 1)" aria-label="Vorherige Seite" rel="prev">@Ui.Icon("chevron-left")</a>
+                <a class="mat-pager__btn" href="@Model.Url(Model.Page - 1)" aria-label="@L["Lists.Pager.Previous"]" rel="prev">@Ui.Icon("chevron-left")</a>
             }
             else
             {
@@ -28,13 +28,13 @@
                 }
                 else
                 {
-                    <a class="mat-pager__btn" href="@Model.Url(p)" aria-label="Seite @p">@p</a>
+                    <a class="mat-pager__btn" href="@Model.Url(p)" aria-label="@L["Lists.Pager.Page", p]">@p</a>
                 }
             }
 
             @if (Model.Page < Model.Pages)
             {
-                <a class="mat-pager__btn" href="@Model.Url(Model.Page + 1)" aria-label="Nächste Seite" rel="next">@Ui.Icon("chevron-right")</a>
+                <a class="mat-pager__btn" href="@Model.Url(Model.Page + 1)" aria-label="@L["Lists.Pager.Next"]" rel="next">@Ui.Icon("chevron-right")</a>
             }
             else
             {

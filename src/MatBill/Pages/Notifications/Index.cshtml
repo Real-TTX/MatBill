@@ -2,10 +2,10 @@
 @model MatBill.Pages.Notifications.IndexModel
 
 <div class="mat-list">
-    <div class="mat-toolbar" role="toolbar" aria-label="Benachrichtigungen: Werkzeuge">
-        <div class="mat-seg" role="group" aria-label="Anzeigen">
-            <a class="mat-seg__btn" href="/Notifications" aria-pressed="@(!Model.UnreadOnly ? "true" : "false")">Alle</a>
-            <a class="mat-seg__btn" href="/Notifications?unread=true" aria-pressed="@(Model.UnreadOnly ? "true" : "false")">Ungelesen (@Model.Unread)</a>
+    <div class="mat-toolbar" role="toolbar" aria-label="@L["Notifications.Tools"]">
+        <div class="mat-seg" role="group" aria-label="@L["Notifications.Show"]">
+            <a class="mat-seg__btn" href="/Notifications" aria-pressed="@(!Model.UnreadOnly ? "true" : "false")">@L["Common.All"]</a>
+            <a class="mat-seg__btn" href="/Notifications?unread=true" aria-pressed="@(Model.UnreadOnly ? "true" : "false")">@L["Notifications.Unread", Model.Unread]</a>
         </div>
         <span class="mat-toolbar__spacer"></span>
     </div>
@@ -14,8 +14,8 @@
     {
         <div class="mat-empty">
             <span class="mat-empty__icon">@Ui.Icon("bell")</span>
-            <div class="mat-empty__title">@(Model.UnreadOnly ? "Alles gelesen" : "Noch keine Benachrichtigungen")</div>
-            <p>Hier erscheinen anstehende Rechnungen deiner Serien, erstellte und versendete Rechnungen und Probleme.</p>
+            <div class="mat-empty__title">@(Model.UnreadOnly ? L["Notifications.Empty.AllRead"] : L["Notifications.Empty.None"])</div>
+            <p>@L["Notifications.Empty.Text"]</p>
         </div>
     }
     else
@@ -53,7 +53,7 @@
     <form method="post" class="mat-actions">
         @if (Model.Unread > 0)
         {
-            <button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="ReadAll">@Ui.Icon("check")<span>Alle als gelesen markieren</span></button>
+            <button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="ReadAll">@Ui.Icon("check")<span>@L["Notifications.ReadAll"]</span></button>
         }
     </form>
 </div>

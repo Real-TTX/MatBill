@@ -177,7 +177,7 @@ public sealed class InputTagHelper : FieldTagHelper
     {
         var pass = PassThrough(attributes);
         var value = Type == "password" ? string.Empty : ValueText();
-        var message = IsRequired ? $" data-msg-required=\"{WebUtility.HtmlEncode(MsgRequired ?? "Bitte fülle dieses Feld aus.")}\"" : string.Empty;
+        var message = IsRequired ? $" data-msg-required=\"{WebUtility.HtmlEncode(MsgRequired ?? Localization.Text.T("Common.Validation.Required"))}\"" : string.Empty;
         var step = Type == "number" && !pass.Contains("step=", StringComparison.Ordinal) ? " step=\"any\"" : string.Empty;
 
         if (Type == "date")
@@ -300,7 +300,7 @@ public sealed class PickerTagHelper : FieldTagHelper
         sb.Append("><input class=\"mat-picker__input\"").Append(CommonAttributes(id)).Append(" value=\"").Append(WebUtility.HtmlEncode(ValueText())).Append('"');
         if (IsRequired)
         {
-            sb.Append(" data-msg-required=\"Bitte wähle etwas aus.\"");
+            sb.Append(" data-msg-required=\"").Append(WebUtility.HtmlEncode(Localization.Text.T("Controls.Picker.Required"))).Append('"');
         }
 
         sb.Append(" /><div class=\"mat-picker__options\" hidden>");
@@ -321,7 +321,7 @@ public sealed class PickerTagHelper : FieldTagHelper
     }
 }
 
-/// <summary>Select options from an enum, with German labels.</summary>
+/// <summary>Select options from an enum, with the labels of the interface language.</summary>
 public static class Options
 {
     public static List<SelectListItem> Of<TEnum>(Func<TEnum, string> label, IEnumerable<TEnum>? only = null) where TEnum : struct, Enum

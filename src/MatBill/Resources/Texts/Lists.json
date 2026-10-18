@@ -1,0 +1,29 @@
+{
+  "Lists.Label": { "en": "List", "de": "Liste" },
+  "Lists.Empty.Title": { "en": "Nothing found", "de": "Nichts gefunden" },
+  "Lists.Empty.Text": { "en": "Change the search or the filter.", "de": "Ändere die Suche oder den Filter." },
+
+  "Lists.Toolbar.Tools": { "en": "{0}: tools", "de": "{0}: Werkzeuge" },
+  "Lists.Toolbar.SearchIn": { "en": "Search {0}", "de": "{0} durchsuchen" },
+  "Lists.Toolbar.MatchingOf": { "en": "{0} of {1}", "de": "{0} von {1}" },
+  "Lists.Toolbar.Applied": { "en": "Applied tools", "de": "Angewendete Werkzeuge" },
+  "Lists.Toolbar.SearchChip": { "en": "Search: {0}", "de": "Suche: {0}" },
+  "Lists.Toolbar.RemoveSearch": { "en": "Remove search", "de": "Suche entfernen" },
+  "Lists.Toolbar.RemoveFilter": { "en": "Remove filter {0}", "de": "Filter {0} entfernen" },
+  "Lists.Toolbar.KeepHint": { "en": "The search and the sort order are kept.", "de": "Die Suche und die Sortierung bleiben erhalten." },
+  "Lists.Toolbar.Apply": { "en": "Apply", "de": "Anwenden" },
+  "Lists.Toolbar.ResetAll": { "en": "Reset all", "de": "Alles zurücksetzen" },
+  "Lists.Toolbar.SortBy": { "en": "Sort by", "de": "Sortieren nach" },
+  "Lists.Toolbar.Order": { "en": "Order", "de": "Reihenfolge" },
+  "Lists.Toolbar.Ascending": { "en": "Ascending", "de": "Aufsteigend" },
+  "Lists.Toolbar.Descending": { "en": "Descending", "de": "Absteigend" },
+  "Lists.Toolbar.DefaultOrder": { "en": "Default order", "de": "Standardreihenfolge" },
+
+  "Lists.Pager.Label": { "en": "Pages", "de": "Seiten" },
+  "Lists.Pager.Info": { "en": "{0} to {1} of {2}", "de": "{0} bis {1} von {2}" },
+  "Lists.Pager.Previous": { "en": "Previous page", "de": "Vorherige Seite" },
+  "Lists.Pager.Next": { "en": "Next page", "de": "Nächste Seite" },
+  "Lists.Pager.Page": { "en": "Page {0}", "de": "Seite {0}" },
+
+  "Lists.Table.Actions": { "en": "Actions", "de": "Aktionen" }
+}

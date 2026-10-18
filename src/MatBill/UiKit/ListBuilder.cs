@@ -12,11 +12,11 @@ public sealed class ListSpec<T>
 
     public required string Action { get; init; }
 
-    public string Label { get; init; } = "Liste";
+    public string Label { get; init; } = Localization.Text.T("Lists.Label");
 
-    public string Noun { get; init; } = "Einträge";
+    public string Noun { get; init; } = "Ui.Noun.Entry";
 
-    public string SearchPlaceholder { get; init; } = "Suchen";
+    public string SearchPlaceholder { get; init; } = Localization.Text.T("Common.Search");
 
     /// <summary>What a search for a text does to the query; null: the list has no search.</summary>
     public Func<IQueryable<T>, string, IQueryable<T>>? Search { get; init; }

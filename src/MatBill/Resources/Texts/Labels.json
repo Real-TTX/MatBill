@@ -1,0 +1,51 @@
+{
+  "Labels.Role.Admin": { "en": "Administrator", "de": "Administrator" },
+  "Labels.Role.User": { "en": "User", "de": "Benutzer" },
+
+  "Labels.Invoice.Draft": { "en": "Draft", "de": "Entwurf" },
+  "Labels.Invoice.Open": { "en": "Open", "de": "Offen" },
+  "Labels.Invoice.Paid": { "en": "Paid", "de": "Bezahlt" },
+  "Labels.Invoice.Cancelled": { "en": "Cancelled", "de": "Storniert" },
+  "Labels.Invoice.Overdue": { "en": "Overdue", "de": "Überfällig" },
+  "Labels.Invoice.Cancellation": { "en": "Cancellation", "de": "Storno" },
+
+  "Labels.Interval.Weekly": { "en": "Weekly", "de": "Wöchentlich" },
+  "Labels.Interval.Monthly": { "en": "Monthly", "de": "Monatlich" },
+  "Labels.Interval.Quarterly": { "en": "Quarterly", "de": "Quartalsweise" },
+  "Labels.Interval.HalfYearly": { "en": "Half-yearly", "de": "Halbjährlich" },
+  "Labels.Interval.Yearly": { "en": "Yearly", "de": "Jährlich" },
+
+  "Labels.Recurring.Active": { "en": "Active", "de": "Aktiv" },
+  "Labels.Recurring.Paused": { "en": "Paused", "de": "Pausiert" },
+  "Labels.Recurring.Ended": { "en": "Ended", "de": "Beendet" },
+  "Labels.Recurring.Failed": { "en": "Error", "de": "Fehler" },
+
+  "Labels.Quote.Draft": { "en": "Draft", "de": "Entwurf" },
+  "Labels.Quote.Open": { "en": "Open", "de": "Offen" },
+  "Labels.Quote.Accepted": { "en": "Accepted", "de": "Angenommen" },
+  "Labels.Quote.Declined": { "en": "Declined", "de": "Abgelehnt" },
+  "Labels.Quote.Invoiced": { "en": "Invoiced", "de": "In Rechnung" },
+  "Labels.Quote.Expired": { "en": "Expired", "de": "Abgelaufen" },
+
+  "Labels.Customer.Company": { "en": "Company", "de": "Firma" },
+  "Labels.Customer.Person": { "en": "Person", "de": "Person" },
+
+  "Labels.Product.Service": { "en": "Service", "de": "Leistung" },
+  "Labels.Product.Product": { "en": "Product", "de": "Produkt" },
+
+  "Labels.Send.Pending": { "en": "waiting to be sent", "de": "wartet auf Versand" },
+  "Labels.Send.Sent": { "en": "sent", "de": "versendet" },
+  "Labels.Send.Failed": { "en": "sending failed", "de": "Versand fehlgeschlagen" },
+  "Labels.Send.NotSent": { "en": "not sent", "de": "nicht versendet" },
+
+  "Labels.BackupScope.SystemOnly": { "en": "System (database and settings)", "de": "System (Datenbank und Einstellungen)" },
+  "Labels.BackupScope.All": { "en": "System and files", "de": "System und Dateien" },
+
+  "Labels.BackupTarget.Smb": { "en": "NAS (SMB share)", "de": "NAS (SMB-Freigabe)" },
+  "Labels.BackupTarget.Folder": { "en": "Folder on the server", "de": "Ordner auf dem Server" },
+
+  "Labels.Schedule.Hourly": { "en": "Hourly", "de": "Stündlich" },
+  "Labels.Schedule.Daily": { "en": "Daily", "de": "Täglich" },
+  "Labels.Schedule.Weekly": { "en": "Weekly", "de": "Wöchentlich" },
+  "Labels.Schedule.Monthly": { "en": "Monthly", "de": "Monatlich" }
+}

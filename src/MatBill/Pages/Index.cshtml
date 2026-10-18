@@ -6,25 +6,25 @@
     <div class="mat-alert mat-alert--info" role="note">
         @Ui.Icon("info")
         <div class="mat-alert__body">
-            <strong>Noch ein Schritt bis zur ersten Rechnung:</strong>
+            <strong>@L["Dashboard.Setup.Title"]</strong>
             @if (Model.IsAdmin)
             {
-                <span>Trage im <a href="/Branding">Branding</a> Firmennamen, Anschrift, Steuernummer und Bankverbindung ein. Sie stehen auf jeder Rechnung.</span>
+                <span>@L["Dashboard.Setup.AdminBefore"] <a href="/Branding">@L["Dashboard.Setup.AdminLink"]</a> @L["Dashboard.Setup.AdminAfter"]</span>
             }
             else
             {
-                <span>Ein Administrator muss im Branding Firmennamen, Steuernummer und Bankverbindung eintragen.</span>
+                <span>@L["Dashboard.Setup.User"]</span>
             }
         </div>
     </div>
 }
 
 <div class="mb-stats">
-    @Ui.Kpi("Offen", Fmt.Money(Model.Open), Ui.CountNoun(Model.OpenCount, "Rechnungen"), "clock", href: "/Invoices?status=offen")
-    @Ui.Kpi("Überfällig", Fmt.Money(Model.Overdue), Model.OverdueCount == 0 ? "nichts überfällig" : Ui.CountNoun(Model.OverdueCount, "Rechnungen"), "alert", href: "/Invoices?status=ueberfaellig", bad: Model.OverdueCount > 0)
-    @Ui.Kpi("Bezahlt im " + Model.Today.ToString("MMMM", Fmt.Culture), Fmt.Money(Model.PaidThisMonth), "Zahlungseingang", "check-circle", href: "/Invoices?status=bezahlt")
-    @Ui.Kpi("Umsatz " + Model.Today.Year, Fmt.Money(Model.RevenueThisYear), "netto, ausgestellt", "trending-up", href: $"/Invoices?jahr={Model.Today.Year}")
-    @Ui.Kpi("Ergebnis " + Model.Today.Year, Fmt.Money(Model.RevenueThisYear - Model.ExpensesThisYear), $"Ausgaben {Fmt.Money(Model.ExpensesThisYear)} netto", "bar-chart", href: "/Export", bad: Model.RevenueThisYear < Model.ExpensesThisYear)
+    @Ui.Kpi(L["Dashboard.Kpi.Open"], Fmt.Money(Model.Open), Ui.CountNoun(Model.OpenCount, "Ui.Noun.Invoice"), "clock", href: "/Invoices?status=open")
+    @Ui.Kpi(L["Dashboard.Kpi.Overdue"], Fmt.Money(Model.Overdue), Model.OverdueCount == 0 ? L["Dashboard.Kpi.NothingOverdue"].Value : Ui.CountNoun(Model.OverdueCount, "Ui.Noun.Invoice"), "alert", href: "/Invoices?status=overdue", bad: Model.OverdueCount > 0)
+    @Ui.Kpi(L["Dashboard.Kpi.PaidIn", Model.Today.ToString("MMMM", Fmt.Culture)], Fmt.Money(Model.PaidThisMonth), L["Dashboard.Kpi.PaymentsReceived"], "check-circle", href: "/Invoices?status=paid")
+    @Ui.Kpi(L["Dashboard.Kpi.Revenue", Model.Today.Year], Fmt.Money(Model.RevenueThisYear), L["Dashboard.Kpi.RevenueNote"], "trending-up", href: $"/Invoices?year={Model.Today.Year}")
+    @Ui.Kpi(L["Dashboard.Kpi.Result", Model.Today.Year], Fmt.Money(Model.RevenueThisYear - Model.ExpensesThisYear), L["Dashboard.Kpi.ResultNote", Fmt.Money(Model.ExpensesThisYear)], "bar-chart", href: "/Export", bad: Model.RevenueThisYear < Model.ExpensesThisYear)
 </div>
 
 @if (Model.SeriesProblems.Count > 0 || Model.SendProblems.Count > 0)
@@ -32,15 +32,15 @@
     <div class="mat-alert mat-alert--danger" role="alert">
         @Ui.Icon("x-circle")
         <div class="mat-alert__body">
-            <strong>Das braucht einen Blick:</strong>
+            <strong>@L["Dashboard.Problems.Title"]</strong>
             <ul class="mat-alert__list">
                 @foreach (var s in Model.SeriesProblems)
                 {
-                    <li><a href="/Recurring/Edit?id=@s.Id">Serie „@s.Name“</a>: @s.LastError</li>
+                    <li><a href="/Recurring/Edit?id=@s.Id">@L["Dashboard.Problems.Series", s.Name]</a>: @s.LastError</li>
                 }
                 @foreach (var i in Model.SendProblems)
                 {
-                    <li><a href="/Invoices/Edit?id=@i.Id">Rechnung @i.Number</a> wurde nicht versendet: @i.SendError</li>
+                    <li><a href="/Invoices/Edit?id=@i.Id">@L["Dashboard.Problems.Invoice", i.Number ?? ""]</a> @L["Dashboard.Problems.NotSent"] @i.SendError</li>
                 }
             </ul>
         </div>
@@ -52,11 +52,11 @@
     <div class="mat-alert mat-alert--info" role="note">
         @Ui.Icon("info")
         <div class="mat-alert__body">
-            <strong>Zu erledigen:</strong>
+            <strong>@L["Dashboard.Todo.Title"]</strong>
             <ul class="mat-alert__list">
-                @if (Model.OpenBookings > 0) { <li><a href="/Banking?status=offen">@Model.OpenBookings Kontoumsätze ohne Zuordnung</a></li> }
-                @if (Model.ExpensesToReview > 0) { <li><a href="/Expenses?status=pruefen">@Model.ExpensesToReview hochgeladene Belege prüfen</a></li> }
-                @if (Model.OpenQuotes > 0) { <li><a href="/Quotes?status=offen">@Model.OpenQuotes offene Angebote warten auf Antwort</a></li> }
+                @if (Model.OpenBookings > 0) { <li><a href="/Banking?status=open">@L["Dashboard.Todo.Bookings", Model.OpenBookings]</a></li> }
+                @if (Model.ExpensesToReview > 0) { <li><a href="/Expenses?status=review">@L["Dashboard.Todo.Receipts", Model.ExpensesToReview]</a></li> }
+                @if (Model.OpenQuotes > 0) { <li><a href="/Quotes?status=open">@L["Dashboard.Todo.Quotes", Model.OpenQuotes]</a></li> }
             </ul>
         </div>
     </div>
@@ -66,13 +66,13 @@
 {
     <div class="mat-empty mat-empty--framed mat-empty--first">
         <span class="mat-empty__icon">@Ui.Icon("file-text")</span>
-        <div class="mat-empty__title">Deine erste Rechnung</div>
-        <p>Schreib sie direkt auf dem Dokument: Kunde eintippen, Positionen wählen, Summen und Steuern rechnen sich selbst.</p>
+        <div class="mat-empty__title">@L["Dashboard.First.Title"]</div>
+        <p>@L["Dashboard.First.Text"]</p>
         <div class="mat-btn-row mat-btn-row--plain">
-            <a class="mat-btn mat-btn--primary" href="/Invoices/Edit">@Ui.Icon("plus")<span>Neue Rechnung</span></a>
+            <a class="mat-btn mat-btn--primary" href="/Invoices/Edit">@Ui.Icon("plus")<span>@L["Dashboard.First.New"]</span></a>
             @if (Model.IsAdmin)
             {
-                <a class="mat-btn mat-btn--secondary" href="/Admin/System">@Ui.Icon("sparkles")<span>Beispieldaten ansehen</span></a>
+                <a class="mat-btn mat-btn--secondary" href="/Admin/System">@Ui.Icon("sparkles")<span>@L["Dashboard.First.Sample"]</span></a>
             }
         </div>
     </div>
@@ -80,11 +80,11 @@
 
 <div class="mat-grid mat-grid--2">
     <section class="mat-card" aria-labelledby="upcoming-title">
-        <div class="mat-card__head">@Ui.Icon("repeat")<h2 class="mat-card__title" id="upcoming-title">Nächste Serienrechnungen</h2></div>
+        <div class="mat-card__head">@Ui.Icon("repeat")<h2 class="mat-card__title" id="upcoming-title">@L["Dashboard.Upcoming.Title"]</h2></div>
         <div class="mat-card__body">
             @if (Model.Upcoming.Count == 0)
             {
-                <p class="mat-muted">Keine Serie aktiv. In einer Rechnung richtest du mit „Wiederholung einrichten“ eine ein.</p>
+                <p class="mat-muted">@L["Dashboard.Upcoming.None"]</p>
             }
             else
             {
@@ -95,22 +95,22 @@
                             @Ui.Icon("calendar", "mb-note__icon mb-note__icon--info")
                             <div class="mb-note__body">
                                 <a class="mb-note__title" href="/Recurring/Edit?id=@s.Id">@s.Name</a>
-                                <span class="mb-note__meta">@Fmt.Due(s.NextRunDate, Model.Today) · @Labels.Of(s.Interval) · @Fmt.Money(gross)@(s.AutoSend ? " · wird versendet" : "")</span>
+                                <span class="mb-note__meta">@Fmt.Due(s.NextRunDate, Model.Today) · @Labels.Of(s.Interval) · @Fmt.Money(gross)@(s.AutoSend ? " · " + L["Dashboard.Upcoming.WillBeSent"].Value : "")</span>
                             </div>
                         </li>
                     }
                 </ul>
             }
-            <p class="mat-hint"><a href="/Recurring">Alle wiederkehrenden Rechnungen</a></p>
+            <p class="mat-hint"><a href="/Recurring">@L["Dashboard.Upcoming.All"]</a></p>
         </div>
     </section>
 
     <section class="mat-card" aria-labelledby="overdue-title">
-        <div class="mat-card__head">@Ui.Icon("alert")<h2 class="mat-card__title" id="overdue-title">Überfällig</h2></div>
+        <div class="mat-card__head">@Ui.Icon("alert")<h2 class="mat-card__title" id="overdue-title">@L["Dashboard.Overdue.Title"]</h2></div>
         <div class="mat-card__body">
             @if (Model.OverdueList.Count == 0)
             {
-                <p class="mat-muted">Nichts überfällig.</p>
+                <p class="mat-muted">@L["Dashboard.Overdue.None"]</p>
             }
             else
             {
@@ -121,7 +121,7 @@
                             @Ui.Icon("clock", "mb-note__icon mb-note__icon--error")
                             <div class="mb-note__body">
                                 <a class="mb-note__title" href="/Invoices/Edit?id=@i.Id">@i.Number · @i.RecipientName</a>
-                                <span class="mb-note__meta">@Fmt.Money(i.GrossTotal) · fällig seit @Fmt.Date(i.DueDate) (@(Model.Today.DayNumber - i.DueDate.DayNumber) Tage)</span>
+                                <span class="mb-note__meta">@Fmt.Money(i.GrossTotal) · @L["Dashboard.Overdue.Since", Fmt.Date(i.DueDate), Model.Today.DayNumber - i.DueDate.DayNumber]</span>
                             </div>
                         </li>
                     }
@@ -132,27 +132,32 @@
 </div>
 
 <section class="mat-card" aria-labelledby="recent-title">
-    <div class="mat-card__head">@Ui.Icon("file-text")<h2 class="mat-card__title" id="recent-title">Zuletzt bearbeitet</h2>@if (Model.Drafts > 0) { <a class="mat-card__sub" href="/Invoices?status=entwurf">@Ui.CountNoun(Model.Drafts, "Entwürfe")</a> }</div>
+    <div class="mat-card__head">@Ui.Icon("file-text")<h2 class="mat-card__title" id="recent-title">@L["Dashboard.Recent.Title"]</h2>@if (Model.Drafts > 0) { <a class="mat-card__sub" href="/Invoices?status=draft">@Ui.CountNoun(Model.Drafts, "Ui.Noun.Draft")</a> }</div>
     <div class="mat-card__body">
         @if (Model.Recent.Count == 0)
         {
-            <p class="mat-muted">Noch keine Rechnung.</p>
+            <p class="mat-muted">@L["Dashboard.Recent.None"]</p>
         }
         else
         {
+            var number = L["Dashboard.Recent.Number"].Value;
+            var customer = L["Dashboard.Recent.Customer"].Value;
+            var date = L["Common.Date"].Value;
+            var amount = L["Common.Amount"].Value;
+            var status = L["Common.Status"].Value;
             <div class="mat-table-wrap">
                 <table class="mat-table">
-                    <caption class="mat-sr-only">Zuletzt bearbeitete Rechnungen</caption>
-                    <thead><tr><th scope="col">Nummer</th><th scope="col">Kunde</th><th scope="col" class="mat-hide-sm">Datum</th><th scope="col" class="mat-num">Betrag</th><th scope="col">Status</th></tr></thead>
+                    <caption class="mat-sr-only">@L["Dashboard.Recent.Caption"]</caption>
+                    <thead><tr><th scope="col">@number</th><th scope="col">@customer</th><th scope="col" class="mat-hide-sm">@date</th><th scope="col" class="mat-num">@amount</th><th scope="col">@status</th></tr></thead>
                     <tbody>
                         @foreach (var i in Model.Recent)
                         {
                             <tr>
-                                <td data-label="Nummer"><a href="/Invoices/Edit?id=@i.Id">@(i.Number ?? "Entwurf")</a></td>
-                                <td data-label="Kunde">@i.RecipientName</td>
-                                <td data-label="Datum" class="mat-hide-sm">@Fmt.Date(i.InvoiceDate)</td>
-                                <td data-label="Betrag" class="mat-num">@Ui.Money(i.GrossTotal)</td>
-                                <td data-label="Status">@Labels.Pill(i, Model.Today)</td>
+                                <td data-label="@number"><a href="/Invoices/Edit?id=@i.Id">@(i.Number ?? Labels.Of(InvoiceStatus.Draft))</a></td>
+                                <td data-label="@customer">@i.RecipientName</td>
+                                <td data-label="@date" class="mat-hide-sm">@Fmt.Date(i.InvoiceDate)</td>
+                                <td data-label="@amount" class="mat-num">@Ui.Money(i.GrossTotal)</td>
+                                <td data-label="@status">@Labels.Pill(i, Model.Today)</td>
                             </tr>
                         }
                     </tbody>

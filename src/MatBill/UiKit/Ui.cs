@@ -87,7 +87,7 @@ public static partial class Ui
 
     public static IHtmlContent Mono(string? text) => new HtmlString($"<span class=\"mat-mono\">{WebUtility.HtmlEncode(text ?? string.Empty)}</span>");
 
-    /// <summary>An amount in a cell: German, with the euro sign, tabular figures.</summary>
+    /// <summary>An amount in a cell: in the format of the interface language, with the euro sign, tabular figures.</summary>
     public static IHtmlContent Money(decimal amount) => new HtmlString($"<span class=\"mb-money\">{WebUtility.HtmlEncode(Services.Fmt.Money(amount))}</span>");
 
     /// <summary>Several pieces of markup after each other (a status pill and a second line, for example).</summary>
@@ -97,7 +97,7 @@ public static partial class Ui
     public static IHtmlContent Avatar(string? name, string size = "")
     {
         var cls = string.IsNullOrEmpty(size) ? "mat-avatar" : $"mat-avatar mat-avatar--{size}";
-        var shown = string.IsNullOrWhiteSpace(name) ? "Niemand" : name;
+        var shown = string.IsNullOrWhiteSpace(name) ? Localization.Text.T("Ui.Nobody") : name;
         return new HtmlString($"<span class=\"{cls}\" role=\"img\" aria-label=\"{WebUtility.HtmlEncode(shown)}\" data-tip=\"{WebUtility.HtmlEncode(shown)}\">{WebUtility.HtmlEncode(Services.Fmt.Initials(name))}</span>");
     }
 
@@ -107,16 +107,37 @@ public static partial class Ui
             ? None()
             : new HtmlString($"<span class=\"mb-person\">{Avatar(name, "sm").ToHtml()}<span>{WebUtility.HtmlEncode(name)}</span></span>");
 
-    private static readonly Dictionary<string, string> Singulars = new(StringComparer.Ordinal)
+    // The nouns of Resources/Texts/Ui.json ("Ui.Noun.Invoice.One" / ".Many"), found by their plural in any language: "Rechnungen", "invoices" and "Invoices" all name Invoice.
+    private static readonly Lazy<Dictionary<string, string>> Nouns = new(() =>
     {
-        ["Einträge"] = "Eintrag", ["Pläne"] = "Plan", ["Ziele"] = "Ziel", ["Links"] = "Link", ["Freigaben"] = "Freigabe", ["Rechnungen"] = "Rechnung",
-        ["Kunden"] = "Kunde", ["Produkte"] = "Produkt", ["Serien"] = "Serie", ["Benachrichtigungen"] = "Benachrichtigung", ["Positionen"] = "Position", ["Entwürfe"] = "Entwurf",
-    };
+        var nouns = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (key, texts) in Localization.TextCatalog.Entries)
+        {
+            if (key.StartsWith("Ui.Noun.", StringComparison.Ordinal) && key.EndsWith(".Many", StringComparison.Ordinal))
+            {
+                var noun = key[..^".Many".Length];
+                nouns[noun] = noun;
+                foreach (var plural in texts.Values)
+                {
+                    nouns.TryAdd(plural, noun);
+                }
+            }
+        }
 
-    /// <summary>The name of the things in a list for a count: "1 Rechnung", "3 Rechnungen". Names that are not known keep their plural.</summary>
-    public static string CountNoun(long count, string plural) => $"{Services.Fmt.Integer(count)} {(count == 1 && Singulars.TryGetValue(plural, out var one) ? one : plural)}";
+        return nouns;
+    });
 
-    /// <summary>A phrase with a count in German: "1 Plan aktiv", "3 Pläne aktiv".</summary>
+    /// <summary>
+    /// The name of the things in a list for a count, in the language of the interface: "1 invoice", "3 invoices" / "1 Rechnung", "3 Rechnungen".
+    /// <paramref name="plural"/> is a plural of Ui.json in any language (or its key without ".Many", "Ui.Noun.Invoice"); a name that is not known is shown as it is.
+    /// </summary>
+    public static string CountNoun(long count, string plural)
+    {
+        var word = Nouns.Value.TryGetValue(plural, out var noun) ? Localization.Text.T(noun + (count == 1 ? ".One" : ".Many")) : plural;
+        return $"{Services.Fmt.Integer(count)} {word}";
+    }
+
+    /// <summary>A phrase with a count: "1 plan active", "3 plans active" (the caller passes both forms, already in the language of the interface).</summary>
     public static string Plural(int count, string one, string many) => $"{count} {(count == 1 ? one : many)}";
 
     /// <summary>The markup of a content as text (a cell that is made of other cells).</summary>

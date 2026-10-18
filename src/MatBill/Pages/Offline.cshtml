@@ -3,18 +3,19 @@
 @attribute [AllowAnonymous]
 @{
     // The page the service worker shows when there is no connection and no copy of the page that was asked for. It holds no data of anybody.
+    // It is cached when the worker installs, in the language of that moment.
     Layout = "_Bare";
-    ViewData["Title"] = "Keine Verbindung";
+    ViewData["Title"] = L["Offline.Title"].Value;
 }
 
 <div class="mat-auth__card" data-offline-page>
     <div class="mat-auth__brand">
         @Ui.Logo("lg")
-        <h1>Keine Verbindung</h1>
-        <p class="mat-muted">MatBill erreicht den Server gerade nicht. Seiten, die du schon geöffnet hattest, kannst du weiter lesen; speichern geht wieder, sobald die Verbindung zurück ist.</p>
-        <p class="mat-muted" aria-live="polite" data-offline-status>Es wird automatisch erneut versucht.</p>
+        <h1>@L["Offline.Title"]</h1>
+        <p class="mat-muted">@L["Offline.Text"]</p>
+        <p class="mat-muted" aria-live="polite" data-offline-status>@L["Offline.Status"]</p>
     </div>
     <div class="mat-btn-row mat-btn-row--plain">
-        <button type="button" class="mat-btn mat-btn--primary mat-btn--block" data-reconnect>@Ui.Icon("refresh")<span>Erneut verbinden</span></button>
+        <button type="button" class="mat-btn mat-btn--primary mat-btn--block" data-reconnect>@Ui.Icon("refresh")<span>@L["Shell.Reconnect"]</span></button>
     </div>
 </div>

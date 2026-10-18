@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using MatBill.Localization;
 using MatBill.UiKit;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
@@ -14,7 +15,7 @@ namespace MatBill.Controls;
 [HtmlTargetElement("mb-buttons")]
 public sealed class ButtonsTagHelper : TagHelper
 {
-    public string SaveText { get; set; } = "Speichern";
+    public string? SaveText { get; set; }
 
     public string SaveIcon { get; set; } = "save";
 
@@ -22,14 +23,14 @@ public sealed class ButtonsTagHelper : TagHelper
 
     public string? BackHref { get; set; }
 
-    public string BackText { get; set; } = "Zurück";
+    public string? BackText { get; set; }
 
     /// <summary>The address of the delete handler: the button posts the same form there, after a confirmation dialog.</summary>
     public string? DeleteUrl { get; set; }
 
     public string? DeleteConfirm { get; set; }
 
-    public string DeleteText { get; set; } = "Löschen";
+    public string? DeleteText { get; set; }
 
     public override async Task ProcessAsync(TagHelperContext context, TagHelperOutput output)
     {
@@ -37,12 +38,12 @@ public sealed class ButtonsTagHelper : TagHelper
         var sb = new StringBuilder("<div class=\"mat-btn-row\">");
         if (!NoSave)
         {
-            sb.Append("<button type=\"submit\" class=\"mat-btn mat-btn--primary\">").Append(Ui.Icon(SaveIcon).ToHtml()).Append("<span>").Append(WebUtility.HtmlEncode(SaveText)).Append("</span></button>");
+            sb.Append("<button type=\"submit\" class=\"mat-btn mat-btn--primary\">").Append(Ui.Icon(SaveIcon).ToHtml()).Append("<span>").Append(WebUtility.HtmlEncode(SaveText ?? Text.T("Common.Save"))).Append("</span></button>");
         }
 
         if (BackHref is not null)
         {
-            sb.Append("<a class=\"mat-btn mat-btn--secondary\" href=\"").Append(WebUtility.HtmlEncode(BackHref)).Append("\">").Append(Ui.Icon("back").ToHtml()).Append("<span>").Append(WebUtility.HtmlEncode(BackText)).Append("</span></a>");
+            sb.Append("<a class=\"mat-btn mat-btn--secondary\" href=\"").Append(WebUtility.HtmlEncode(BackHref)).Append("\">").Append(Ui.Icon("back").ToHtml()).Append("<span>").Append(WebUtility.HtmlEncode(BackText ?? Text.T("Common.Back"))).Append("</span></a>");
         }
 
         sb.Append(extra);
@@ -50,8 +51,8 @@ public sealed class ButtonsTagHelper : TagHelper
         {
             sb.Append("<span class=\"mat-btn-row__spacer\"></span>");
             sb.Append("<button type=\"submit\" formnovalidate formaction=\"").Append(WebUtility.HtmlEncode(DeleteUrl)).Append("\" class=\"mat-btn mat-btn--danger\"")
-              .Append(" data-confirm=\"").Append(WebUtility.HtmlEncode(DeleteConfirm ?? "Wirklich löschen? Das kann nicht rückgängig gemacht werden.")).Append("\" data-confirm-ok=\"").Append(WebUtility.HtmlEncode(DeleteText)).Append("\">")
-              .Append(Ui.Icon("trash").ToHtml()).Append("<span>").Append(WebUtility.HtmlEncode(DeleteText)).Append("</span></button>");
+              .Append(" data-confirm=\"").Append(WebUtility.HtmlEncode(DeleteConfirm ?? Text.T("Controls.Delete.Confirm"))).Append("\" data-confirm-ok=\"").Append(WebUtility.HtmlEncode(DeleteText ?? Text.T("Common.Delete"))).Append("\">")
+              .Append(Ui.Icon("trash").ToHtml()).Append("<span>").Append(WebUtility.HtmlEncode(DeleteText ?? Text.T("Common.Delete"))).Append("</span></button>");
         }
 
         sb.Append("</div>");
@@ -117,7 +118,7 @@ public sealed class TabsTagHelper : TagHelper
 
         var selected = tabs.Any(t => t.Id == Selected) ? Selected : tabs.FirstOrDefault()?.Id;
         var sb = new StringBuilder();
-        sb.Append("<div data-tabs id=\"").Append(Id).Append("\"><div class=\"mat-tabs\" role=\"tablist\" aria-label=\"").Append(WebUtility.HtmlEncode(Label ?? "Bereiche")).Append("\">");
+        sb.Append("<div data-tabs id=\"").Append(Id).Append("\"><div class=\"mat-tabs\" role=\"tablist\" aria-label=\"").Append(WebUtility.HtmlEncode(Label ?? Text.T("Controls.Tabs.Label"))).Append("\">");
         foreach (var t in tabs)
         {
             var isSelected = t.Id == selected;
@@ -168,7 +169,7 @@ public sealed class SummaryTagHelper : TagHelper
     [HtmlAttributeNotBound, ViewContext]
     public ViewContext ViewContext { get; set; } = null!;
 
-    public string Title { get; set; } = "Bitte prüfe das Formular.";
+    public string? Title { get; set; }
 
     public override void Process(TagHelperContext context, TagHelperOutput output)
     {
@@ -179,7 +180,7 @@ public sealed class SummaryTagHelper : TagHelper
 
         var sb = new StringBuilder();
         sb.Append("<div class=\"mat-alert mat-alert--danger\" role=\"alert\" data-validation-summary").Append(errors.Count == 0 ? " hidden" : "").Append('>')
-          .Append(Ui.Icon("x-circle").ToHtml()).Append("<div class=\"mat-alert__body\"><strong>").Append(WebUtility.HtmlEncode(Title)).Append("</strong><ul class=\"mat-alert__list\">");
+          .Append(Ui.Icon("x-circle").ToHtml()).Append("<div class=\"mat-alert__body\"><strong>").Append(WebUtility.HtmlEncode(Title ?? Text.T("Controls.Summary.Title"))).Append("</strong><ul class=\"mat-alert__list\">");
         foreach (var (key, message) in errors)
         {
             var target = string.IsNullOrEmpty(key) ? "" : "#" + TagBuilder.CreateSanitizedId(key, "_");

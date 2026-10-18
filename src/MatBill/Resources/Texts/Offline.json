@@ -1,0 +1,5 @@
+{
+  "Offline.Title": { "en": "No connection", "de": "Keine Verbindung" },
+  "Offline.Text": { "en": "MatBill cannot reach the server right now. Pages you had already opened can still be read; saving works again as soon as the connection is back.", "de": "MatBill erreicht den Server gerade nicht. Seiten, die du schon geöffnet hattest, kannst du weiter lesen; speichern geht wieder, sobald die Verbindung zurück ist." },
+  "Offline.Status": { "en": "Retrying automatically.", "de": "Es wird automatisch erneut versucht." }
+}

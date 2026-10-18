@@ -19,7 +19,7 @@
 
 @foreach (var menu in shell.Menus)
 {
-    <nav class="mat-nav__scroll" aria-label="@(shell.HasSwitcher ? menu.Title : "Hauptmenü")" data-nav-panel="@menu.Id" hidden="@(menu != current)">
+    <nav class="mat-nav__scroll" aria-label="@(shell.HasSwitcher ? menu.Title : L["Shell.MainMenu"].Value)" data-nav-panel="@menu.Id" hidden="@(menu != current)">
         <ul class="mat-nav__list">
             @foreach (var group in menu.Groups)
             {

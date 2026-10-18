@@ -1,0 +1,12 @@
+{
+  "Notifications.Title": { "en": "Notifications", "de": "Benachrichtigungen" },
+  "Notifications.Sub": { "en": "Upcoming invoices, created invoices and problems.", "de": "Anstehende Rechnungen, erstellte Rechnungen und Probleme." },
+  "Notifications.Tools": { "en": "Notifications: tools", "de": "Benachrichtigungen: Werkzeuge" },
+  "Notifications.Show": { "en": "Show", "de": "Anzeigen" },
+  "Notifications.Unread": { "en": "Unread ({0})", "de": "Ungelesen ({0})" },
+  "Notifications.Empty.AllRead": { "en": "All read", "de": "Alles gelesen" },
+  "Notifications.Empty.None": { "en": "No notifications yet", "de": "Noch keine Benachrichtigungen" },
+  "Notifications.Empty.Text": { "en": "Upcoming invoices of your series, created and sent invoices and problems appear here.", "de": "Hier erscheinen anstehende Rechnungen deiner Serien, erstellte und versendete Rechnungen und Probleme." },
+  "Notifications.ReadAll": { "en": "Mark all as read", "de": "Alle als gelesen markieren" },
+  "Notifications.AllRead": { "en": "All notifications are marked as read.", "de": "Alle Benachrichtigungen sind als gelesen markiert." }
+}

@@ -38,13 +38,13 @@ public sealed record NavBadge(string Text, string Tone = "accent", string? Label
 
 /// <summary>
 /// An item of the menu. With <see cref="Children"/> it is the parent of a submenu: a button that opens its children, one level deep. <see cref="Primary"/> is the
-/// main action of the app (SHELL-19): the first item, filled with the accent.
+/// main action of the app (SHELL-19): the first item, filled with the accent. <see cref="Id"/> names a parent independent of the language of its title.
 /// </summary>
-public sealed record NavItem(string Title, string? Href, string? Icon, NavBadge? Badge = null, IReadOnlyList<NavItem>? Children = null, bool Primary = false)
+public sealed record NavItem(string Title, string? Href, string? Icon, NavBadge? Badge = null, IReadOnlyList<NavItem>? Children = null, bool Primary = false, string? Id = null)
 {
     public bool IsParent => Children is { Count: > 0 };
 
-    public string Key => Regex.Replace(Title.ToLowerInvariant(), "[^a-z0-9]+", "-").Trim('-');
+    public string Key => Id ?? Regex.Replace(Title.ToLowerInvariant(), "[^a-z0-9]+", "-").Trim('-');
 
     public bool Contains(string? href) => href is not null && (Href == href || (Children?.Any(c => c.Href == href) ?? false));
 

@@ -1,14 +1,14 @@
 {
   "name": "MatBill",
   "short_name": "MatBill",
-  "description": "Rechnungen schreiben, versenden und wiederholen.",
+  "description": "Write, send and repeat invoices.",
   "id": "/",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone"],
   "orientation": "any",
-  "lang": "de",
+  "lang": "en",
   "dir": "ltr",
   "background_color": "#f5f4f1",
   "theme_color": "#f5f4f1",
@@ -21,8 +21,8 @@
     { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ],
   "shortcuts": [
-    { "name": "Neue Rechnung", "url": "/Invoices/Edit", "icons": [{ "src": "/img/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Rechnungen", "url": "/Invoices", "icons": [{ "src": "/img/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Wiederkehrende Rechnungen", "url": "/Recurring", "icons": [{ "src": "/img/icon-192.png", "sizes": "192x192" }] }
+    { "name": "New invoice", "url": "/Invoices/Edit", "icons": [{ "src": "/img/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Invoices", "url": "/Invoices", "icons": [{ "src": "/img/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Recurring invoices", "url": "/Recurring", "icons": [{ "src": "/img/icon-192.png", "sizes": "192x192" }] }
   ]
 }

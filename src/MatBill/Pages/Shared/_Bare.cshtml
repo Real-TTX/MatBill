@@ -8,7 +8,7 @@
 <html @ClientTexts.RootAttributes() data-app="matbill" data-sw="@(AppVersion.Current)-@(Sprite.Hash)" @(ViewData["ClearKept"] is true ? "data-clear-kept" : "") @Html.Raw(shell.RootAttributes)>
 <partial name="_Head" model="(shell, title)" />
 <body>
-    <a class="mat-skip" href="#main">Zum Inhalt springen</a>
+    <a class="mat-skip" href="#main">@L["Shell.SkipToContent"]</a>
     @Html.Raw(Sprite.Html)
     <main class="@(ViewData["Wide"] is true ? "mat-container mb-bare" : "mat-auth")" id="main">
         @RenderBody()

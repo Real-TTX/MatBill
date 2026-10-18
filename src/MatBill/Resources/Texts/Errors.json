@@ -1,0 +1,11 @@
+{
+  "Errors.NotFound.Title": { "en": "This does not exist", "de": "Das gibt es nicht" },
+  "Errors.NotFound.Text": { "en": "This page or entry does not exist, or you are not allowed to see it.", "de": "Diese Seite oder dieser Eintrag existiert nicht, oder du darfst ihn nicht sehen." },
+  "Errors.Forbidden.Title": { "en": "No access", "de": "Kein Zugriff" },
+  "Errors.Forbidden.Text": { "en": "You do not have permission for this page.", "de": "Für diese Seite fehlt dir die Berechtigung." },
+  "Errors.BadRequest.Title": { "en": "The request is not right", "de": "Die Anfrage stimmt nicht" },
+  "Errors.BadRequest.Text": { "en": "The request could not be processed. Please try again.", "de": "Die Anfrage konnte nicht verarbeitet werden. Versuche es bitte noch einmal." },
+  "Errors.General.Title": { "en": "That did not work", "de": "Das hat nicht geklappt" },
+  "Errors.General.Text": { "en": "An error occurred. It has been logged. Please try again.", "de": "Es ist ein Fehler aufgetreten. Er ist protokolliert. Versuche es bitte noch einmal." },
+  "Errors.Home": { "en": "Go to the start page", "de": "Zur Startseite" }
+}

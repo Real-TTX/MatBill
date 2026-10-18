@@ -1,0 +1,6 @@
+{
+  "Controls.Picker.Required": { "en": "Please choose something.", "de": "Bitte wähle etwas aus." },
+  "Controls.Delete.Confirm": { "en": "Really delete? This cannot be undone.", "de": "Wirklich löschen? Das kann nicht rückgängig gemacht werden." },
+  "Controls.Tabs.Label": { "en": "Sections", "de": "Bereiche" },
+  "Controls.Summary.Title": { "en": "Please check the form.", "de": "Bitte prüfe das Formular." }
+}

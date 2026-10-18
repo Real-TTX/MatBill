@@ -18,6 +18,10 @@
     return text.replace(/\{(\d+)\}/g, function (m, i) { return args[+i] !== undefined ? String(args[+i]) : m; });
   };
   var toast = function (message, tone) { if (window.MatUi && window.MatUi.toast) { window.MatUi.toast(message, { tone: tone || 'danger' }); } };
+  // Dates and times of the interface in the format of its language (<html data-locale>, de-DE or en-GB); the paper of a document always writes German.
+  var locale = root.getAttribute('data-locale') || 'en-GB';
+  var shortDate = function (d) { return d.toLocaleDateString(locale); };
+  var shortTime = function (d) { return d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }); };
 
   function post(url, data) {
     return fetch(url, {
@@ -27,7 +31,7 @@
       body: new URLSearchParams(data || {}).toString()
     }).then(function (response) {
       return response.json().catch(function () { return {}; }).then(function (body) {
-        if (!response.ok) { throw new Error(body.error || 'Das hat nicht geklappt.'); }
+        if (!response.ok) { throw new Error(body.error || t('Js.Failed')); }
         return body;
       });
     });
@@ -90,7 +94,7 @@
     setOffline(false);
     // A copy that was shown without a connection is replaced by the real page: nothing stale stays on the screen.
     if (copyFrom !== null || $('[data-offline-page]')) { location.reload(); return; }
-    toast('Die Verbindung ist wieder da.', 'success');
+    toast(t('Js.Connection.Back'), 'success');
     refreshBell();
   }
 
@@ -106,12 +110,12 @@
   function reconnectNow(button) {
     var status = $('[data-offline-status]');
     if (button) { button.disabled = true; }
-    if (status) { status.textContent = 'Verbinde ...'; }
+    if (status) { status.textContent = t('Js.Connection.Connecting'); }
     ping().then(function (ok) {
       if (button) { button.disabled = false; }
       if (ok) { back(); return; }
-      if (status) { status.textContent = 'Noch keine Verbindung. Es wird automatisch weiter versucht.'; }
-      toast('Noch keine Verbindung.', 'warning');
+      if (status) { status.textContent = t('Js.Connection.StillOffline'); }
+      toast(t('Js.Connection.StillOfflineToast'), 'warning');
       scheduleRetry();
     });
   }
@@ -127,7 +131,7 @@
     var text = $('[data-offline-text]');
     var when = copyFrom ? new Date(copyFrom) : null;
     if (text && when && !isNaN(when)) {
-      text.textContent = 'Du siehst den Stand vom ' + when.toLocaleDateString('de-DE') + ', ' + when.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr. Speichern ist möglich, sobald die Verbindung zurück ist.';
+      text.textContent = t('Js.Connection.CopyFrom', shortDate(when), shortTime(when));
     }
     setOffline(true);
     scheduleRetry();
@@ -144,7 +148,7 @@
     if (!navigator.onLine || root.classList.contains('is-offline')) {
       e.preventDefault();
       e.stopImmediatePropagation();
-      toast('Keine Verbindung: Es wurde nichts gespeichert. Deine Eingaben bleiben auf der Seite.', 'warning');
+      toast(t('Js.Connection.NotSaved'), 'warning');
       scheduleRetry();
     }
   }, true);
@@ -160,10 +164,10 @@
       if (data.unread > 0) {
         if (!badge) { badge = doc.createElement('span'); badge.className = 'mat-badge mb-bell__count'; badge.setAttribute('aria-hidden', 'true'); bell.appendChild(badge); }
         badge.textContent = data.unread > 99 ? '99+' : String(data.unread);
-        bell.setAttribute('aria-label', 'Benachrichtigungen, ' + data.unread + ' ungelesen');
+        bell.setAttribute('aria-label', t('Js.Bell.Unread', data.unread));
       } else if (badge) {
         badge.parentNode.removeChild(badge);
-        bell.setAttribute('aria-label', 'Benachrichtigungen');
+        bell.setAttribute('aria-label', t('Js.Bell.Label'));
       }
     }).catch(function () { });
   }
@@ -174,11 +178,11 @@
 
   // <select data-submit-on-change> sends its form when it changes.
   doc.addEventListener('change', function (event) {
-    var t = event.target;
-    if (t && t.hasAttribute && t.hasAttribute('data-submit-on-change') && t.form) { t.form.requestSubmit ? t.form.requestSubmit() : t.form.submit(); }
+    var target = event.target;
+    if (target && target.hasAttribute && target.hasAttribute('data-submit-on-change') && target.form) { target.form.requestSubmit ? target.form.requestSubmit() : target.form.submit(); }
   });
 
-  // <button data-prompt="Frage" data-prompt-into="Name"> asks for a text, writes it into the hidden field and sends the form with this button.
+  // <button data-prompt="Question" data-prompt-into="Name"> asks for a text, writes it into the hidden field and sends the form with this button.
   doc.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('button[data-prompt]');
     if (!b || !window.MatUi || !window.MatUi.prompt) { return; }
@@ -226,10 +230,10 @@
     setView(editor.getAttribute('data-view') || 'document', false);
 
     // ---- text areas grow with their text (a document has no scroll boxes)
-    function grow(t) {
-      if (editor.getAttribute('data-view') === 'form') { t.style.removeProperty('height'); return; }
-      t.style.height = 'auto';
-      t.style.height = t.scrollHeight + 2 + 'px';
+    function grow(area) {
+      if (editor.getAttribute('data-view') === 'form') { area.style.removeProperty('height'); return; }
+      area.style.height = 'auto';
+      area.style.height = area.scrollHeight + 2 + 'px';
     }
     $$('textarea[data-autogrow]', editor).forEach(grow);
     editor.addEventListener('input', function (e) { if (e.target.matches && e.target.matches('textarea[data-autogrow]')) { grow(e.target); } });
@@ -282,7 +286,7 @@
         var menu = $('.mb-line__menu', line);
         var more = $('[data-line-more]', line);
         if (menu && more) { menu.id = 'line-' + i + '-menu'; more.setAttribute('aria-controls', menu.id); }
-        line.setAttribute('aria-label', 'Position ' + (i + 1));
+        line.setAttribute('aria-label', t('Js.Editor.Line', i + 1));
       });
       if (empty) { empty.hidden = lines().length > 0; }
     }
@@ -308,7 +312,7 @@
               return { name: p.name, desc: p.description, end: p.unitPrice + ' €' + (p.unit ? ' / ' + p.unit : ''), icon: 'box', data: p };
             });
           },
-          emptyHint: products.length === 0 ? 'Noch keine Produkte angelegt: einfach die Leistung eintragen.' : null,
+          emptyHint: products.length === 0 ? t('Js.Editor.NoProducts') : null,
           onSelect: function (item) { fillLine(line, item.data); },
           onType: function () { var pid = $('[data-field="ProductId"]', line); if (pid) { pid.value = ''; } }
         });
@@ -356,7 +360,7 @@
         renumber(); recalc(); markDirty();
         var focus = next ? $('[data-field="Name"]', next) : $('[data-line-add]', editor);
         if (focus) { focus.focus(); }
-        toast('Position entfernt.', 'success');
+        toast(t('Js.Editor.LineRemoved'), 'success');
       } else if (what === 'up' && line.previousElementSibling) {
         body.insertBefore(line, line.previousElementSibling); renumber(); markDirty(); $('[data-line-more]', line).focus();
       } else if (what === 'down' && line.nextElementSibling) {
@@ -403,13 +407,14 @@
       if (rows) {
         rows.innerHTML = '';
         rates.forEach(function (r) {
-          var t = round2(groups[r] * r / 100);
-          tax = round2(tax + t);
+          var rateTax = round2(groups[r] * r / 100);
+          tax = round2(tax + rateTax);
           var row = doc.createElement('div');
           var dt = doc.createElement('dt');
+          // The paper of the document stays German in every interface language (the same rows as InvoiceDocument).
           dt.textContent = rates.length > 1 ? 'Umsatzsteuer ' + quantity(r) + ' % auf ' + money.format(groups[r]) : 'Umsatzsteuer (' + quantity(r) + ' %)';
           var dd = doc.createElement('dd');
-          dd.textContent = money.format(t);
+          dd.textContent = money.format(rateTax);
           row.appendChild(dt); row.appendChild(dd); rows.appendChild(row);
         });
       }
@@ -473,14 +478,14 @@
             return { name: c.name, desc: [c.number, [c.street, [c.postalCode, c.city].filter(Boolean).join(' ')].filter(Boolean).join(', ')].filter(Boolean).join(' · '), icon: 'building', data: c };
           });
         },
-        create: data.canCreateCustomer === false ? null : function (q) { return 'Neuen Kunden „' + q + '“ anlegen'; },
-        emptyHint: customers.length === 0 ? 'Noch keine Kunden: tippe einen Namen, um einen anzulegen.' : null,
+        create: data.canCreateCustomer === false ? null : function (q) { return t('Js.Editor.NewCustomer', q); },
+        emptyHint: customers.length === 0 ? t('Js.Editor.NoCustomers') : null,
         onSelect: function (item) { fillRecipient(item.data); },
         onCreate: function (q) {
           return post('/api/customers', { name: q }).then(function (answer) {
             customers.push(answer.customer);
             fillRecipient(answer.customer);
-            toast('Kunde „' + answer.customer.name + '“ angelegt.', 'success');
+            toast(t('Js.Editor.CustomerCreated', answer.customer.name), 'success');
           }).catch(function (err) { toast(err.message); });
         },
         onType: function () {
@@ -526,7 +531,7 @@
       try { saved = JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { saved = null; }
       if (saved && saved.at > (data.savedAt || 0)) {
         var when = new Date(saved.at);
-        $('[data-restore-when]', restore).textContent = when.toLocaleDateString('de-DE') + ', ' + when.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr';
+        $('[data-restore-when]', restore).textContent = t('Js.Editor.RestoreWhen', shortDate(when), shortTime(when));
         restore.hidden = false;
         $('[data-restore-apply]', restore).addEventListener('click', function () {
           while (lines().length < saved.lines) { addLine(null, false); }
@@ -543,7 +548,7 @@
           recalc();
           dirty = true;
           restore.hidden = true;
-          toast('Die ungespeicherten Eingaben sind wieder da. Speichere, um sie zu behalten.', 'success');
+          toast(t('Js.Editor.Restored'), 'success');
         });
         $('[data-restore-discard]', restore).addEventListener('click', function () {
           try { localStorage.removeItem(key); } catch (e) { /* ignore */ }
@@ -649,6 +654,17 @@
     });
     return { close: close, render: render };
   }
+
+  // ================================================================================================ uploads
+
+  // Receipts that are dropped (or chosen, or pasted) on a drop zone with data-upload-autosubmit go up at once.
+  doc.addEventListener('mat:upload-change', function (event) {
+    var input = event.target && event.target.querySelector && event.target.querySelector('input[data-upload-autosubmit]');
+    if (!input || !input.files || input.files.length === 0 || !input.form) { return; }
+    input.form.classList.add('is-busy');
+    toast(input.files.length === 1 ? t('Js.Upload.One') : t('Js.Upload.Many', input.files.length), 'info');
+    input.form.requestSubmit ? input.form.requestSubmit() : input.form.submit();
+  });
 })();
 
 // Scrollbars are only visible while something scrolls: the class is set on the scrolled element and removed a moment later.
@@ -663,13 +679,3 @@
     timers.set(el, setTimeout(function () { el.classList.remove('is-scrolling'); }, 900));
   }, true);
 })();
-
-// Receipts that are dropped (or chosen, or pasted) on a drop zone with data-upload-autosubmit go up at once.
-document.addEventListener('mat:upload-change', function (event) {
-  'use strict';
-  var input = event.target && event.target.querySelector && event.target.querySelector('input[data-upload-autosubmit]');
-  if (!input || !input.files || input.files.length === 0 || !input.form) { return; }
-  input.form.classList.add('is-busy');
-  if (window.MatUi && window.MatUi.toast) { window.MatUi.toast(input.files.length === 1 ? 'Der Beleg wird hochgeladen …' : input.files.length + ' Belege werden hochgeladen …', { tone: 'info' }); }
-  input.form.requestSubmit ? input.form.requestSubmit() : input.form.submit();
-});

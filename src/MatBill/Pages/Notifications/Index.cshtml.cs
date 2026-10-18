@@ -22,7 +22,8 @@ public sealed class IndexModel(MbDbContext db, NotificationService notifications
 
     public async Task OnGetAsync(bool unread = false)
     {
-        Head("Benachrichtigungen", "Anstehende Rechnungen, erstellte Rechnungen und Probleme.", ("Benachrichtigungen", null));
+        var title = L["Notifications.Title"].Value;
+        Head(title, L["Notifications.Sub"], (title, null));
         ViewData["Width"] = "narrow";
         var me = current.UserId ?? 0;
         UnreadOnly = unread;
@@ -52,7 +53,7 @@ public sealed class IndexModel(MbDbContext db, NotificationService notifications
     public async Task<IActionResult> OnPostReadAllAsync()
     {
         await notifications.MarkReadAsync(current.UserId ?? 0);
-        Flash("Alle Benachrichtigungen sind als gelesen markiert.");
+        Flash(L["Notifications.AllRead"]);
         return RedirectToPage();
     }
 }

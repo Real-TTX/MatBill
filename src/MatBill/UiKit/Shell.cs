@@ -1,6 +1,7 @@
 using System.Net;
 using MatBill.Data;
 using MatBill.Data.Entities;
+using MatBill.Localization;
 using MatBill.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -29,7 +30,7 @@ public sealed class ShellModel
 
     public string Version { get; init; } = "";
 
-    public string Tagline { get; init; } = "Rechnungen und Finanzen";
+    public string Tagline { get; init; } = Text.T("Shell.Tagline");
 
     /// <summary>The unread notifications of the person (the badge of the bell); null draws no bell (a page without a person).</summary>
     public int? Unread { get; init; }
@@ -82,8 +83,8 @@ public sealed class ShellFactory(ICurrentUser user, NavCounts counts, Notificati
         return new ShellModel
         {
             Menus = menus,
-            UserName = user.Name ?? "Gast",
-            UserRole = user.IsAdmin ? "Administrator" : "Benutzer",
+            UserName = user.Name ?? Text.T("Shell.Guest"),
+            UserRole = Labels.Of(user.IsAdmin ? UserRole.Admin : UserRole.User),
             UserLine = principal?.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? "",
             UserMenu = UserMenu(),
             Version = $"MatBill {AppVersion.Current}",
@@ -103,75 +104,75 @@ public sealed class ShellFactory(ICurrentUser user, NavCounts counts, Notificati
     private async Task<NavSet> WorkMenuAsync()
     {
         var c = await counts.GetAsync();
-        var invoiceBadge = c.Overdue > 0 ? NavBadge.Count(c.Overdue, "warn", "überfällige Rechnungen")
-            : c.SendProblems > 0 ? NavBadge.Count(c.SendProblems, "error", "Rechnungen, deren Versand fehlschlug") : null;
+        var invoiceBadge = c.Overdue > 0 ? NavBadge.Count(c.Overdue, "warn", Text.T("Shell.Badge.Overdue"))
+            : c.SendProblems > 0 ? NavBadge.Count(c.SendProblems, "error", Text.T("Shell.Badge.SendFailed")) : null;
         var groups = new List<NavGroup>
         {
             new(null,
             [
-                new("Neue Rechnung", "/Invoices/Edit", "plus", Primary: true),
-                new("Übersicht", "/", "dashboard"),
+                new(Text.T("Shell.Nav.NewInvoice"), "/Invoices/Edit", "plus", Primary: true),
+                new(Text.T("Shell.Nav.Overview"), "/", "dashboard"),
             ]),
-            new("Verkauf",
+            new(Text.T("Shell.Group.Sales"),
             [
-                new("Angebote", "/Quotes", "file-document"),
-                new("Rechnungen", "/Invoices", "file-text", invoiceBadge),
-                new("Wiederkehrend", "/Recurring", "refresh", c.SeriesProblems > 0 ? NavBadge.Count(c.SeriesProblems, "error", "Serien mit Fehler") : null),
+                new(Text.T("Shell.Nav.Quotes"), "/Quotes", "file-document"),
+                new(Text.T("Shell.Nav.Invoices"), "/Invoices", "file-text", invoiceBadge),
+                new(Text.T("Shell.Nav.Recurring"), "/Recurring", "refresh", c.SeriesProblems > 0 ? NavBadge.Count(c.SeriesProblems, "error", Text.T("Shell.Badge.SeriesFailed")) : null),
             ]),
-            new("Finanzen",
+            new(Text.T("Shell.Group.Finance"),
             [
-                new("Ausgaben", "/Expenses", "euro", c.ExpensesToReview > 0 ? NavBadge.Count(c.ExpensesToReview, "warn", "Belege zu prüfen") : null),
-                new("Banking", "/Banking", "credit-card", c.OpenBookings > 0 ? NavBadge.Count(c.OpenBookings, "accent", "Umsätze ohne Zuordnung") : null),
-                new("Auswertung", "/Export", "bar-chart"),
+                new(Text.T("Shell.Nav.Expenses"), "/Expenses", "euro", c.ExpensesToReview > 0 ? NavBadge.Count(c.ExpensesToReview, "warn", Text.T("Shell.Badge.ReceiptsToReview")) : null),
+                new(Text.T("Shell.Nav.Banking"), "/Banking", "credit-card", c.OpenBookings > 0 ? NavBadge.Count(c.OpenBookings, "accent", Text.T("Shell.Badge.Unmatched")) : null),
+                new(Text.T("Shell.Nav.Reports"), "/Export", "bar-chart"),
             ]),
-            new("Stammdaten",
+            new(Text.T("Shell.Group.MasterData"),
             [
-                new("Kunden", "/Customers", "users"),
-                new("Produkte", "/Products", "box"),
+                new(Text.T("Shell.Nav.Customers"), "/Customers", "users"),
+                new(Text.T("Shell.Nav.Products"), "/Products", "box"),
             ]),
         };
         if (user.IsAdmin)
         {
-            groups[3] = groups[3] with { Items = [.. groups[3].Items, new("Branding", "/Branding", "palette")] };
+            groups[3] = groups[3] with { Items = [.. groups[3].Items, new(Text.T("Shell.Nav.Branding"), "/Branding", "palette")] };
         }
 
-        return new NavSet("work", "Rechnungen", "file-text", groups);
+        return new NavSet("work", Text.T("Shell.Menu.Work"), "file-text", groups);
     }
 
-    private static NavSet AdminMenu() => new("admin", "Einstellungen", "settings",
+    private static NavSet AdminMenu() => new("admin", Text.T("Shell.Menu.Admin"), "settings",
     [
-        new("Organisation",
+        new(Text.T("Shell.Group.Organisation"),
         [
-            new("Benutzer", "/Admin/Users", "user"),
-            new("Freigaben", "/Admin/Shares", "share"),
-            new("Rechnungen", "/Admin/Invoicing", "sliders"),
-            new("E-Mail", "/Admin/Mail", "mail"),
-            new("Banking", "/Admin/Banking", "credit-card"),
+            new(Text.T("Shell.Nav.Users"), "/Admin/Users", "user"),
+            new(Text.T("Shell.Nav.Shares"), "/Admin/Shares", "share"),
+            new(Text.T("Shell.Nav.Invoicing"), "/Admin/Invoicing", "sliders"),
+            new(Text.T("Shell.Nav.Mail"), "/Admin/Mail", "mail"),
+            new(Text.T("Shell.Nav.Banking"), "/Admin/Banking", "credit-card"),
         ]),
-        new("System",
+        new(Text.T("Shell.Group.System"),
         [
-            new("Speicher (NAS)", "/Admin/Storage", "hard-drive"),
-            new("Backup", null, "archive", Children:
+            new(Text.T("Shell.Nav.Storage"), "/Admin/Storage", "hard-drive"),
+            new(Text.T("Shell.Nav.Backup"), null, "archive", Children:
             [
-                new("Übersicht", "/Admin/Backup", null),
-                new("Pläne", "/Admin/Backup/Plans", null),
-                new("Ziele", "/Admin/Backup/Targets", null),
-                new("Wiederherstellung", "/Admin/Backup/Restore", null),
-            ]),
-            new("Sicherheit", "/Admin/Security", "shield"),
+                new(Text.T("Shell.Nav.BackupOverview"), "/Admin/Backup", null),
+                new(Text.T("Shell.Nav.BackupPlans"), "/Admin/Backup/Plans", null),
+                new(Text.T("Shell.Nav.BackupTargets"), "/Admin/Backup/Targets", null),
+                new(Text.T("Shell.Nav.BackupRestore"), "/Admin/Backup/Restore", null),
+            ], Id: "backup"),
+            new(Text.T("Shell.Nav.Security"), "/Admin/Security", "shield"),
         ]),
-        new("Protokolle",
+        new(Text.T("Shell.Group.Logs"),
         [
-            new("Aktivität", "/Admin/Activity", "activity"),
-            new("System", "/Admin/System", "server"),
+            new(Text.T("Shell.Nav.Activity"), "/Admin/Activity", "activity"),
+            new(Text.T("Shell.Nav.System"), "/Admin/System", "server"),
         ]),
     ]);
 
     private static List<UserMenuItem> UserMenu() =>
     [
-        new("Mein Konto", "/Account/Profile", "user"),
-        new("Sicherheit", "/Account/Security", "shield"),
-        new("Benachrichtigungen", "/Notifications", "bell"),
-        new("Abmelden", "/Account/Logout", "logout", Danger: true, SeparatorBefore: true, Post: true),
+        new(Text.T("Shell.User.Account"), "/Account/Profile", "user"),
+        new(Text.T("Shell.User.Security"), "/Account/Security", "shield"),
+        new(Text.T("Shell.User.Notifications"), "/Notifications", "bell"),
+        new(Text.T("Shell.User.Logout"), "/Account/Logout", "logout", Danger: true, SeparatorBefore: true, Post: true),
     ];
 }

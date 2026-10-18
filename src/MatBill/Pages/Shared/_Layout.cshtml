@@ -10,25 +10,27 @@
     var crumbs = ViewData["Crumbs"] as IReadOnlyList<(string Text, string? Url)> ?? [];
     var width = ViewData["Width"] as string;
     var active = ViewData["ActiveHref"] as string ?? Navigation.ActiveHref(shell.Menus, Context.Request.Path.Value ?? "/");
+    // The first label of the theme button; MatUi writes it anew (in the language of <html lang>) as soon as the script runs.
+    var themeLabel = L["Shell.Theme.Toggle", L["Common.Theme.System"].Value, L["Common.Theme.Light"].Value].Value;
 }
 <!DOCTYPE html>
 <html @ClientTexts.RootAttributes() data-app="matbill" data-sw="@(AppVersion.Current)-@(Sprite.Hash)" @Html.Raw(shell.RootAttributes)>
 <partial name="_Head" model="(shell, title)" />
 <body>
-    <a class="mat-skip" href="#main">Zum Inhalt springen</a>
+    <a class="mat-skip" href="#main">@L["Shell.SkipToContent"]</a>
     @Html.Raw(Sprite.Html)
 
     <div class="mat-app">
         <aside class="mat-nav" id="mat-nav">
             <div class="mat-nav__brand">
-                <a href="@shell.HomeHref" aria-label="MatBill, Startseite">
+                <a href="@shell.HomeHref" aria-label="@L["Shell.HomeLabel"]">
                     @Ui.Logo()
                     <span>
                         <span class="mat-nav__name">MatBill</span>
                         <span class="mat-nav__tagline">@shell.Tagline</span>
                     </span>
                 </a>
-                <button type="button" class="mat-btn mat-btn--ghost mat-btn--icon mat-nav__close" data-nav-close aria-label="Menü schließen">@Ui.Icon("x")</button>
+                <button type="button" class="mat-btn mat-btn--ghost mat-btn--icon mat-nav__close" data-nav-close aria-label="@L["Shell.CloseMenu"]">@Ui.Icon("x")</button>
             </div>
 
             <partial name="_Menu" model="(shell, active)" />
@@ -47,7 +49,7 @@
                         </span>
                         @Ui.Icon("chevron-up", "mat-user__chev")
                     </button>
-                    <button type="button" class="mat-theme" data-theme-toggle data-theme-save-url="/api/theme" data-theme-state="system" aria-label="Darstellung: System. Klicken für Hell." title="Darstellung: System. Klicken für Hell.">
+                    <button type="button" class="mat-theme" data-theme-toggle data-theme-save-url="/api/theme" data-theme-state="system" aria-label="@themeLabel" title="@themeLabel">
                         <svg class="mat-icon" data-theme-icon="system" aria-hidden="true" focusable="false"><use href="#mat-i-monitor"></use></svg>
                         <svg class="mat-icon" data-theme-icon="light" aria-hidden="true" focusable="false"><use href="#mat-i-sun"></use></svg>
                         <svg class="mat-icon" data-theme-icon="dark" aria-hidden="true" focusable="false"><use href="#mat-i-moon"></use></svg>
@@ -59,8 +61,8 @@
 
         <div class="mat-main">
             <header class="mat-topbar">
-                <button type="button" class="mat-burger" data-nav-toggle aria-label="Menü öffnen" aria-controls="mat-nav" aria-expanded="false">@Ui.Icon("menu")</button>
-                <nav class="mat-crumbs" aria-label="Brotkrumen">
+                <button type="button" class="mat-burger" data-nav-toggle aria-label="@L["Shell.OpenMenu"]" aria-controls="mat-nav" aria-expanded="false">@Ui.Icon("menu")</button>
+                <nav class="mat-crumbs" aria-label="@L["Shell.Breadcrumb"]">
                     <ol>
                         @if (crumbs.Count == 0)
                         {
@@ -88,7 +90,7 @@
                     @await RenderSectionAsync("TopbarActions", required: false)
                     @if (shell.Unread is { } unread)
                     {
-                        <a class="mat-btn mat-btn--ghost mat-btn--icon mb-bell" href="/Notifications" data-tip="Benachrichtigungen" aria-label="Benachrichtigungen@(unread > 0 ? $", {unread} ungelesen" : "")">
+                        <a class="mat-btn mat-btn--ghost mat-btn--icon mb-bell" href="/Notifications" data-tip="@L["Shell.Notifications"]" aria-label="@(unread > 0 ? L["Shell.NotificationsUnread", unread] : L["Shell.Notifications"])">
                             @Ui.Icon("bell")
                             @if (unread > 0) { <span class="mat-badge mb-bell__count" aria-hidden="true">@(unread > 99 ? "99+" : unread.ToString())</span> }
                         </a>
@@ -99,8 +101,8 @@
             @* Shown by app.js while there is no connection; the page stays usable to read, saving waits for the connection. *@
             <div class="mat-alert mat-alert--warning mb-offline" role="status" data-offline-banner hidden>
                 @Ui.Icon("wifi-off")
-                <div class="mat-alert__body"><strong>Keine Verbindung.</strong> <span data-offline-text>Du siehst den zuletzt geladenen Stand. Speichern ist möglich, sobald die Verbindung zurück ist.</span></div>
-                <div class="mat-alert__actions"><button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" data-reconnect>@Ui.Icon("refresh")<span>Erneut verbinden</span></button></div>
+                <div class="mat-alert__body"><strong>@L["Shell.Offline.Title"]</strong> <span data-offline-text>@L["Shell.Offline.Text"]</span></div>
+                <div class="mat-alert__actions"><button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" data-reconnect>@Ui.Icon("refresh")<span>@L["Shell.Reconnect"]</span></button></div>
             </div>
 
             <main class="mat-page @(width == "narrow" ? "mat-page--narrow" : width == "wide" ? "mat-page--wide" : "")" id="main">
@@ -121,7 +123,7 @@
             </main>
 
             <footer class="mat-footer">
-                <p class="mat-footer__text">MatBill · Rechnungen schreiben, versenden, wiederholen</p>
+                <p class="mat-footer__text">@L["Shell.Footer"]</p>
             </footer>
         </div>
     </div>
