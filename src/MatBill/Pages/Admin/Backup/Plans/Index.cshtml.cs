@@ -1,5 +1,6 @@
 using MatBill.Data;
 using MatBill.Data.Entities;
+using MatBill.Localization;
 using MatBill.Services;
 using MatBill.Services.Backup;
 using MatBill.UiKit;
@@ -16,30 +17,30 @@ public sealed class IndexModel(MbDbContext db) : PageModelBase
 
     public TableModel Table { get; private set; } = null!;
 
-    public static string Of(BackupScope s) => s == BackupScope.SystemOnly ? "Nur das System" : "System und Dateien";
+    public static string Of(BackupScope s) => s == BackupScope.SystemOnly ? Text.T("Backup.Scope.SystemOnly") : Text.T("Backup.Scope.SystemAndFiles");
 
     public async Task OnGetAsync()
     {
-        Head("Sicherungspläne", "Was gesichert wird, wohin und wann.", ("Einstellungen", null), ("Sicherung", "/Admin/Backup"), ("Pläne", null));
+        Head(L["Backup.Plans.Title"], L["Backup.Plans.Sub"], (L["Backup.Settings"], null), (L["Backup.Title"], "/Admin/Backup"), (L["Backup.Plans"], null));
         ViewData["ActiveHref"] = "/Admin/Backup/Plans";
 
         var spec = new ListSpec<BackupPlan>
         {
             Id = "plans",
             Action = "/Admin/Backup/Plans",
-            Label = "Pläne",
-            Noun = "Pläne",
-            SearchPlaceholder = "Name ...",
+            Label = L["Backup.Plans"],
+            Noun = L["Backup.Plans"],
+            SearchPlaceholder = L["Backup.Plans.Search"],
             Search = (q, text) => q.Where(p => EF.Functions.ILike(p.Name, Like.Contains(text))),
             Filters =
             [
-                new FilterSpec<BackupPlan>("umfang", "Umfang", ListBuilder.EnumOptions<BackupScope>(Of), (q, v) => q.Where(p => p.Scope == Enum.Parse<BackupScope>(v))),
-                new FilterSpec<BackupPlan>("status", "Status", [new("aktiv", "Aktiv"), new("aus", "Ausgeschaltet")], (q, v) => v == "aus" ? q.Where(p => !p.IsEnabled) : q.Where(p => p.IsEnabled)),
+                new FilterSpec<BackupPlan>("scope", L["Backup.Scope"], ListBuilder.EnumOptions<BackupScope>(Of), (q, v) => q.Where(p => p.Scope == Enum.Parse<BackupScope>(v))),
+                new FilterSpec<BackupPlan>("status", L["Common.Status"], [new("active", L["Backup.Plans.Status.Active"]), new("off", L["Backup.Plans.Status.Off"])], (q, v) => v == "off" ? q.Where(p => !p.IsEnabled) : q.Where(p => p.IsEnabled)),
             ],
             Sorts = new Dictionary<string, (string, Func<IQueryable<BackupPlan>, bool, IOrderedQueryable<BackupPlan>>)>
             {
-                ["name"] = ("Name", (q, d) => d ? q.OrderByDescending(p => p.Name) : q.OrderBy(p => p.Name)),
-                ["next"] = ("Nächste Sicherung", (q, d) => d ? q.OrderByDescending(p => p.NextRunDate) : q.OrderBy(p => p.NextRunDate)),
+                ["name"] = (L["Common.Name"], (q, d) => d ? q.OrderByDescending(p => p.Name) : q.OrderBy(p => p.Name)),
+                ["next"] = (L["Backup.Plans.Sort.Next"], (q, d) => d ? q.OrderByDescending(p => p.NextRunDate) : q.OrderBy(p => p.NextRunDate)),
             },
             DefaultSort = "name",
         };
@@ -47,16 +48,21 @@ public sealed class IndexModel(MbDbContext db) : PageModelBase
         var result = await ListBuilder.RunAsync(db.BackupPlan.AsNoTracking().Include(p => p.Target), Request, spec, HttpContext.RequestAborted);
         Toolbar = result.Toolbar;
         Pager = result.Pager;
-        Table = TableModel.Of("plan-table", "Sicherungspläne", result.Items,
+        Table = TableModel.Of("plan-table", L["Backup.Plans.Title"], result.Items,
         [
-            (new TableColumn("Name"), p => Ui.NameWithSub(p.Name, $"/Admin/Backup/Plans/Edit?id={p.Id}", Of(p.Scope) + (string.IsNullOrEmpty(p.PassphraseProtected) ? "" : " · verschlüsselt"))),
-            (new TableColumn("Ziel", HideOnPhone: true), p => Ui.Text(p.Target?.Name)),
-            (new TableColumn("Zeitplan", HideOnPhone: true), p => Ui.Text(BackupSchedule.Describe(p))),
-            (new TableColumn("Nächste", HideOnPhone: true), p => Ui.Text(p.IsEnabled ? Fmt.Moment(p.NextRunDate) : "")),
-            (new TableColumn("Zuletzt"), p => p.LastRunDate is null ? Ui.Text("noch nie") : p.LastStatus?.StartsWith("Fehl", StringComparison.Ordinal) == true ? Ui.Pill("fehlgeschlagen", "error") : Ui.Pill("ok", "ok")),
-            (new TableColumn("Status"), p => p.IsEnabled ? Ui.Pill("aktiv", "ok") : Ui.Pill("aus", "plain")),
+            (new TableColumn(L["Common.Name"]), p => Ui.NameWithSub(p.Name, $"/Admin/Backup/Plans/Edit?id={p.Id}", Of(p.Scope) + (string.IsNullOrEmpty(p.PassphraseProtected) ? "" : " · " + L["Backup.Encrypted"].Value))),
+            (new TableColumn(L["Backup.Target"], HideOnPhone: true), p => Ui.Text(p.Target?.Name)),
+            (new TableColumn(L["Backup.Plans.Col.Schedule"], HideOnPhone: true), p => Ui.Text(BackupSchedule.Describe(p))),
+            (new TableColumn(L["Backup.Plans.Col.Next"], HideOnPhone: true), p => Ui.Text(p.IsEnabled ? Fmt.Moment(p.NextRunDate) : "")),
+            (new TableColumn(L["Backup.Plans.Col.Last"]), p => p.LastRunDate is null ? Ui.Text(L["Backup.Never"].Value) : BackupService.IsFailedStatus(p.LastStatus) ? Ui.Pill(L["Backup.Failed"].Value, "error") : Ui.Pill(L["Backup.Ok"].Value, "ok")),
+            (new TableColumn(L["Common.Status"]), p => p.IsEnabled ? Ui.Pill(L["Backup.Active"].Value, "ok") : Ui.Pill(L["Backup.Off"].Value, "plain")),
         ],
-        p => [new RowAction("edit", "Bearbeiten", $"/Admin/Backup/Plans/Edit?id={p.Id}")]);
-        Table = Table with { EmptyTitle = Toolbar.Total == 0 ? "Noch kein Plan" : "Nichts gefunden", EmptyText = Toolbar.Total == 0 ? "Lege fest, was wann gesichert wird." : "Ändere die Suche oder den Filter.", EmptyIcon = "calendar" };
+        p => [new RowAction("edit", L["Common.Edit"].Value, $"/Admin/Backup/Plans/Edit?id={p.Id}")]);
+        Table = Table with
+        {
+            EmptyTitle = Toolbar.Total == 0 ? L["Backup.Plans.Empty.Title"] : L["Backup.NothingFound"],
+            EmptyText = Toolbar.Total == 0 ? L["Backup.Plans.Empty.Text"] : L["Backup.ChangeSearchOrFilter"],
+            EmptyIcon = "calendar",
+        };
     }
 }

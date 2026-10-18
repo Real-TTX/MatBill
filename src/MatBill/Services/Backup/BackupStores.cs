@@ -1,5 +1,6 @@
 using MatBill.Configuration;
 using MatBill.Data.Entities;
+using MatBill.Localization;
 using MatBill.Storage;
 
 namespace MatBill.Services.Backup;
@@ -63,11 +64,11 @@ public sealed class LocalBackupStore(string folder) : IBackupStore
             await File.WriteAllTextAsync(probe, "probe", ct);
             File.Delete(probe);
             var free = new DriveInfo(Path.GetFullPath(folder)).AvailableFreeSpace;
-            return (true, $"Der Ordner „{folder}“ ist da und beschreibbar. Frei: {Fmt.FileSize(free)}.");
+            return (true, Text.T("Backup.Store.FolderOk", folder, Fmt.FileSize(free)));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {
-            return (false, $"Der Ordner „{folder}“ kann nicht benutzt werden: {ex.Message}");
+            return (false, Text.T("Backup.Store.FolderFailed", folder, ex.Message));
         }
     }
 
@@ -75,7 +76,7 @@ public sealed class LocalBackupStore(string folder) : IBackupStore
     {
         if (!BackupNames.IsBackup(name) || name != Path.GetFileName(name))
         {
-            throw new InvalidOperationException("Das ist kein Name einer Sicherung.");
+            throw new InvalidOperationException(Text.T("Backup.Service.NotABackupName"));
         }
 
         return Path.Combine(folder, name);
@@ -96,11 +97,11 @@ public sealed class SmbBackupStore(SmbShare share) : IBackupStore
     public async Task<(bool Ok, string Message)> CheckAsync(CancellationToken ct = default)
     {
         var check = await share.CheckAsync(ct);
-        return (check.Ok, check.Ok && check.FreeBytes is { } free ? $"{check.Message} Frei: {Fmt.FileSize(free)}." : check.Message);
+        return (check.Ok, check.Ok && check.FreeBytes is { } free ? Text.T("Backup.Store.Free", check.Message, Fmt.FileSize(free)) : check.Message);
     }
 
     private static string Checked(string name)
-        => BackupNames.IsBackup(name) && name == Path.GetFileName(name) ? name : throw new InvalidOperationException("Das ist kein Name einer Sicherung.");
+        => BackupNames.IsBackup(name) && name == Path.GetFileName(name) ? name : throw new InvalidOperationException(Text.T("Backup.Service.NotABackupName"));
 }
 
 /// <summary>File names of backups: <c>matbill-{plan}-{yyyyMMdd-HHmmss}.mbbackup</c>, with <c>.enc</c> added when the file is encrypted.</summary>
@@ -122,7 +123,7 @@ public static class BackupNames
             slug = slug.Replace("--", "-", StringComparison.Ordinal);
         }
 
-        slug = slug.Length == 0 ? "sicherung" : slug.Length > 40 ? slug[..40].TrimEnd('-') : slug;
+        slug = slug.Length == 0 ? "backup" : slug.Length > 40 ? slug[..40].TrimEnd('-') : slug;
         return $"matbill-{slug}-{utc:yyyyMMdd-HHmmss}" + (encrypted ? EncryptedExtension : Extension);
     }
 

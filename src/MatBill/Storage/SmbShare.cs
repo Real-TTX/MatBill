@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
+using MatBill.Localization;
 using SMBLibrary;
 using SMBLibrary.Client;
 using FileAttributes = SMBLibrary.FileAttributes;
@@ -36,7 +37,7 @@ public sealed class SmbShare(SmbOptions options)
                 EnsureFolder(session, string.Empty);
 
                 var probe = Remote(".mb-probe-" + Guid.NewGuid().ToString("N")[..8]);
-                CheckStatus(session.Store.CreateFile(out var handle, out _, probe, AccessMask.GENERIC_WRITE | AccessMask.DELETE | AccessMask.SYNCHRONIZE, FileAttributes.Normal, ShareAccess.None, CreateDisposition.FILE_CREATE, CreateOptions.FILE_NON_DIRECTORY_FILE | CreateOptions.FILE_SYNCHRONOUS_IO_ALERT, null), "eine Testdatei schreiben");
+                CheckStatus(session.Store.CreateFile(out var handle, out _, probe, AccessMask.GENERIC_WRITE | AccessMask.DELETE | AccessMask.SYNCHRONIZE, FileAttributes.Normal, ShareAccess.None, CreateDisposition.FILE_CREATE, CreateOptions.FILE_NON_DIRECTORY_FILE | CreateOptions.FILE_SYNCHRONOUS_IO_ALERT, null), "WriteProbe");
                 try
                 {
                     session.Store.WriteFile(out _, handle, 0, "probe"u8.ToArray());
@@ -47,7 +48,7 @@ public sealed class SmbShare(SmbOptions options)
                     session.CloseQuietly(handle);
                 }
 
-                return new ShareCheck(true, $"Verbunden mit {options.Host}, Freigabe „{options.Share}“, Ordner „{FolderPath()}“: Dateien können geschrieben werden.", FreeSpace(session));
+                return new ShareCheck(true, Text.T("Storage.Smb.Connected", options.Host, options.Share, FolderPath()), FreeSpace(session));
             }
             catch (StorageException ex)
             {
@@ -67,7 +68,7 @@ public sealed class SmbShare(SmbOptions options)
                     var shares = client.ListShares(out var status);
                     if (status != NTStatus.STATUS_SUCCESS || shares is null)
                     {
-                        throw new StorageException($"Die Freigaben von {host} können nicht aufgelistet werden: {Describe(status)}.");
+                        throw new StorageException(Text.T("Storage.Smb.ListShares", host, Describe(status)));
                     }
 
                     return shares.Where(s => !s.EndsWith('$')).OrderBy(s => s, StringComparer.OrdinalIgnoreCase).ToList();
@@ -91,13 +92,13 @@ public sealed class SmbShare(SmbOptions options)
                 return [];
             }
 
-            CheckStatus(opened, "den Ordner öffnen");
+            CheckStatus(opened, "OpenFolder");
             try
             {
                 var status = session.Store.QueryDirectory(out var entries, handle, "*", FileInformationClass.FileDirectoryInformation);
                 if (status is not (NTStatus.STATUS_SUCCESS or NTStatus.STATUS_NO_MORE_FILES))
                 {
-                    CheckStatus(status, "den Ordner auflisten");
+                    CheckStatus(status, "ListFolder");
                 }
 
                 var files = new List<RemoteFile>();
@@ -134,7 +135,7 @@ public sealed class SmbShare(SmbOptions options)
             var partial = final + ".partial";
             CheckStatus(
                 session.Store.CreateFile(out var handle, out _, partial, AccessMask.GENERIC_WRITE | AccessMask.DELETE | AccessMask.SYNCHRONIZE, FileAttributes.Normal, ShareAccess.None, CreateDisposition.FILE_OVERWRITE_IF, CreateOptions.FILE_NON_DIRECTORY_FILE | CreateOptions.FILE_SYNCHRONOUS_IO_ALERT, null),
-                "die Datei anlegen");
+                "CreateFile");
 
             var complete = false;
             try
@@ -149,7 +150,7 @@ public sealed class SmbShare(SmbOptions options)
                     offset = Write(session, handle, offset, buffer, read);
                 }
 
-                CheckStatus(session.Store.SetFileInformation(handle, new FileRenameInformationType2 { FileName = final, ReplaceIfExists = true }), "die Datei benennen");
+                CheckStatus(session.Store.SetFileInformation(handle, new FileRenameInformationType2 { FileName = final, ReplaceIfExists = true }), "RenameFile");
                 complete = true;
             }
             finally
@@ -180,10 +181,10 @@ public sealed class SmbShare(SmbOptions options)
                 var opened = session.Store.CreateFile(out var handle, out _, Remote(string.Join('\\', SplitPath(relativePath))), AccessMask.GENERIC_READ | AccessMask.SYNCHRONIZE, FileAttributes.Normal, ShareAccess.Read, CreateDisposition.FILE_OPEN, CreateOptions.FILE_NON_DIRECTORY_FILE | CreateOptions.FILE_SYNCHRONOUS_IO_ALERT, null);
                 if (opened is NTStatus.STATUS_OBJECT_NAME_NOT_FOUND or NTStatus.STATUS_OBJECT_PATH_NOT_FOUND)
                 {
-                    throw new StorageException($"„{relativePath}“ liegt nicht auf der Freigabe.");
+                    throw new StorageException(Text.T("Storage.Smb.NotOnShare", relativePath));
                 }
 
-                CheckStatus(opened, "die Datei öffnen");
+                CheckStatus(opened, "OpenFile");
                 session.Store.GetFileInformation(out var info, handle, FileInformationClass.FileStandardInformation);
                 var length = info is FileStandardInformation standard ? standard.EndOfFile : 0;
                 return new SmbReadStream(session, handle, length, (int)Math.Clamp(session.Client.MaxReadSize, 4096, MaxChunkBytes));
@@ -203,7 +204,7 @@ public sealed class SmbShare(SmbOptions options)
             var status = DeleteExisting(session, Remote(string.Join('\\', SplitPath(relativePath))));
             if (status is not (NTStatus.STATUS_SUCCESS or NTStatus.STATUS_OBJECT_NAME_NOT_FOUND or NTStatus.STATUS_OBJECT_PATH_NOT_FOUND))
             {
-                CheckStatus(status, "die Datei löschen");
+                CheckStatus(status, "DeleteFile");
             }
         },
         ct);
@@ -244,10 +245,10 @@ public sealed class SmbShare(SmbOptions options)
         {
             var slice = new byte[count - written];
             Buffer.BlockCopy(buffer, written, slice, 0, slice.Length);
-            CheckStatus(session.Store.WriteFile(out var bytes, handle, offset + written, slice), "auf die Freigabe schreiben");
+            CheckStatus(session.Store.WriteFile(out var bytes, handle, offset + written, slice), "Write");
             if (bytes <= 0)
             {
-                throw new StorageException("Die Freigabe nimmt keine Daten an.");
+                throw new StorageException(Text.T("Storage.Smb.NoData"));
             }
 
             written += bytes;
@@ -289,7 +290,7 @@ public sealed class SmbShare(SmbOptions options)
                 return 0;
             }
 
-            CheckStatus(status, "von der Freigabe lesen");
+            CheckStatus(status, "Read");
             Buffer.BlockCopy(data, 0, buffer, offset, data.Length);
             _position += data.Length;
             return data.Length;
@@ -318,7 +319,7 @@ public sealed class SmbShare(SmbOptions options)
         var parts = path.Split('/', '\\').Where(s => s.Length > 0).ToList();
         if (parts.Count == 0 || parts.Any(p => p is "." or ".."))
         {
-            throw new StorageException("Ungültiger Pfad.");
+            throw new StorageException(Text.T("Storage.Smb.InvalidPath"));
         }
 
         return parts;
@@ -346,7 +347,7 @@ public sealed class SmbShare(SmbOptions options)
         {
             if (segment is "." or "..")
             {
-                throw new StorageException("Der Ordner darf kein „.“ oder „..“ enthalten.");
+                throw new StorageException(Text.T("Storage.Smb.DotFolder"));
             }
 
             current = current.Length == 0 ? segment : current + "\\" + segment;
@@ -355,7 +356,7 @@ public sealed class SmbShare(SmbOptions options)
                 continue;
             }
 
-            CheckStatus(session.Store.CreateFile(out var handle, out _, current, AccessMask.GENERIC_WRITE | AccessMask.SYNCHRONIZE, FileAttributes.Directory, ShareAccess.None, CreateDisposition.FILE_CREATE, CreateOptions.FILE_DIRECTORY_FILE, null), $"den Ordner „{current}“ anlegen");
+            CheckStatus(session.Store.CreateFile(out var handle, out _, current, AccessMask.GENERIC_WRITE | AccessMask.SYNCHRONIZE, FileAttributes.Directory, ShareAccess.None, CreateDisposition.FILE_CREATE, CreateOptions.FILE_DIRECTORY_FILE, null), "CreateFolder", current);
             session.CloseQuietly(handle);
         }
     }
@@ -422,7 +423,7 @@ public sealed class SmbShare(SmbOptions options)
     {
         if (string.IsNullOrWhiteSpace(options.Share))
         {
-            throw new StorageException("Es fehlt die Freigabe.");
+            throw new StorageException(Text.T("Storage.Smb.NoShare"));
         }
 
         var client = Login(options);
@@ -430,7 +431,7 @@ public sealed class SmbShare(SmbOptions options)
         if (status != NTStatus.STATUS_SUCCESS || store is null)
         {
             Close(client);
-            throw new StorageException($"Die Freigabe „{options.Share}“ auf {options.Host} lässt sich nicht öffnen: {Describe(status)}.");
+            throw new StorageException(Text.T("Storage.Smb.ShareFailed", options.Share, options.Host, Describe(status)));
         }
 
         return new Session(client, store);
@@ -440,7 +441,7 @@ public sealed class SmbShare(SmbOptions options)
     {
         if (string.IsNullOrWhiteSpace(target.Host))
         {
-            throw new StorageException("Es fehlt der Server.");
+            throw new StorageException(Text.T("Storage.Smb.NoServer"));
         }
 
         IPAddress address;
@@ -449,11 +450,11 @@ public sealed class SmbShare(SmbOptions options)
             address = IPAddress.TryParse(target.Host, out var parsed)
                 ? parsed
                 : Dns.GetHostAddresses(target.Host).FirstOrDefault(a => a.AddressFamily == AddressFamily.InterNetwork)
-                  ?? throw new StorageException($"Der Server {target.Host} ist nicht bekannt.");
+                  ?? throw new StorageException(Text.T("Storage.Smb.UnknownServer", target.Host));
         }
         catch (SocketException ex)
         {
-            throw new StorageException($"Der Server {target.Host} ist nicht bekannt: {ex.Message}", ex);
+            throw new StorageException(Text.T("Storage.Smb.UnknownServer.Detail", target.Host, ex.Message), ex);
         }
 
         var client = new SMB2Client(ResponseTimeoutMilliseconds);
@@ -464,21 +465,21 @@ public sealed class SmbShare(SmbOptions options)
         }
         catch (Exception ex) when (ex is SocketException or IOException or InvalidOperationException)
         {
-            throw new StorageException($"Keine Verbindung zu {target.Host} (SMB, Port 445): {ex.Message}", ex);
+            throw new StorageException(Text.T("Storage.Smb.NoConnection", target.Host, ex.Message), ex);
         }
 
         if (!connected)
         {
             throw new StorageException(PortIsOpen(address)
-                ? $"{target.Host} antwortet auf Port 445, aber es wurde keine SMB-Version vereinbart: Unterstützt werden SMB 2.0.2 bis 3.0.2. Ein Server, der nur SMB 1 oder nur SMB 3.1.1 anbietet, geht nicht."
-                : $"Keine Verbindung zu {target.Host} (SMB, Port 445): Ist der Server an und der Port offen?");
+                ? Text.T("Storage.Smb.NoDialect", target.Host)
+                : Text.T("Storage.Smb.NoConnection.Hint", target.Host));
         }
 
         var login = client.Login(target.Domain ?? string.Empty, target.UserName ?? string.Empty, target.Password ?? string.Empty);
         if (login != NTStatus.STATUS_SUCCESS)
         {
             client.Disconnect();
-            throw new StorageException($"Die Anmeldung bei {target.Host} ist fehlgeschlagen: {Describe(login)}.");
+            throw new StorageException(Text.T("Storage.Smb.LoginFailed", target.Host, Describe(login)));
         }
 
         return client;
@@ -514,33 +515,34 @@ public sealed class SmbShare(SmbOptions options)
         }
         catch (Exception)
         {
-            // dito
+            // ditto
         }
     }
 
-    private static void CheckStatus(NTStatus status, string doing)
+    /// <summary>Throws when the status is a failure. <paramref name="doing"/> names what was tried (a text <c>Storage.Smb.Doing.*</c>), read only when it failed.</summary>
+    private static void CheckStatus(NTStatus status, string doing, params object[] arguments)
     {
         if (status is NTStatus.STATUS_SUCCESS or NTStatus.STATUS_END_OF_FILE)
         {
             return;
         }
 
-        throw new StorageException($"Die Freigabe konnte nicht: {doing}: {Describe(status)}.");
+        throw new StorageException(Text.T("Storage.Smb.Failed", Text.T("Storage.Smb.Doing." + doing, arguments), Describe(status)));
     }
 
     private static string Describe(NTStatus status) => status switch
     {
-        NTStatus.STATUS_LOGON_FAILURE or NTStatus.STATUS_WRONG_PASSWORD => "der Benutzername oder das Passwort stimmt nicht",
-        NTStatus.STATUS_ACCOUNT_DISABLED => "das Konto ist deaktiviert",
-        NTStatus.STATUS_ACCOUNT_LOCKED_OUT => "das Konto ist gesperrt",
-        NTStatus.STATUS_PASSWORD_EXPIRED => "das Passwort ist abgelaufen",
-        NTStatus.STATUS_ACCESS_DENIED => "Zugriff verweigert: Der Benutzer darf das dort nicht",
-        NTStatus.STATUS_BAD_NETWORK_NAME => "es gibt keine Freigabe mit diesem Namen",
-        NTStatus.STATUS_OBJECT_NAME_NOT_FOUND or NTStatus.STATUS_OBJECT_PATH_NOT_FOUND or NTStatus.STATUS_NO_SUCH_FILE => "nicht gefunden",
-        NTStatus.STATUS_OBJECT_NAME_COLLISION => "es gibt sie schon",
-        NTStatus.STATUS_DISK_FULL => "die Freigabe ist voll",
-        NTStatus.STATUS_SHARING_VIOLATION => "die Datei ist in Benutzung",
-        NTStatus.STATUS_NOT_SUPPORTED => "der Server unterstützt das nicht",
+        NTStatus.STATUS_LOGON_FAILURE or NTStatus.STATUS_WRONG_PASSWORD => Text.T("Storage.Smb.Status.LogonFailure"),
+        NTStatus.STATUS_ACCOUNT_DISABLED => Text.T("Storage.Smb.Status.AccountDisabled"),
+        NTStatus.STATUS_ACCOUNT_LOCKED_OUT => Text.T("Storage.Smb.Status.AccountLocked"),
+        NTStatus.STATUS_PASSWORD_EXPIRED => Text.T("Storage.Smb.Status.PasswordExpired"),
+        NTStatus.STATUS_ACCESS_DENIED => Text.T("Storage.Smb.Status.AccessDenied"),
+        NTStatus.STATUS_BAD_NETWORK_NAME => Text.T("Storage.Smb.Status.BadNetworkName"),
+        NTStatus.STATUS_OBJECT_NAME_NOT_FOUND or NTStatus.STATUS_OBJECT_PATH_NOT_FOUND or NTStatus.STATUS_NO_SUCH_FILE => Text.T("Storage.Smb.Status.NotFound"),
+        NTStatus.STATUS_OBJECT_NAME_COLLISION => Text.T("Storage.Smb.Status.Collision"),
+        NTStatus.STATUS_DISK_FULL => Text.T("Storage.Smb.Status.DiskFull"),
+        NTStatus.STATUS_SHARING_VIOLATION => Text.T("Storage.Smb.Status.SharingViolation"),
+        NTStatus.STATUS_NOT_SUPPORTED => Text.T("Storage.Smb.Status.NotSupported"),
         _ => status.ToString(),
     };
 }

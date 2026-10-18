@@ -4,9 +4,10 @@
     var scopes = Controls.Options.Of<BackupScope>(MatBill.Pages.Admin.Backup.Plans.IndexModel.Of);
     var schedules = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
     {
-        new("Täglich", nameof(ScheduleKind.Daily)), new("Wöchentlich", nameof(ScheduleKind.Weekly)), new("Monatlich", nameof(ScheduleKind.Monthly)), new("Alle paar Stunden", nameof(ScheduleKind.Hourly)),
+        new(L["Backup.Schedule.Daily"], nameof(ScheduleKind.Daily)), new(L["Backup.Schedule.Weekly"], nameof(ScheduleKind.Weekly)), new(L["Backup.Schedule.Monthly"], nameof(ScheduleKind.Monthly)), new(L["Backup.Schedule.Hourly"], nameof(ScheduleKind.Hourly)),
     };
     var days = Enum.GetValues<DayOfWeek>().Select(d => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem(MatBill.Services.Backup.BackupSchedule.DayName(d), d.ToString())).ToList();
+    var createTarget = $"<a href=\"/Admin/Backup/Targets/Edit\">{System.Net.WebUtility.HtmlEncode(L["Backup.Plan.NoTarget.Link"].Value)}</a>";
 }
 
 <form class="mat-form" method="post" novalidate>
@@ -15,53 +16,53 @@
 
     @if (Model.Targets.Count == 0)
     {
-        <div class="mat-alert mat-alert--warning">@Ui.Icon("alert")<div class="mat-alert__body">Es gibt noch kein Ziel. <a href="/Admin/Backup/Targets/Edit">Lege zuerst ein Ziel an</a>, zum Beispiel dein NAS.</div></div>
+        <div class="mat-alert mat-alert--warning">@Ui.Icon("alert")<div class="mat-alert__body">@Html.Raw(L["Backup.Plan.NoTarget", createTarget].Value)</div></div>
     }
 
-    <mb-card title="Was und wohin" icon="hard-drive">
+    <mb-card title="@L["Backup.Plan.What"]" icon="hard-drive">
         <div class="mat-form__grid">
-            <mb-input for="Input.Name" label="Name" required="true" full="true" hint="Zum Beispiel „Nachts aufs NAS“." />
-            <mb-select for="Input.TargetId" label="Ziel" items="Model.Targets" empty="(bitte wählen)" />
-            <mb-select for="Input.Scope" label="Umfang" items="scopes" hint="„Nur das System“ sind die Datenbank und die Einstellungen. „System und Dateien“ nimmt auch die PDFs der ausgestellten Rechnungen und das Logo mit." />
-            <mb-switch for="Input.IsEnabled" label="Der Plan läuft von selbst" full="true" />
+            <mb-input for="Input.Name" label="@L["Common.Name"]" required="true" full="true" hint="@L["Backup.Plan.Name.Hint"]" />
+            <mb-select for="Input.TargetId" label="@L["Backup.Target"]" items="Model.Targets" empty="@L["Backup.Plan.PleaseChoose"]" />
+            <mb-select for="Input.Scope" label="@L["Backup.Scope"]" items="scopes" hint="@L["Backup.Plan.Scope.Hint"]" />
+            <mb-switch for="Input.IsEnabled" label="@L["Backup.Plan.Enabled"]" full="true" />
         </div>
     </mb-card>
 
-    <mb-card title="Wann" icon="calendar">
+    <mb-card title="@L["Backup.When"]" icon="calendar">
         <div class="mat-form__grid">
-            <mb-select for="Input.Schedule" label="Wie oft" items="schedules" />
-            <mb-input for="Input.IntervalHours" label="Alle … Stunden" type="number" min="1" max="168" show-if="Input.Schedule" show-value="Hourly" />
-            <mb-input for="Input.TimeOfDay" label="Uhrzeit" type="time" show-if="Input.Schedule" show-value="Daily,Weekly,Monthly" hint="Die Uhrzeit dieser Installation (Zeitzone Europe/Berlin, wenn nichts anderes eingestellt ist)." />
-            <mb-select for="Input.DayOfWeek" label="Wochentag" items="days" show-if="Input.Schedule" show-value="Weekly" />
-            <mb-input for="Input.DayOfMonth" label="Tag im Monat" type="number" min="1" max="31" show-if="Input.Schedule" show-value="Monthly" hint="Hat ein Monat weniger Tage, läuft der Plan am letzten Tag." />
+            <mb-select for="Input.Schedule" label="@L["Backup.Plan.HowOften"]" items="schedules" />
+            <mb-input for="Input.IntervalHours" label="@L["Backup.Plan.Interval"]" type="number" min="1" max="168" show-if="Input.Schedule" show-value="Hourly" />
+            <mb-input for="Input.TimeOfDay" label="@L["Backup.Plan.Time"]" type="time" show-if="Input.Schedule" show-value="Daily,Weekly,Monthly" hint="@L["Backup.Plan.Time.Hint"]" />
+            <mb-select for="Input.DayOfWeek" label="@L["Backup.Plan.Weekday"]" items="days" show-if="Input.Schedule" show-value="Weekly" />
+            <mb-input for="Input.DayOfMonth" label="@L["Backup.Plan.DayOfMonth"]" type="number" min="1" max="31" show-if="Input.Schedule" show-value="Monthly" hint="@L["Backup.Plan.DayOfMonth.Hint"]" />
         </div>
     </mb-card>
 
-    <mb-card title="Wie lange aufheben" icon="clock">
-        <p class="mat-muted">Die Regeln zählen zusammen. Ältere Sicherungen dieses Plans, die keine Regel mehr festhält, werden nach einer neuen Sicherung gelöscht. Sind alle Regeln 0, wird nie etwas gelöscht.</p>
+    <mb-card title="@L["Backup.Plan.Keep"]" icon="clock">
+        <p class="mat-muted">@L["Backup.Plan.Keep.Text"]</p>
         <div class="mat-form__grid">
-            <mb-input for="Input.KeepLast" label="Die neuesten" type="number" min="0" hint="Anzahl" />
-            <mb-input for="Input.KeepDaily" label="Eine pro Tag für" type="number" min="0" hint="Tage" />
-            <mb-input for="Input.KeepWeekly" label="Eine pro Woche für" type="number" min="0" hint="Wochen" />
-            <mb-input for="Input.KeepMonthly" label="Eine pro Monat für" type="number" min="0" hint="Monate" />
+            <mb-input for="Input.KeepLast" label="@L["Backup.Plan.KeepLast"]" type="number" min="0" hint="@L["Backup.Plan.KeepLast.Hint"]" />
+            <mb-input for="Input.KeepDaily" label="@L["Backup.Plan.KeepDaily"]" type="number" min="0" hint="@L["Backup.Plan.KeepDaily.Hint"]" />
+            <mb-input for="Input.KeepWeekly" label="@L["Backup.Plan.KeepWeekly"]" type="number" min="0" hint="@L["Backup.Plan.KeepWeekly.Hint"]" />
+            <mb-input for="Input.KeepMonthly" label="@L["Backup.Plan.KeepMonthly"]" type="number" min="0" hint="@L["Backup.Plan.KeepMonthly.Hint"]" />
         </div>
     </mb-card>
 
-    <mb-card title="Verschlüsselung" icon="lock">
+    <mb-card title="@L["Backup.Plan.Encryption"]" icon="lock">
         <div class="mat-form__grid">
-            <mb-input for="Input.Passphrase" label="@(Model.Encrypted ? "Neues Passwort" : "Passwort zum Verschlüsseln")" type="password" autocomplete="new-password" full="true" hint="@(Model.Encrypted ? "Leer lassen, um das gespeicherte Passwort zu behalten." : "Leer: Die Sicherung ist nicht verschlüsselt. Sie enthält die Schlüssel zu deinen gespeicherten Passwörtern, verschlüssele sie, wenn das Ziel nicht nur dir gehört.")" />
+            <mb-input for="Input.Passphrase" label="@(Model.Encrypted ? L["Backup.Plan.NewPassphrase"] : L["Backup.Plan.Passphrase"])" type="password" autocomplete="new-password" full="true" hint="@(Model.Encrypted ? L["Backup.KeepPassword"] : L["Backup.Plan.Passphrase.Hint"])" />
             @if (Model.Encrypted)
             {
-                <mb-switch for="Input.RemovePassphrase" label="Nicht mehr verschlüsseln" full="true" />
+                <mb-switch for="Input.RemovePassphrase" label="@L["Backup.Plan.RemovePassphrase"]" full="true" />
             }
         </div>
-        <p class="mat-hint">Ohne dieses Passwort lässt sich eine verschlüsselte Sicherung nicht wiederherstellen. Bewahre es getrennt auf.</p>
+        <p class="mat-hint">@L["Backup.Plan.Passphrase.Note"]</p>
     </mb-card>
 
     @if (Model.Plan is not null)
     {
-        <mb-buttons back-href="/Admin/Backup/Plans" delete-url="@Url.Page("/Admin/Backup/Plans/Edit", "Delete", new { id = Model.Id })" delete-confirm="Diesen Plan löschen? Die Sicherungen am Ziel bleiben liegen.">
-            <button type="submit" formnovalidate asp-page-handler="Run" asp-route-id="@Model.Id" class="mat-btn mat-btn--secondary" data-confirm="Diesen Plan jetzt ausführen?" data-confirm-ok="Jetzt sichern">@Ui.Icon("play")<span>Jetzt ausführen</span></button>
+        <mb-buttons back-href="/Admin/Backup/Plans" delete-url="@Url.Page("/Admin/Backup/Plans/Edit", "Delete", new { id = Model.Id })" delete-confirm="@L["Backup.Plan.Delete.Confirm"]">
+            <button type="submit" formnovalidate asp-page-handler="Run" asp-route-id="@Model.Id" class="mat-btn mat-btn--secondary" data-confirm="@L["Backup.Plan.Run.Confirm"]" data-confirm-ok="@L["Backup.Plan.Run.Ok"]">@Ui.Icon("play")<span>@L["Backup.Plan.Run"]</span></button>
         </mb-buttons>
     }
     else

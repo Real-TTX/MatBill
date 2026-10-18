@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.Security.Cryptography;
+using MatBill.Localization;
 
 namespace MatBill.Services.Backup;
 
@@ -72,7 +73,7 @@ public static class BackupCrypto
         var magic = new byte[Magic.Length];
         if (await input.ReadAtLeastAsync(magic, magic.Length, throwOnEndOfStream: false, ct) != magic.Length || !magic.AsSpan().SequenceEqual(Magic))
         {
-            throw new CryptographicException("Das ist keine verschlüsselte Sicherung.");
+            throw new CryptographicException(Text.T("Backup.Crypto.NotEncrypted"));
         }
 
         var salt = new byte[16];
@@ -82,7 +83,7 @@ public static class BackupCrypto
         var iterations = BinaryPrimitives.ReadInt32LittleEndian(header);
         if (iterations is < 10_000 or > 10_000_000)
         {
-            throw new CryptographicException("Die Sicherung ist beschädigt.");
+            throw new CryptographicException(Text.T("Backup.Crypto.Damaged"));
         }
 
         var prefix = header[4..8];
@@ -94,7 +95,7 @@ public static class BackupCrypto
         {
             if (await input.ReadAtLeastAsync(lengthBytes, 4, throwOnEndOfStream: false, ct) != 4)
             {
-                throw new CryptographicException("Die Sicherung ist unvollständig.");
+                throw new CryptographicException(Text.T("Backup.Crypto.Incomplete"));
             }
 
             var raw = BinaryPrimitives.ReadInt32LittleEndian(lengthBytes);
@@ -102,7 +103,7 @@ public static class BackupCrypto
             var length = raw & int.MaxValue;
             if (length > BlockSize)
             {
-                throw new CryptographicException("Die Sicherung ist beschädigt.");
+                throw new CryptographicException(Text.T("Backup.Crypto.Damaged"));
             }
 
             var cipher = new byte[length];
@@ -116,7 +117,7 @@ public static class BackupCrypto
             }
             catch (CryptographicException)
             {
-                throw new CryptographicException(index == 0 ? "Das Passwort stimmt nicht, oder die Sicherung ist beschädigt." : "Die Sicherung ist beschädigt.");
+                throw new CryptographicException(index == 0 ? Text.T("Backup.Crypto.WrongPassword") : Text.T("Backup.Crypto.Damaged"));
             }
 
             await output.WriteAsync(plain, ct);

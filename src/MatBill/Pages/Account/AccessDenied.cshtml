@@ -3,16 +3,16 @@
 @attribute [AllowAnonymous]
 @{
     Layout = "_Bare";
-    ViewData["Title"] = "Kein Zugriff";
+    ViewData["Title"] = L["Account.Denied.Title"].Value;
 }
 
 <div class="mat-auth__card">
     <div class="mat-auth__brand">
         @Ui.Logo("lg")
-        <h1>Kein Zugriff</h1>
-        <p class="mat-muted">Für diese Seite fehlt dir die Berechtigung.</p>
+        <h1>@L["Account.Denied.Title"]</h1>
+        <p class="mat-muted">@L["Account.Denied.Text"]</p>
     </div>
     <div class="mat-btn-row mat-btn-row--plain">
-        <a class="mat-btn mat-btn--primary mat-btn--block" href="/">@Ui.Icon("home")<span>Zur Startseite</span></a>
+        <a class="mat-btn mat-btn--primary mat-btn--block" href="/">@Ui.Icon("home")<span>@L["Account.Denied.Home"]</span></a>
     </div>
 </div>

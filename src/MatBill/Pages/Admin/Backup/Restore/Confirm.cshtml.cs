@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using MatBill.Localization;
 using MatBill.Services;
 using MatBill.Services.Backup;
 using Microsoft.AspNetCore.Mvc;
@@ -8,7 +9,11 @@ namespace MatBill.Pages.Admin.Backup.Restore;
 /// <summary>Step two of a restore: what is in the backup, what to restore, and the second question ("type RESTORE") before anything is replaced.</summary>
 public sealed class ConfirmModel(BackupService backups) : PageModelBase
 {
-    public const string Phrase = "WIEDERHERSTELLEN";
+    /// <summary>The word to type, in the language of the interface ("RESTORE", "WIEDERHERSTELLEN"); the word of any language is accepted.</summary>
+    public static string Phrase => Text.T("Backup.Restore.Phrase");
+
+    private static bool IsPhrase(string? typed)
+        => Languages.Codes.Any(code => string.Equals(typed?.Trim(), TextCatalog.Find("Backup.Restore.Phrase", code), StringComparison.OrdinalIgnoreCase));
 
     public sealed class InputModel
     {
@@ -16,7 +21,7 @@ public sealed class ConfirmModel(BackupService backups) : PageModelBase
 
         public bool Settings { get; set; }
 
-        [Display(Name = "Bestätigung")]
+        [Display(Name = "Backup.Restore.Confirmation")]
         public string? Confirmation { get; set; }
     }
 
@@ -44,9 +49,9 @@ public sealed class ConfirmModel(BackupService backups) : PageModelBase
             return RedirectToPage("/Admin/Backup/Restore/Index");
         }
 
-        if (!string.Equals(Input.Confirmation?.Trim(), Phrase, StringComparison.OrdinalIgnoreCase))
+        if (!IsPhrase(Input.Confirmation))
         {
-            ModelState.AddModelError("Input.Confirmation", $"Bitte tippe {Phrase}, um zu bestätigen.");
+            ModelState.AddModelError("Input.Confirmation", L["Backup.Restore.Type.Required", Phrase]);
             return Page();
         }
 
@@ -85,7 +90,7 @@ public sealed class ConfirmModel(BackupService backups) : PageModelBase
         {
             if (Result is null)
             {
-                FlashError("Diese Auswahl ist abgelaufen. Bitte wähle die Sicherung noch einmal.");
+                FlashError(L["Backup.Restore.Expired"]);
             }
 
             return false;
@@ -97,7 +102,7 @@ public sealed class ConfirmModel(BackupService backups) : PageModelBase
         }
         catch (Exception ex) when (ex is BackupException or InvalidDataException)
         {
-            FlashError(ex is BackupException ? ex.Message : "Die Datei ist keine gültige Sicherung.");
+            FlashError(ex is BackupException ? ex.Message : L["Backup.Restore.Invalid"].Value);
             backups.DeleteStaged(path);
             return false;
         }
@@ -107,7 +112,7 @@ public sealed class ConfirmModel(BackupService backups) : PageModelBase
 
     private void Prepare()
     {
-        Head("Wiederherstellen", "Bitte prüfe, was zurückgespielt wird.", ("Einstellungen", null), ("Sicherung", "/Admin/Backup"), ("Wiederherstellen", "/Admin/Backup/Restore"), ("Bestätigen", null));
+        Head(L["Backup.Restore"], L["Backup.Restore.Confirm.Sub"], (L["Backup.Settings"], null), (L["Backup.Title"], "/Admin/Backup"), (L["Backup.Restore"], "/Admin/Backup/Restore"), (L["Backup.Restore.Confirm"], null));
         ViewData["ActiveHref"] = "/Admin/Backup/Restore";
         ViewData["Width"] = "narrow";
     }

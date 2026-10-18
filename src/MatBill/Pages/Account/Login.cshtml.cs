@@ -11,13 +11,13 @@ public sealed class LoginModel(SignInService signIn, TwoFactorTicket ticket, Act
 {
     public sealed class InputModel
     {
-        [Required(ErrorMessage = "Bitte gib deine E-Mail-Adresse ein.")]
-        [EmailAddress(ErrorMessage = "Das ist keine gültige E-Mail-Adresse.")]
-        [Display(Name = "E-Mail-Adresse")]
+        [Required(ErrorMessage = "Account.Login.Email.Required")]
+        [EmailAddress(ErrorMessage = "Account.Email.Invalid")]
+        [Display(Name = "Account.Email")]
         public string Email { get; set; } = "";
 
-        [Required(ErrorMessage = "Bitte gib dein Passwort ein.")]
-        [Display(Name = "Passwort")]
+        [Required(ErrorMessage = "Account.Login.Password.Required")]
+        [Display(Name = "Account.Password")]
         public string Password { get; set; } = "";
     }
 
@@ -34,14 +34,14 @@ public sealed class LoginModel(SignInService signIn, TwoFactorTicket ticket, Act
             return LocalRedirect(Landing());
         }
 
-        ViewData["Title"] = "Anmelden";
+        ViewData["Title"] = L["Account.Login.Title"].Value;
         ViewData["ClearKept"] = true;
         return Page();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        ViewData["Title"] = "Anmelden";
+        ViewData["Title"] = L["Account.Login.Title"].Value;
         ViewData["ClearKept"] = true;
         if (!ModelState.IsValid)
         {
@@ -57,19 +57,19 @@ public sealed class LoginModel(SignInService signIn, TwoFactorTicket ticket, Act
 
             case SignInOutcome.Success:
                 await signIn.StartSessionAsync(HttpContext, result.User!, HttpContext.RequestAborted);
-                await log.LogAsync("Anmeldung", "User", result.User!.Id, result.User.Email);
+                await log.LogAsync(L["Account.Log.SignIn"], "User", result.User!.Id, result.User.Email);
                 return LocalRedirect(Landing());
 
             case SignInOutcome.LockedOut:
-                ModelState.AddModelError(string.Empty, "Zu viele Fehlversuche. Das Konto ist für einige Minuten gesperrt.");
+                ModelState.AddModelError(string.Empty, L["Account.LockedOut"]);
                 return Page();
 
             case SignInOutcome.Inactive:
-                ModelState.AddModelError(string.Empty, "Dieses Konto ist deaktiviert. Bitte wende dich an die Administration.");
+                ModelState.AddModelError(string.Empty, L["Account.Login.Inactive"]);
                 return Page();
 
             default:
-                ModelState.AddModelError(string.Empty, "E-Mail-Adresse oder Passwort stimmen nicht.");
+                ModelState.AddModelError(string.Empty, L["Account.Login.Wrong"]);
                 return Page();
         }
     }

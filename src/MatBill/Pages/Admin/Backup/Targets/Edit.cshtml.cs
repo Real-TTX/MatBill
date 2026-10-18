@@ -10,34 +10,34 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MatBill.Pages.Admin.Backup.Targets;
 
-/// <summary>A target: a folder, or a share of a NAS with its sign-in. The password is kept protected. "Prüfen" writes and removes a small file to see that it works.</summary>
+/// <summary>A target: a folder, or a share of a NAS with its sign-in. The password is kept protected. "Check" writes and removes a small file to see that it works.</summary>
 public sealed class EditModel(MbDbContext db, SecretProtector secrets, BackupStoreFactory stores, ActivityLogger log) : PageModelBase
 {
     public sealed class InputModel
     {
-        [Required(ErrorMessage = "Bitte gib dem Ziel einen Namen.")]
-        [Display(Name = "Name")]
+        [Required(ErrorMessage = "Backup.Target.Name.Required")]
+        [Display(Name = "Common.Name")]
         public string Name { get; set; } = "";
 
-        [Display(Name = "Art")]
+        [Display(Name = "Backup.Target.Kind")]
         public BackupTargetKind Kind { get; set; } = BackupTargetKind.Smb;
 
-        [Display(Name = "Ordner")]
+        [Display(Name = "Backup.Target.Folder")]
         public string Path { get; set; } = "";
 
-        [Display(Name = "Server")]
+        [Display(Name = "Backup.Target.Host")]
         public string? Host { get; set; }
 
-        [Display(Name = "Freigabe")]
+        [Display(Name = "Backup.Target.Share")]
         public string? Share { get; set; }
 
-        [Display(Name = "Domäne (optional)")]
+        [Display(Name = "Backup.Target.Domain")]
         public string? Domain { get; set; }
 
-        [Display(Name = "Benutzername")]
+        [Display(Name = "Backup.Target.User")]
         public string? UserName { get; set; }
 
-        [Display(Name = "Passwort")]
+        [Display(Name = "Backup.Password")]
         public string? Password { get; set; }
     }
 
@@ -68,7 +68,7 @@ public sealed class EditModel(MbDbContext db, SecretProtector secrets, BackupSto
         }
         else
         {
-            Input.Path = "MatBill-Sicherungen";
+            Input.Path = L["Backup.Target.DefaultFolder"];
         }
 
         return Page();
@@ -90,8 +90,8 @@ public sealed class EditModel(MbDbContext db, SecretProtector secrets, BackupSto
         var target = Target is { } existing ? await db.BackupTarget.FirstAsync(t => t.Id == existing.Id) : db.BackupTarget.Add(new BackupTarget()).Entity;
         Apply(target);
         await db.SaveChangesAsync();
-        await log.LogAsync("Sicherungsziel gespeichert", "BackupTarget", target.Id, target.Name);
-        Flash("Das Ziel ist gespeichert.");
+        await log.LogAsync(L["Backup.Target.Log.Saved"], "BackupTarget", target.Id, target.Name);
+        Flash(L["Backup.Target.Saved"]);
         return RedirectToPage("/Admin/Backup/Targets/Index");
     }
 
@@ -133,14 +133,14 @@ public sealed class EditModel(MbDbContext db, SecretProtector secrets, BackupSto
 
         if (await db.BackupPlan.AnyAsync(p => p.TargetId == target.Id))
         {
-            FlashError("Dieses Ziel wird von einem Plan benutzt. Ändere oder lösche zuerst den Plan.");
+            FlashError(L["Backup.Target.InUse"]);
             return RedirectToPage(new { id = Id });
         }
 
         db.BackupTarget.Remove(target);
         await db.SaveChangesAsync();
-        await log.LogAsync("Sicherungsziel gelöscht", "BackupTarget", target.Id, target.Name);
-        Flash("Das Ziel ist gelöscht. Die Sicherungen dort bleiben liegen.");
+        await log.LogAsync(L["Backup.Target.Log.Deleted"], "BackupTarget", target.Id, target.Name);
+        Flash(L["Backup.Target.Deleted"]);
         return RedirectToPage("/Admin/Backup/Targets/Index");
     }
 
@@ -153,12 +153,12 @@ public sealed class EditModel(MbDbContext db, SecretProtector secrets, BackupSto
 
         if (string.IsNullOrWhiteSpace(Input.Host))
         {
-            ModelState.AddModelError("Input.Host", "Bitte gib den Server (Namen oder Adresse) des NAS an.");
+            ModelState.AddModelError("Input.Host", L["Backup.Target.Host.Required"]);
         }
 
         if (string.IsNullOrWhiteSpace(Input.Share))
         {
-            ModelState.AddModelError("Input.Share", "Bitte gib den Namen der Freigabe an.");
+            ModelState.AddModelError("Input.Share", L["Backup.Target.Share.Required"]);
         }
     }
 
@@ -193,8 +193,8 @@ public sealed class EditModel(MbDbContext db, SecretProtector secrets, BackupSto
             }
         }
 
-        var title = Target is null ? "Neues Ziel" : Target.Name;
-        Head(title, null, ("Einstellungen", null), ("Sicherung", "/Admin/Backup"), ("Ziele", "/Admin/Backup/Targets"), (title, null));
+        var title = Target is null ? L["Backup.Targets.New"].Value : Target.Name;
+        Head(title, null, (L["Backup.Settings"], null), (L["Backup.Title"], "/Admin/Backup"), (L["Backup.Targets"], "/Admin/Backup/Targets"), (title, null));
         ViewData["ActiveHref"] = "/Admin/Backup/Targets";
         ViewData["Width"] = "narrow";
         return true;

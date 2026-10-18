@@ -3,8 +3,8 @@
 @{
     var kinds = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
     {
-        new("NAS (SMB-Freigabe)", nameof(BackupTargetKind.Smb)),
-        new("Ordner im Container oder Volume", nameof(BackupTargetKind.Local)),
+        new(L["Backup.Target.Kind.Smb"], nameof(BackupTargetKind.Smb)),
+        new(L["Backup.Target.Kind.Local"], nameof(BackupTargetKind.Local)),
     };
 }
 
@@ -16,29 +16,29 @@
         <div class="mat-alert mat-alert--@(Model.TestOk ? "success" : "danger")" role="status">@Ui.Icon(Model.TestOk ? "check-circle" : "alert")<div class="mat-alert__body">@Model.Test</div></div>
     }
 
-    <mb-card title="Ziel" icon="hard-drive">
+    <mb-card title="@L["Backup.Target"]" icon="hard-drive">
         <div class="mat-form__grid">
-            <mb-input for="Input.Name" label="Name" required="true" hint="Zum Beispiel „NAS im Büro“." />
-            <mb-select for="Input.Kind" label="Art" items="kinds" />
-            <mb-input for="Input.Host" label="Server" hint="Name oder Adresse des NAS, zum Beispiel nas.local (SMB, Port 445)" show-if="Input.Kind" show-value="Smb" />
-            <mb-input for="Input.Share" label="Freigabe" hint="Der Name des freigegebenen Ordners, zum Beispiel Sicherungen" show-if="Input.Kind" show-value="Smb" />
-            <mb-input for="Input.Path" label="Ordner" full="true" hint="@("Bei einem NAS: ein Ordner in der Freigabe. Bei „Ordner“: ein Pfad, relativ zum Daten-Volume (leer: backups).")" />
-            <mb-input for="Input.Domain" label="Domäne (optional)" autocomplete="off" show-if="Input.Kind" show-value="Smb" />
-            <mb-input for="Input.UserName" label="Benutzername" autocomplete="off" show-if="Input.Kind" show-value="Smb" />
-            <mb-input for="Input.Password" label="Passwort" type="password" autocomplete="new-password" show-if="Input.Kind" show-value="Smb" hint="@(Model.HasPassword ? "Leer lassen, um das gespeicherte Passwort zu behalten." : "Wird verschlüsselt gespeichert.")" />
+            <mb-input for="Input.Name" label="@L["Common.Name"]" required="true" hint="@L["Backup.Target.Name.Hint"]" />
+            <mb-select for="Input.Kind" label="@L["Backup.Target.Kind"]" items="kinds" />
+            <mb-input for="Input.Host" label="@L["Backup.Target.Host"]" hint="@L["Backup.Target.Host.Hint"]" show-if="Input.Kind" show-value="Smb" />
+            <mb-input for="Input.Share" label="@L["Backup.Target.Share"]" hint="@L["Backup.Target.Share.Hint"]" show-if="Input.Kind" show-value="Smb" />
+            <mb-input for="Input.Path" label="@L["Backup.Target.Folder"]" full="true" hint="@L["Backup.Target.Path.Hint"]" />
+            <mb-input for="Input.Domain" label="@L["Backup.Target.Domain"]" autocomplete="off" show-if="Input.Kind" show-value="Smb" />
+            <mb-input for="Input.UserName" label="@L["Backup.Target.User"]" autocomplete="off" show-if="Input.Kind" show-value="Smb" />
+            <mb-input for="Input.Password" label="@L["Backup.Password"]" type="password" autocomplete="new-password" show-if="Input.Kind" show-value="Smb" hint="@(Model.HasPassword ? L["Backup.KeepPassword"] : L["Backup.Target.Password.Hint"])" />
         </div>
     </mb-card>
 
     @if (Model.Target is not null)
     {
-        <mb-buttons back-href="/Admin/Backup/Targets" delete-url="@Url.Page("/Admin/Backup/Targets/Edit", "Delete", new { id = Model.Id })" delete-confirm="Dieses Ziel löschen? Die Sicherungen dort bleiben liegen.">
-            <button type="submit" formnovalidate asp-page-handler="Test" class="mat-btn mat-btn--secondary">@Ui.Icon("activity")<span>Prüfen</span></button>
+        <mb-buttons back-href="/Admin/Backup/Targets" delete-url="@Url.Page("/Admin/Backup/Targets/Edit", "Delete", new { id = Model.Id })" delete-confirm="@L["Backup.Target.Delete.Confirm"]">
+            <button type="submit" formnovalidate asp-page-handler="Test" class="mat-btn mat-btn--secondary">@Ui.Icon("activity")<span>@L["Backup.Target.Test"]</span></button>
         </mb-buttons>
     }
     else
     {
         <mb-buttons back-href="/Admin/Backup/Targets">
-            <button type="submit" formnovalidate asp-page-handler="Test" class="mat-btn mat-btn--secondary">@Ui.Icon("activity")<span>Prüfen</span></button>
+            <button type="submit" formnovalidate asp-page-handler="Test" class="mat-btn mat-btn--secondary">@Ui.Icon("activity")<span>@L["Backup.Target.Test"]</span></button>
         </mb-buttons>
     }
 </form>

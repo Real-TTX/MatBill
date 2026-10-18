@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using MatBill.Configuration;
 using MatBill.Data;
 using MatBill.Data.Entities;
+using MatBill.Localization;
 
 namespace MatBill.Storage;
 
@@ -26,7 +27,7 @@ public sealed class LocalFileStore(string root) : IFileStore
         var full = Path.GetFullPath(Path.Combine(root, key.Replace('/', Path.DirectorySeparatorChar)));
         if (!full.StartsWith(Path.GetFullPath(root) + Path.DirectorySeparatorChar, StringComparison.Ordinal))
         {
-            throw new StorageException("Ungültiger Dateischlüssel.");
+            throw new StorageException(Text.T("Storage.InvalidKey"));
         }
 
         return full;
@@ -50,7 +51,7 @@ public sealed class LocalFileStore(string root) : IFileStore
         var path = PathOf(key);
         if (!File.Exists(path))
         {
-            throw new StorageException("Die Datei fehlt im Speicher.");
+            throw new StorageException(Text.T("Storage.FileMissing"));
         }
 
         return Task.FromResult<Stream>(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, useAsync: true));
@@ -106,8 +107,8 @@ public sealed class FileStoreService(ConfigStore config, SecretProtector secrets
     private IFileStore StoreFor(string scheme) => scheme switch
     {
         LocalScheme => Local,
-        SmbScheme => new SmbFileStore(ConfiguredShare() ?? throw new StorageException("Der NAS-Speicher ist nicht eingerichtet, aber diese Datei liegt dort.")),
-        _ => throw new StorageException("Unbekannter Speicher.")
+        SmbScheme => new SmbFileStore(ConfiguredShare() ?? throw new StorageException(Text.T("Storage.NasNotSetUp"))),
+        _ => throw new StorageException(Text.T("Storage.Unknown"))
     };
 
     private static (string Scheme, string Path) Split(string key)
@@ -229,6 +230,6 @@ public sealed class FileStoreService(ConfigStore config, SecretProtector secrets
         }
 
         clean = new string(clean.Where(c => !char.IsControl(c)).ToArray()).Trim();
-        return clean.Length == 0 ? "datei" : clean.Length > 150 ? clean[^150..] : clean;
+        return clean.Length == 0 ? "file" : clean.Length > 150 ? clean[^150..] : clean;
     }
 }

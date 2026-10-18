@@ -33,7 +33,7 @@ public sealed class IndexModel(MbDbContext db, ConfigStore config, BackupService
 
     public async Task OnGetAsync()
     {
-        Head("Sicherung", "Datenbank, Einstellungen und Anhänge auf ein NAS oder in einen Ordner sichern.", ("Einstellungen", null), ("Sicherung", null));
+        Head(L["Backup.Title"], L["Backup.Sub"], (L["Backup.Settings"], null), (L["Backup.Title"], null));
         Plans = await db.BackupPlan.AsNoTracking().Include(p => p.Target).OrderBy(p => p.Name).ToListAsync();
         TargetCount = await db.BackupTarget.CountAsync();
         LastRun = await db.BackupRun.AsNoTracking().OrderByDescending(r => r.StartDate).FirstOrDefaultAsync();
@@ -42,23 +42,23 @@ public sealed class IndexModel(MbDbContext db, ConfigStore config, BackupService
         var page = Math.Min(Math.Max(1, ListQuery.Page(Request)), Math.Max(1, (int)Math.Ceiling(total / 10.0)));
         var runs = await db.BackupRun.AsNoTracking().OrderByDescending(r => r.StartDate).Skip((page - 1) * 10).Take(10).ToListAsync();
         Pager = new PagerModel { Page = page, PageSize = 10, Total = total, Url = p => Url.Page("/Admin/Backup/Index", new { page = p })! };
-        Runs = TableModel.Of("run-table", "Sicherungen der letzten Zeit", runs,
+        Runs = TableModel.Of("run-table", L["Backup.Recent"], runs,
         [
-            (new TableColumn("Wann"), r => Ui.Text(Fmt.Moment(r.StartDate))),
-            (new TableColumn("Plan"), r => Ui.NameWithSub(r.PlanName ?? "Einzelne Sicherung", null, (r.IsManual ? "von Hand" : "automatisch") + (r.TargetName is null ? "" : " → " + r.TargetName))),
-            (new TableColumn("Größe", Numeric: true, HideOnPhone: true), r => Ui.Text(r.Status == BackupRunStatus.Success ? Fmt.FileSize(r.SizeBytes) : "")),
-            (new TableColumn("Dauer", Numeric: true, HideOnPhone: true), r => Ui.Text($"{Math.Max(1, (int)(r.EndDate - r.StartDate).TotalSeconds)} s")),
-            (new TableColumn("Ergebnis"), r => r.Status == BackupRunStatus.Success ? Ui.NameWithSub("erfolgreich", null, r.Message) : Ui.NameWithSub("fehlgeschlagen", null, r.Message)),
+            (new TableColumn(L["Backup.When"]), r => Ui.Text(Fmt.Moment(r.StartDate))),
+            (new TableColumn(L["Backup.Col.Plan"]), r => Ui.NameWithSub(r.PlanName ?? L["Backup.SingleBackup"].Value, null, (r.IsManual ? L["Backup.Manual"].Value : L["Backup.Automatic"].Value) + (r.TargetName is null ? "" : " → " + r.TargetName))),
+            (new TableColumn(L["Backup.Size"], Numeric: true, HideOnPhone: true), r => Ui.Text(r.Status == BackupRunStatus.Success ? Fmt.FileSize(r.SizeBytes) : "")),
+            (new TableColumn(L["Backup.Col.Duration"], Numeric: true, HideOnPhone: true), r => Ui.Text($"{Math.Max(1, (int)(r.EndDate - r.StartDate).TotalSeconds)} s")),
+            (new TableColumn(L["Backup.Col.Result"]), r => Ui.NameWithSub(r.Status == BackupRunStatus.Success ? L["Backup.Succeeded"].Value : L["Backup.Failed"].Value, null, r.Message)),
         ],
         r => []);
-        Runs = Runs with { EmptyTitle = "Noch keine Sicherung", EmptyText = "Lege ein Ziel und einen Plan an, oder lade jetzt eine Sicherung herunter.", EmptyIcon = "shield" };
+        Runs = Runs with { EmptyTitle = L["Backup.Empty.Title"], EmptyText = L["Backup.Empty.Text"], EmptyIcon = "shield" };
     }
 
     public IActionResult OnPostToggle()
     {
         var now = !config.Current.Backup.Enabled;
         config.Update(c => c.Backup.Enabled = now);
-        Flash(now ? "Die geplanten Sicherungen laufen wieder." : "Die geplanten Sicherungen sind angehalten.");
+        Flash(now ? L["Backup.Resumed"] : L["Backup.Paused"]);
         return RedirectToPage();
     }
 
@@ -67,21 +67,21 @@ public sealed class IndexModel(MbDbContext db, ConfigStore config, BackupService
     {
         if (BackupService.IsBusy)
         {
-            FlashError("Es läuft gerade schon eine Sicherung oder Wiederherstellung.");
+            FlashError(L["Backup.Busy"]);
             return RedirectToPage();
         }
 
         try
         {
             var path = await backups.CreateFileAsync(scope, passphrase, HttpContext.RequestAborted);
-            var name = BackupNames.Make("manuell", clock.GetUtcNow().UtcDateTime, !string.IsNullOrEmpty(passphrase));
-            await log.LogAsync("Sicherung heruntergeladen", "Backup", null, scope.ToString());
+            var name = BackupNames.Make("manual", clock.GetUtcNow().UtcDateTime, !string.IsNullOrEmpty(passphrase));
+            await log.LogAsync(L["Backup.Log.Downloaded"], "Backup", null, scope.ToString());
             var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, FileOptions.DeleteOnClose | FileOptions.Asynchronous);
             return File(stream, "application/octet-stream", name);
         }
         catch (Exception ex) when (ex is IOException or Npgsql.NpgsqlException or BackupException)
         {
-            FlashError("Die Sicherung konnte nicht erstellt werden: " + ex.Message);
+            FlashError(L["Backup.Download.Failed", ex.Message]);
             return RedirectToPage();
         }
     }

@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using MatBill.Configuration;
 using MatBill.Data;
 using MatBill.Data.Entities;
+using MatBill.Localization;
 using MatBill.Services.Auth;
 using MatBill.Storage;
 using MatBill.UiKit;
@@ -38,6 +39,20 @@ public sealed class BackupService(
     private static readonly JsonSerializerOptions Json = new() { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
     public static bool IsBusy => Busy.CurrentCount == 0;
+
+    /// <summary>The marks of <see cref="BackupPlan.LastStatus"/>: a code, not a text (older versions wrote "Erfolgreich" and "Fehlgeschlagen: …").</summary>
+    private const string StatusSuccess = "Success";
+
+    private const string StatusFailed = "Failed: ";
+
+    public static bool IsFailedStatus(string? status)
+        => status is not null && (status.StartsWith(StatusFailed, StringComparison.Ordinal) || status.StartsWith("Fehl", StringComparison.Ordinal));
+
+    /// <summary>
+    /// The folder of the safety copies made before a restore. The name is on disk in existing installations, so it stays as it was
+    /// (it means "before restore").
+    /// </summary>
+    public static string SafetyFolder(string dataDir) => Path.Combine(dataDir, "backups", "vor-wiederherstellung");
 
     private TimeZoneInfo Zone => Fmt.Zone;
 
@@ -170,11 +185,11 @@ public sealed class BackupService(
     {
         if (!await Busy.WaitAsync(0, ct))
         {
-            throw new BackupException("Es läuft gerade schon eine Sicherung oder Wiederherstellung.");
+            throw new BackupException(Text.T("Backup.Busy"));
         }
 
         var started = clock.GetUtcNow().UtcDateTime;
-        var target = plan.Target ?? await db.BackupTarget.FirstOrDefaultAsync(t => t.Id == plan.TargetId, ct) ?? throw new BackupException("Das Ziel des Plans gibt es nicht mehr.");
+        var target = plan.Target ?? await db.BackupTarget.FirstOrDefaultAsync(t => t.Id == plan.TargetId, ct) ?? throw new BackupException(Text.T("Backup.Service.TargetGone"));
         var run = new BackupRun { PlanId = plan.Id, PlanName = plan.Name, TargetName = target.Name, StartDate = started, IsManual = manual, Scope = plan.Scope };
         string? file = null;
         try
@@ -192,9 +207,9 @@ public sealed class BackupService(
             run.FileName = name;
             var removed = await ApplyRetentionAsync(plan, store, ct);
             run.Status = BackupRunStatus.Success;
-            run.Message = removed > 0 ? $"{removed} ältere Sicherung(en) entfernt." : null;
+            run.Message = removed > 0 ? Text.T("Backup.Service.Removed", removed) : null;
             plan.FailedAttempts = 0;
-            plan.LastStatus = "Erfolgreich";
+            plan.LastStatus = StatusSuccess;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -202,7 +217,7 @@ public sealed class BackupService(
             run.Status = BackupRunStatus.Failed;
             run.Message = ex.Message;
             plan.FailedAttempts++;
-            plan.LastStatus = "Fehlgeschlagen: " + ex.Message;
+            plan.LastStatus = StatusFailed + ex.Message;
         }
         finally
         {
@@ -220,7 +235,7 @@ public sealed class BackupService(
         db.BackupRun.Add(run);
         db.BackupPlan.Update(plan);
         await db.SaveChangesAsync(ct);
-        await log.LogAsync(run.Status == BackupRunStatus.Success ? "Sicherung erstellt" : "Sicherung fehlgeschlagen", "Backup", run.Id, $"{plan.Name} → {target.Name}");
+        await log.LogAsync(run.Status == BackupRunStatus.Success ? Text.T("Backup.Log.Created") : Text.T("Backup.Log.Failed"), "Backup", run.Id, $"{plan.Name} → {target.Name}");
         return run;
     }
 
@@ -289,10 +304,10 @@ public sealed class BackupService(
 
     private static async Task<BackupManifest> ReadManifestAsync(ZipArchive zip, CancellationToken ct)
     {
-        var entry = zip.GetEntry("manifest.json") ?? throw new BackupException("Das ist keine Sicherung von MatBill (die Beschreibung fehlt).");
+        var entry = zip.GetEntry("manifest.json") ?? throw new BackupException(Text.T("Backup.Service.NoManifest"));
         await using var reader = entry.Open();
-        var manifest = await JsonSerializer.DeserializeAsync<BackupManifest>(reader, Json, ct) ?? throw new BackupException("Die Beschreibung der Sicherung ist leer.");
-        return manifest.Format > FormatVersion ? throw new BackupException("Diese Sicherung stammt aus einer neueren Version von MatBill.") : manifest;
+        var manifest = await JsonSerializer.DeserializeAsync<BackupManifest>(reader, Json, ct) ?? throw new BackupException(Text.T("Backup.Service.EmptyManifest"));
+        return manifest.Format > FormatVersion ? throw new BackupException(Text.T("Backup.Service.Newer")) : manifest;
     }
 
     /// <summary>
@@ -316,7 +331,7 @@ public sealed class BackupService(
             {
                 if (string.IsNullOrEmpty(passphrase))
                 {
-                    throw new BackupException("Diese Sicherung ist verschlüsselt. Bitte gib das Passwort ein.");
+                    throw new BackupException(Text.T("Backup.Service.Encrypted"));
                 }
 
                 try
@@ -376,7 +391,7 @@ public sealed class BackupService(
     {
         if (!await Busy.WaitAsync(0, ct))
         {
-            throw new BackupException("Es läuft gerade schon eine Sicherung oder Wiederherstellung.");
+            throw new BackupException(Text.T("Backup.Busy"));
         }
 
         try
@@ -388,13 +403,13 @@ public sealed class BackupService(
             }
             catch (InvalidDataException ex)
             {
-                throw new BackupException("Die Datei ist keine gültige Sicherung.", ex);
+                throw new BackupException(Text.T("Backup.Restore.Invalid"), ex);
             }
 
             var latest = await database.LatestMigrationAsync(ct);
             if (manifest.Migration is not null && latest is not null && string.CompareOrdinal(manifest.Migration, latest) > 0)
             {
-                throw new BackupException("Diese Sicherung stammt aus einer neueren Version von MatBill. Aktualisiere zuerst die Anwendung.");
+                throw new BackupException(Text.T("Backup.Service.NewerUpdate"));
             }
 
             var safety = await MakeSafetyCopyAsync(ct);
@@ -407,18 +422,18 @@ public sealed class BackupService(
             }
             catch (Exception ex) when (ex is Npgsql.NpgsqlException or InvalidOperationException)
             {
-                throw new BackupException("Die Datenbank konnte nicht wiederhergestellt werden, es wurde nichts verändert: " + ex.Message, ex);
+                throw new BackupException(Text.T("Backup.Service.DatabaseFailed", ex.Message), ex);
             }
 
             sessions.InvalidateAll();
             var restoredFiles = options.Files && manifest.Files.Count > 0 ? await RestoreFilesAsync(zip, manifest, notes, ct) : 0;
             if (options.Files && manifest.Scope == BackupScope.SystemOnly)
             {
-                notes.Add("Die Sicherung enthält keine Dateien (Umfang „nur System“). Anhänge, die nicht mehr im Speicher liegen, fehlen.");
+                notes.Add(Text.T("Backup.Service.NoFiles"));
             }
 
             var settings = options.Settings && manifest.HasSettings && RestoreSettings(zip, notes);
-            await log.LogAsync("Sicherung wiederhergestellt", "Backup", null, $"Stand {Fmt.Moment(manifest.CreatedUtc)}, Version {manifest.App}");
+            await log.LogAsync(Text.T("Backup.Log.Restored"), "Backup", null, Text.T("Backup.Log.Restored.Detail", Fmt.Moment(manifest.CreatedUtc), manifest.App));
             return new RestoreResult(manifest.Tables.Count, manifest.Tables.Sum(t => t.Rows), restoredFiles, settings, safety, notes);
         }
         finally
@@ -435,7 +450,7 @@ public sealed class BackupService(
             var entry = zip.GetEntry(f.Entry);
             if (entry is null)
             {
-                notes.Add($"Datei {f.Id} fehlt in der Sicherung.");
+                notes.Add(Text.T("Backup.Service.FileMissing", f.Id));
                 continue;
             }
 
@@ -451,7 +466,7 @@ public sealed class BackupService(
 
         if (manifest.Problems.Count > 0)
         {
-            notes.Add($"Beim Erstellen der Sicherung fehlten {manifest.Problems.Count} Datei(en): {manifest.Problems[0]}");
+            notes.Add(Text.T("Backup.Service.FilesMissing", manifest.Problems.Count, manifest.Problems[0]));
         }
 
         return count;
@@ -499,7 +514,7 @@ public sealed class BackupService(
 
         if (restored)
         {
-            notes.Add("Die Einstellungen sind zurück. Starte den Container neu (docker compose restart), damit die gespeicherten Passwörter wieder entschlüsselt werden können.");
+            notes.Add(Text.T("Backup.Service.SettingsBack"));
         }
 
         return restored;
@@ -508,12 +523,12 @@ public sealed class BackupService(
     /// <summary>Before a restore the current system is saved into the volume, so that a restore of the wrong file can be taken back. The newest three are kept.</summary>
     private async Task<string?> MakeSafetyCopyAsync(CancellationToken ct)
     {
-        var folder = Path.Combine(config.DataDir, "backups", "vor-wiederherstellung");
+        var folder = SafetyFolder(config.DataDir);
         try
         {
             var file = await CreateFileAsync(BackupScope.SystemOnly, null, ct);
             Directory.CreateDirectory(folder);
-            var target = Path.Combine(folder, BackupNames.Make("vor-wiederherstellung", clock.GetUtcNow().UtcDateTime, false));
+            var target = Path.Combine(folder, BackupNames.Make("before-restore", clock.GetUtcNow().UtcDateTime, false));
             File.Move(file, target, overwrite: true);
             foreach (var old in new DirectoryInfo(folder).GetFiles().Where(f => BackupNames.IsBackup(f.Name)).OrderByDescending(f => f.LastWriteTimeUtc).Skip(3))
             {
@@ -524,7 +539,7 @@ public sealed class BackupService(
         }
         catch (Exception ex) when (ex is IOException or Npgsql.NpgsqlException or UnauthorizedAccessException)
         {
-            throw new BackupException("Vor der Wiederherstellung konnte keine Sicherheitskopie des aktuellen Stands angelegt werden: " + ex.Message, ex);
+            throw new BackupException(Text.T("Backup.Service.SafetyFailed", ex.Message), ex);
         }
     }
 

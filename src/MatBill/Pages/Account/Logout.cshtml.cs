@@ -11,7 +11,7 @@ public sealed class LogoutModel(SignInService signIn, ActivityLogger log) : Page
 
     public async Task<IActionResult> OnPostAsync()
     {
-        await log.LogAsync("Abmeldung");
+        await log.LogAsync(L["Account.Log.SignOut"]);
         await signIn.EndSessionAsync(HttpContext);
         return RedirectToPage("/Account/Login");
     }

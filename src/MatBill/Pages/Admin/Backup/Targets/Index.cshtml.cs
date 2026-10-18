@@ -21,16 +21,16 @@ public sealed class IndexModel(MbDbContext db) : PageModelBase
 
     public async Task OnGetAsync()
     {
-        Head("Sicherungsziele", "Wohin die Sicherungen geschrieben werden.", ("Einstellungen", null), ("Sicherung", "/Admin/Backup"), ("Ziele", null));
+        Head(L["Backup.Targets.Title"], L["Backup.Targets.Sub"], (L["Backup.Settings"], null), (L["Backup.Title"], "/Admin/Backup"), (L["Backup.Targets"], null));
         ViewData["ActiveHref"] = "/Admin/Backup/Targets";
 
         var spec = new ListSpec<BackupTarget>
         {
             Id = "targets",
             Action = "/Admin/Backup/Targets",
-            Label = "Ziele",
-            Noun = "Ziele",
-            SearchPlaceholder = "Name oder Ort ...",
+            Label = L["Backup.Targets"],
+            Noun = L["Backup.Targets"],
+            SearchPlaceholder = L["Backup.Targets.Search"],
             Search = (q, text) =>
             {
                 var like = Like.Contains(text);
@@ -38,7 +38,7 @@ public sealed class IndexModel(MbDbContext db) : PageModelBase
             },
             Sorts = new Dictionary<string, (string, Func<IQueryable<BackupTarget>, bool, IOrderedQueryable<BackupTarget>>)>
             {
-                ["name"] = ("Name", (q, d) => d ? q.OrderByDescending(t => t.Name) : q.OrderBy(t => t.Name)),
+                ["name"] = (L["Common.Name"], (q, d) => d ? q.OrderByDescending(t => t.Name) : q.OrderBy(t => t.Name)),
             },
             DefaultSort = "name",
         };
@@ -46,12 +46,17 @@ public sealed class IndexModel(MbDbContext db) : PageModelBase
         var result = await ListBuilder.RunAsync(db.BackupTarget.AsNoTracking(), Request, spec, HttpContext.RequestAborted);
         Toolbar = result.Toolbar;
         Pager = result.Pager;
-        Table = TableModel.Of("target-table", "Sicherungsziele", result.Items,
+        Table = TableModel.Of("target-table", L["Backup.Targets.Title"], result.Items,
         [
-            (new TableColumn("Name"), t => Ui.NameWithSub(t.Name, $"/Admin/Backup/Targets/Edit?id={t.Id}", t.Kind == BackupTargetKind.Local ? "Ordner" : "NAS (SMB)")),
-            (new TableColumn("Ort", Mono: true, HideOnPhone: true), t => Ui.Text(Where(t))),
+            (new TableColumn(L["Common.Name"]), t => Ui.NameWithSub(t.Name, $"/Admin/Backup/Targets/Edit?id={t.Id}", t.Kind == BackupTargetKind.Local ? L["Backup.Target.Folder"].Value : L["Backup.Target.Nas"].Value)),
+            (new TableColumn(L["Backup.Targets.Col.Location"], Mono: true, HideOnPhone: true), t => Ui.Text(Where(t))),
         ],
-        t => [new RowAction("edit", "Bearbeiten", $"/Admin/Backup/Targets/Edit?id={t.Id}")]);
-        Table = Table with { EmptyTitle = Toolbar.Total == 0 ? "Noch kein Ziel" : "Nichts gefunden", EmptyText = Toolbar.Total == 0 ? "Lege einen Ordner oder ein NAS an, auf dem Sicherungen liegen sollen." : "Ändere die Suche.", EmptyIcon = "hard-drive" };
+        t => [new RowAction("edit", L["Common.Edit"].Value, $"/Admin/Backup/Targets/Edit?id={t.Id}")]);
+        Table = Table with
+        {
+            EmptyTitle = Toolbar.Total == 0 ? L["Backup.Targets.Empty.Title"] : L["Backup.NothingFound"],
+            EmptyText = Toolbar.Total == 0 ? L["Backup.Targets.Empty.Text"] : L["Backup.ChangeSearch"],
+            EmptyIcon = "hard-drive",
+        };
     }
 }

@@ -1,4 +1,5 @@
 using MatBill.Data.Entities;
+using MatBill.Localization;
 
 namespace MatBill.Services.Backup;
 
@@ -56,22 +57,19 @@ public static class BackupSchedule
         return TimeZoneInfo.ConvertTimeToUtc(local, zone);
     }
 
-    public static string Describe(BackupPlan plan) => plan.Schedule switch
+    /// <summary>The schedule in words, in the language of the interface: "daily at 02:30", "täglich um 02:30 Uhr".</summary>
+    public static string Describe(BackupPlan plan)
     {
-        ScheduleKind.Hourly => plan.IntervalHours == 1 ? "stündlich" : $"alle {plan.IntervalHours} Stunden",
-        ScheduleKind.Daily => $"täglich um {plan.TimeOfDay:HH\\:mm} Uhr",
-        ScheduleKind.Weekly => $"jeden {DayName(plan.DayOfWeek)} um {plan.TimeOfDay:HH\\:mm} Uhr",
-        _ => $"monatlich am {plan.DayOfMonth}. um {plan.TimeOfDay:HH\\:mm} Uhr",
-    };
+        var time = plan.TimeOfDay.ToString("HH\\:mm", System.Globalization.CultureInfo.InvariantCulture);
+        return plan.Schedule switch
+        {
+            ScheduleKind.Hourly => plan.IntervalHours == 1 ? Text.T("Backup.Schedule.EveryHour") : Text.T("Backup.Schedule.EveryHours", plan.IntervalHours),
+            ScheduleKind.Daily => Text.T("Backup.Schedule.DailyAt", time),
+            ScheduleKind.Weekly => Text.T("Backup.Schedule.WeeklyAt", DayName(plan.DayOfWeek), time),
+            _ => Text.T("Backup.Schedule.MonthlyAt", plan.DayOfMonth, time),
+        };
+    }
 
-    public static string DayName(DayOfWeek day) => day switch
-    {
-        DayOfWeek.Monday => "Montag",
-        DayOfWeek.Tuesday => "Dienstag",
-        DayOfWeek.Wednesday => "Mittwoch",
-        DayOfWeek.Thursday => "Donnerstag",
-        DayOfWeek.Friday => "Freitag",
-        DayOfWeek.Saturday => "Samstag",
-        _ => "Sonntag",
-    };
+    /// <summary>The name of a weekday in the language of the interface ("Sunday", "Sonntag").</summary>
+    public static string DayName(DayOfWeek day) => Languages.FormatCulture.DateTimeFormat.GetDayName(day);
 }

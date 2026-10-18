@@ -14,19 +14,19 @@ namespace MatBill.Pages.Account;
 public sealed class TwoFactorModel(MbDbContext db, TwoFactorService twoFactor, SignInService signIn, TwoFactorTicket ticket, ActivityLogger log) : PageModelBase
 {
     [BindProperty]
-    [Required(ErrorMessage = "Bitte gib den Code ein.")]
-    [Display(Name = "Code")]
+    [Required(ErrorMessage = "Account.TwoFactor.Code.Required")]
+    [Display(Name = "Account.TwoFactor.Code")]
     public string Code { get; set; } = "";
 
     public IActionResult OnGet()
     {
-        ViewData["Title"] = "Zweiter Faktor";
+        ViewData["Title"] = L["Account.TwoFactor.Title"].Value;
         return ticket.Read(HttpContext) is null ? RedirectToPage("/Account/Login") : Page();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        ViewData["Title"] = "Zweiter Faktor";
+        ViewData["Title"] = L["Account.TwoFactor.Title"].Value;
         if (ticket.Read(HttpContext) is not var (userId, returnUrl))
         {
             return RedirectToPage("/Account/Login");
@@ -45,13 +45,13 @@ public sealed class TwoFactorModel(MbDbContext db, TwoFactorService twoFactor, S
 
         if (!await twoFactor.VerifyAsync(user, Code, HttpContext.RequestAborted))
         {
-            ModelState.AddModelError(nameof(Code), signIn.IsLockedOut(user) ? "Zu viele Fehlversuche. Das Konto ist für einige Minuten gesperrt." : "Der Code stimmt nicht.");
+            ModelState.AddModelError(nameof(Code), signIn.IsLockedOut(user) ? L["Account.LockedOut"] : L["Account.WrongCode"]);
             return Page();
         }
 
         ticket.Clear(HttpContext);
         await signIn.StartSessionAsync(HttpContext, user, HttpContext.RequestAborted);
-        await log.LogAsync("Anmeldung mit zweitem Faktor", "User", user.Id, user.Email);
+        await log.LogAsync(L["Account.Log.SignInSecondFactor"], "User", user.Id, user.Email);
         return LocalRedirect(SafeReturn(returnUrl, "/"));
     }
 }

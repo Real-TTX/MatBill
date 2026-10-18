@@ -29,7 +29,7 @@ public sealed class IndexModel(MbDbContext db, BackupService backups, BackupStor
 
     public string? ListError { get; private set; }
 
-    private string SafetyFolder => Path.Combine(config.DataDir, "backups", "vor-wiederherstellung");
+    private string SafetyFolder => BackupService.SafetyFolder(config.DataDir);
 
     public async Task OnGetAsync()
     {
@@ -54,7 +54,7 @@ public sealed class IndexModel(MbDbContext db, BackupService backups, BackupStor
     {
         if (file is null || file.Length == 0)
         {
-            FlashError("Bitte wähle die Datei der Sicherung aus.");
+            FlashError(L["Backup.Restore.File.Missing"]);
             return RedirectToPage();
         }
 
@@ -77,7 +77,7 @@ public sealed class IndexModel(MbDbContext db, BackupService backups, BackupStor
         }
         catch (Exception ex) when (ex is StorageException or IOException)
         {
-            FlashError("Die Sicherung konnte nicht gelesen werden: " + ex.Message);
+            FlashError(L["Backup.Restore.ReadFailed", ex.Message]);
             return RedirectToPage(new { targetId });
         }
     }
@@ -109,7 +109,7 @@ public sealed class IndexModel(MbDbContext db, BackupService backups, BackupStor
 
     private async Task PrepareAsync()
     {
-        Head("Wiederherstellen", "Eine Sicherung zurückspielen.", ("Einstellungen", null), ("Sicherung", "/Admin/Backup"), ("Wiederherstellen", null));
+        Head(L["Backup.Restore"], L["Backup.Restore.Sub"], (L["Backup.Settings"], null), (L["Backup.Title"], "/Admin/Backup"), (L["Backup.Restore"], null));
         ViewData["ActiveHref"] = "/Admin/Backup/Restore";
         ViewData["Width"] = "narrow";
         Targets = await db.BackupTarget.AsNoTracking().OrderBy(t => t.Name).Select(t => new SelectListItem(t.Name, t.Id.ToString(), t.Id == TargetId)).ToListAsync();

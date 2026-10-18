@@ -1,6 +1,7 @@
 using System.Data;
 using System.IO.Compression;
 using MatBill.Configuration;
+using MatBill.Localization;
 using Npgsql;
 
 namespace MatBill.Services.Backup;
@@ -76,7 +77,7 @@ public sealed class DatabaseArchive(ConfigStore config)
             var missing = table.Columns.Where(c => !columns.Contains(c, StringComparer.Ordinal)).ToList();
             if (missing.Count > 0)
             {
-                throw new InvalidOperationException($"In der Sicherung hat die Tabelle {table.Name} die Spalte {missing[0]}, die es in dieser Version nicht mehr gibt.");
+                throw new InvalidOperationException(Text.T("Backup.Archive.ColumnGone", table.Name, missing[0]));
             }
         }
 
@@ -86,7 +87,7 @@ public sealed class DatabaseArchive(ConfigStore config)
         var ordered = replica ? tables.ToList() : await InDependencyOrderAsync(conn, tx, tables, ct);
         foreach (var table in ordered.Where(t => current.ContainsKey(t.Name)))
         {
-            var entry = zip.GetEntry(table.Entry) ?? throw new InvalidOperationException($"Die Sicherung ist unvollständig: {table.Entry} fehlt.");
+            var entry = zip.GetEntry(table.Entry) ?? throw new InvalidOperationException(Text.T("Backup.Archive.Incomplete", table.Entry));
             if (table.Rows == 0)
             {
                 continue;
@@ -183,7 +184,7 @@ public sealed class DatabaseArchive(ConfigStore config)
             var ready = rest.Where(t => parents[t.Name].All(done.Contains)).ToList();
             if (ready.Count == 0)
             {
-                throw new InvalidOperationException("Die Tabellen verweisen im Kreis aufeinander. Zum Wiederherstellen braucht der Datenbankbenutzer erweiterte Rechte (session_replication_role).");
+                throw new InvalidOperationException(Text.T("Backup.Archive.Cycle"));
             }
 
             foreach (var t in ready)

@@ -16,50 +16,50 @@ public sealed class EditModel(MbDbContext db, SecretProtector secrets, ActivityL
 {
     public sealed class InputModel
     {
-        [Required(ErrorMessage = "Bitte gib dem Plan einen Namen.")]
-        [Display(Name = "Name")]
+        [Required(ErrorMessage = "Backup.Plan.Name.Required")]
+        [Display(Name = "Common.Name")]
         public string Name { get; set; } = "";
 
-        [Display(Name = "Ziel")]
+        [Display(Name = "Backup.Target")]
         public long? TargetId { get; set; }
 
-        [Display(Name = "Umfang")]
+        [Display(Name = "Backup.Scope")]
         public BackupScope Scope { get; set; } = BackupScope.SystemOnly;
 
-        [Display(Name = "Wie oft")]
+        [Display(Name = "Backup.Plan.HowOften")]
         public ScheduleKind Schedule { get; set; } = ScheduleKind.Daily;
 
-        [Range(1, 168, ErrorMessage = "Das Intervall liegt zwischen 1 und 168 Stunden.")]
-        [Display(Name = "Alle … Stunden")]
+        [Range(1, 168, ErrorMessage = "Backup.Plan.Interval.Range")]
+        [Display(Name = "Backup.Plan.Interval")]
         public int IntervalHours { get; set; } = 6;
 
-        [Display(Name = "Uhrzeit")]
+        [Display(Name = "Backup.Plan.Time")]
         public string TimeOfDay { get; set; } = "02:30";
 
-        [Display(Name = "Wochentag")]
+        [Display(Name = "Backup.Plan.Weekday")]
         public DayOfWeek DayOfWeek { get; set; } = DayOfWeek.Sunday;
 
-        [Range(1, 31, ErrorMessage = "Der Tag liegt zwischen 1 und 31.")]
-        [Display(Name = "Tag im Monat")]
+        [Range(1, 31, ErrorMessage = "Backup.Plan.DayOfMonth.Range")]
+        [Display(Name = "Backup.Plan.DayOfMonth")]
         public int DayOfMonth { get; set; } = 1;
 
-        [Range(0, 1000, ErrorMessage = "Bitte gib eine Zahl ab 0 ein.")]
-        [Display(Name = "Die neuesten")]
+        [Range(0, 1000, ErrorMessage = "Backup.Plan.Keep.Range")]
+        [Display(Name = "Backup.Plan.KeepLast")]
         public int KeepLast { get; set; } = 7;
 
-        [Range(0, 1000, ErrorMessage = "Bitte gib eine Zahl ab 0 ein.")]
-        [Display(Name = "Eine pro Tag für")]
+        [Range(0, 1000, ErrorMessage = "Backup.Plan.Keep.Range")]
+        [Display(Name = "Backup.Plan.KeepDaily")]
         public int KeepDaily { get; set; }
 
-        [Range(0, 1000, ErrorMessage = "Bitte gib eine Zahl ab 0 ein.")]
-        [Display(Name = "Eine pro Woche für")]
+        [Range(0, 1000, ErrorMessage = "Backup.Plan.Keep.Range")]
+        [Display(Name = "Backup.Plan.KeepWeekly")]
         public int KeepWeekly { get; set; }
 
-        [Range(0, 1000, ErrorMessage = "Bitte gib eine Zahl ab 0 ein.")]
-        [Display(Name = "Eine pro Monat für")]
+        [Range(0, 1000, ErrorMessage = "Backup.Plan.Keep.Range")]
+        [Display(Name = "Backup.Plan.KeepMonthly")]
         public int KeepMonthly { get; set; }
 
-        [Display(Name = "Passwort zum Verschlüsseln")]
+        [Display(Name = "Backup.Plan.Passphrase")]
         public string? Passphrase { get; set; }
 
         public bool RemovePassphrase { get; set; }
@@ -111,12 +111,12 @@ public sealed class EditModel(MbDbContext db, SecretProtector secrets, ActivityL
 
         if (Input.TargetId is null || !Targets.Any(t => t.Value == Input.TargetId.ToString()))
         {
-            ModelState.AddModelError("Input.TargetId", "Bitte wähle ein Ziel. Ein Ziel legst du unter „Ziele“ an.");
+            ModelState.AddModelError("Input.TargetId", L["Backup.Plan.Target.Required"]);
         }
 
         if (!TimeOnly.TryParseExact(Input.TimeOfDay, "HH:mm", out var time) && !TimeOnly.TryParse(Input.TimeOfDay, out time))
         {
-            ModelState.AddModelError("Input.TimeOfDay", "Bitte gib die Uhrzeit so ein: 02:30.");
+            ModelState.AddModelError("Input.TimeOfDay", L["Backup.Plan.Time.Invalid"]);
         }
 
         if (!ModelState.IsValid)
@@ -149,8 +149,8 @@ public sealed class EditModel(MbDbContext db, SecretProtector secrets, ActivityL
 
         plan.NextRunDate = BackupSchedule.Next(plan, clock.GetUtcNow().UtcDateTime, Fmt.Zone);
         await db.SaveChangesAsync();
-        await log.LogAsync("Sicherungsplan gespeichert", "BackupPlan", plan.Id, plan.Name);
-        Flash("Der Plan ist gespeichert.");
+        await log.LogAsync(L["Backup.Plan.Log.Saved"], "BackupPlan", plan.Id, plan.Name);
+        Flash(L["Backup.Plan.Saved"]);
         return RedirectToPage("/Admin/Backup/Plans/Index");
     }
 
@@ -165,7 +165,7 @@ public sealed class EditModel(MbDbContext db, SecretProtector secrets, ActivityL
 
         if (BackupService.IsBusy)
         {
-            FlashError("Es läuft gerade schon eine Sicherung oder Wiederherstellung.");
+            FlashError(L["Backup.Busy"]);
             return RedirectToPage("/Admin/Backup/Index");
         }
 
@@ -184,7 +184,7 @@ public sealed class EditModel(MbDbContext db, SecretProtector secrets, ActivityL
                 // somebody else started a backup in the meantime
             }
         });
-        Flash("Die Sicherung läuft. Das Ergebnis erscheint in der Übersicht.");
+        Flash(L["Backup.Plan.Started"]);
         return RedirectToPage("/Admin/Backup/Index");
     }
 
@@ -195,8 +195,8 @@ public sealed class EditModel(MbDbContext db, SecretProtector secrets, ActivityL
         {
             db.BackupPlan.Remove(plan);
             await db.SaveChangesAsync();
-            await log.LogAsync("Sicherungsplan gelöscht", "BackupPlan", plan.Id, plan.Name);
-            Flash("Der Plan ist gelöscht. Die Sicherungen am Ziel bleiben liegen.");
+            await log.LogAsync(L["Backup.Plan.Log.Deleted"], "BackupPlan", plan.Id, plan.Name);
+            Flash(L["Backup.Plan.Deleted"]);
         }
 
         return RedirectToPage("/Admin/Backup/Plans/Index");
@@ -214,8 +214,8 @@ public sealed class EditModel(MbDbContext db, SecretProtector secrets, ActivityL
         }
 
         Targets = await db.BackupTarget.AsNoTracking().OrderBy(t => t.Name).Select(t => new SelectListItem(t.Name, t.Id.ToString())).ToListAsync();
-        var title = Plan is null ? "Neuer Plan" : Plan.Name;
-        Head(title, null, ("Einstellungen", null), ("Sicherung", "/Admin/Backup"), ("Pläne", "/Admin/Backup/Plans"), (title, null));
+        var title = Plan is null ? L["Backup.Plans.New"].Value : Plan.Name;
+        Head(title, null, (L["Backup.Settings"], null), (L["Backup.Title"], "/Admin/Backup"), (L["Backup.Plans"], "/Admin/Backup/Plans"), (title, null));
         ViewData["ActiveHref"] = "/Admin/Backup/Plans";
         ViewData["Width"] = "narrow";
         return true;

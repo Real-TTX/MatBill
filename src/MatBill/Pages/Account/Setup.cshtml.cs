@@ -15,21 +15,21 @@ public sealed class SetupModel(MbDbContext db, UserService users, SignInService 
 {
     public sealed class InputModel
     {
-        [Required(ErrorMessage = "Bitte gib deinen Namen ein.")]
-        [Display(Name = "Name")]
+        [Required(ErrorMessage = "Account.Setup.Name.Required")]
+        [Display(Name = "Account.Setup.Name")]
         public string DisplayName { get; set; } = "";
 
-        [Required(ErrorMessage = "Bitte gib eine E-Mail-Adresse ein.")]
-        [EmailAddress(ErrorMessage = "Das ist keine gültige E-Mail-Adresse.")]
-        [Display(Name = "E-Mail-Adresse")]
+        [Required(ErrorMessage = "Account.Setup.Email.Required")]
+        [EmailAddress(ErrorMessage = "Account.Email.Invalid")]
+        [Display(Name = "Account.Email")]
         public string Email { get; set; } = "";
 
-        [Required(ErrorMessage = "Bitte wähle ein Passwort.")]
-        [Display(Name = "Passwort")]
+        [Required(ErrorMessage = "Account.Setup.Password.Required")]
+        [Display(Name = "Account.Password")]
         public string Password { get; set; } = "";
 
-        [Required(ErrorMessage = "Bitte wiederhole das Passwort.")]
-        [Display(Name = "Passwort wiederholen")]
+        [Required(ErrorMessage = "Account.Setup.Repeat.Required")]
+        [Display(Name = "Account.Setup.Repeat")]
         public string PasswordRepeat { get; set; } = "";
     }
 
@@ -38,13 +38,13 @@ public sealed class SetupModel(MbDbContext db, UserService users, SignInService 
 
     public async Task<IActionResult> OnGetAsync()
     {
-        ViewData["Title"] = "Einrichtung";
+        ViewData["Title"] = L["Account.Setup.Title"].Value;
         return await db.User.AnyAsync(u => u.Role == UserRole.Admin) ? RedirectToPage("/Account/Login") : Page();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        ViewData["Title"] = "Einrichtung";
+        ViewData["Title"] = L["Account.Setup.Title"].Value;
         if (await db.User.AnyAsync(u => u.Role == UserRole.Admin))
         {
             return RedirectToPage("/Account/Login");
@@ -58,7 +58,7 @@ public sealed class SetupModel(MbDbContext db, UserService users, SignInService 
             }
             else if (Input.Password != Input.PasswordRepeat)
             {
-                ModelState.AddModelError("Input.PasswordRepeat", "Die Passwörter stimmen nicht überein.");
+                ModelState.AddModelError("Input.PasswordRepeat", L["Account.Setup.Mismatch"]);
             }
         }
 
@@ -70,8 +70,8 @@ public sealed class SetupModel(MbDbContext db, UserService users, SignInService 
         var admin = await users.CreateAsync(Input.Email, Input.DisplayName, UserRole.Admin, Input.Password);
         setup.MarkDone();
         await signIn.StartSessionAsync(HttpContext, admin);
-        await log.LogAsync("Einrichtung", "User", admin.Id, "Erster Administrator angelegt");
-        Flash("Willkommen! Trage als Nächstes Absender, Steuernummer und Bankverbindung ein: Sie stehen auf jeder Rechnung.");
+        await log.LogAsync(L["Account.Setup.Title"], "User", admin.Id, L["Account.Setup.Log.Detail"]);
+        Flash(L["Account.Setup.Welcome"]);
         return RedirectToPage("/Branding/Index");
     }
 

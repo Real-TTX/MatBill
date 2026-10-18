@@ -6,13 +6,13 @@
 
 @if (Model.RequiredButMissing)
 {
-    <div class="mat-alert mat-alert--warning">@Ui.Icon("alert")<div class="mat-alert__body"><strong>Für Administratoren ist der zweite Faktor Pflicht.</strong> Richte ihn jetzt ein, um weiterzuarbeiten.</div></div>
+    <div class="mat-alert mat-alert--warning">@Ui.Icon("alert")<div class="mat-alert__body"><strong>@L["Account.Security.Required.Strong"]</strong> @L["Account.Security.Required.Text"]</div></div>
 }
 
 @if (Model.RecoveryCodes is not null)
 {
-    <mb-card title="Wiederherstellungscodes" icon="key">
-        <div class="mat-alert mat-alert--warning">@Ui.Icon("alert")<div class="mat-alert__body">Speichere diese Codes jetzt an einem sicheren Ort. Sie werden nur einmal angezeigt. Jeder Code gilt einmal, falls du dein Handy nicht hast.</div></div>
+    <mb-card title="@L["Account.Security.Codes"]" icon="key">
+        <div class="mat-alert mat-alert--warning">@Ui.Icon("alert")<div class="mat-alert__body">@L["Account.Security.Codes.Warning"]</div></div>
         <ul class="mb-codes" id="recovery-codes">
             @foreach (var code in Model.RecoveryCodes)
             {
@@ -20,70 +20,70 @@
             }
         </ul>
         <div class="mat-btn-row mat-btn-row--plain">
-            <button type="button" class="mat-btn mat-btn--secondary" data-copy="#recovery-codes">@Ui.Icon("copy")<span>Alle kopieren</span></button>
+            <button type="button" class="mat-btn mat-btn--secondary" data-copy="#recovery-codes">@Ui.Icon("copy")<span>@L["Account.Security.Codes.CopyAll"]</span></button>
         </div>
     </mb-card>
 }
 
-<mb-card title="Zweiter Faktor (Authenticator-App)" icon="shield">
+<mb-card title="@L["Account.Security.Totp"]" icon="shield">
     @if (Model.Enabled)
     {
-        <p><span class="mb-chip mb-chip--ok">Aktiv</span> Beim Anmelden fragen wir zusätzlich nach dem Code deiner App. Noch <strong>@Model.RemainingCodes</strong> Wiederherstellungscodes übrig.</p>
+        <p><span class="mb-chip mb-chip--ok">@L["Account.Security.Active"]</span> @L["Account.Security.Enabled.Text"] @Html.Raw(L["Account.Security.Remaining", $"<strong>{Model.RemainingCodes}</strong>"].Value)</p>
         <form class="mat-form" method="post" novalidate>
-            <mb-input name="Confirm" label="Zur Bestätigung: dein Passwort (oder ein Code)" type="password" autocomplete="current-password" required="true" />
+            <mb-input name="Confirm" label="@L["Account.Security.Confirm"]" type="password" autocomplete="current-password" required="true" />
             <div class="mat-btn-row">
-                <button type="submit" asp-page-handler="NewCodes" class="mat-btn mat-btn--secondary">@Ui.Icon("refresh")<span>Neue Wiederherstellungscodes</span></button>
+                <button type="submit" asp-page-handler="NewCodes" class="mat-btn mat-btn--secondary">@Ui.Icon("refresh")<span>@L["Account.Security.NewCodes"]</span></button>
                 <span class="mat-btn-row__spacer"></span>
-                <button type="submit" asp-page-handler="Disable" class="mat-btn mat-btn--danger" data-confirm="Den zweiten Faktor wirklich entfernen? Dein Konto ist dann nur noch mit dem Passwort geschützt." data-confirm-ok="Entfernen">@Ui.Icon("trash")<span>Entfernen</span></button>
+                <button type="submit" asp-page-handler="Disable" class="mat-btn mat-btn--danger" data-confirm="@L["Account.Security.Disable.Confirm"]" data-confirm-ok="@L["Account.Security.Remove"]">@Ui.Icon("trash")<span>@L["Account.Security.Remove"]</span></button>
             </div>
         </form>
     }
     else if (Model.Enrollment is not null)
     {
         <ol class="mb-steps">
-            <li>Öffne eine Authenticator-App (zum Beispiel Aegis, Google Authenticator oder Microsoft Authenticator).</li>
-            <li>Scanne diesen QR-Code oder gib den Schlüssel von Hand ein.</li>
-            <li>Gib den sechsstelligen Code aus der App ein.</li>
+            <li>@L["Account.Security.Step1"]</li>
+            <li>@L["Account.Security.Step2"]</li>
+            <li>@L["Account.Security.Step3"]</li>
         </ol>
         <div class="mb-qr">@Html.Raw(Model.Enrollment.QrSvg)</div>
-        <p class="mat-hint">Schlüssel: <span class="mat-mono">@Model.Enrollment.Secret</span></p>
+        <p class="mat-hint">@L["Account.Security.Key"] <span class="mat-mono">@Model.Enrollment.Secret</span></p>
         <form class="mat-form" method="post" asp-page-handler="Confirm" novalidate>
-            <mb-input name="Code" label="Code aus der App" type="text" inputmode="numeric" autocomplete="one-time-code" required="true" />
+            <mb-input name="Code" label="@L["Account.Security.AppCode"]" type="text" inputmode="numeric" autocomplete="one-time-code" required="true" />
             <div class="mat-btn-row">
-                <button type="submit" class="mat-btn mat-btn--primary">@Ui.Icon("check")<span>Bestätigen und aktivieren</span></button>
-                <a class="mat-btn mat-btn--secondary" href="/Account/Security">@Ui.Icon("back")<span>Abbrechen</span></a>
+                <button type="submit" class="mat-btn mat-btn--primary">@Ui.Icon("check")<span>@L["Account.Security.Activate"]</span></button>
+                <a class="mat-btn mat-btn--secondary" href="/Account/Security">@Ui.Icon("back")<span>@L["Common.Cancel"]</span></a>
             </div>
         </form>
     }
     else
     {
-        <p class="mat-muted">Mit einer Authenticator-App schützt du dein Konto doppelt: Zum Passwort kommt ein Code, der sich alle 30 Sekunden ändert.</p>
+        <p class="mat-muted">@L["Account.Security.Intro"]</p>
         <form method="post" asp-page-handler="Begin">
             <div class="mat-btn-row">
-                <button type="submit" class="mat-btn mat-btn--primary">@Ui.Icon("shield")<span>Einrichten</span></button>
+                <button type="submit" class="mat-btn mat-btn--primary">@Ui.Icon("shield")<span>@L["Account.Security.SetUp"]</span></button>
             </div>
         </form>
     }
 </mb-card>
 
-<mb-card title="Angemeldete Geräte" icon="smartphone">
+<mb-card title="@L["Account.Security.Devices"]" icon="smartphone">
     <div class="mat-list">
         <div class="mat-table-wrap">
             <table class="mat-table" id="sessions">
-                <caption class="mat-sr-only">Angemeldete Geräte</caption>
-                <thead><tr><th scope="col">Gerät</th><th scope="col" class="mat-hide-sm">Adresse</th><th scope="col">Zuletzt aktiv</th><th scope="col"><span class="mat-sr-only">Aktionen</span></th></tr></thead>
+                <caption class="mat-sr-only">@L["Account.Security.Devices"]</caption>
+                <thead><tr><th scope="col">@L["Account.Security.Device"]</th><th scope="col" class="mat-hide-sm">@L["Account.Security.Address"]</th><th scope="col">@L["Account.Security.LastActive"]</th><th scope="col"><span class="mat-sr-only">@L["Account.Security.Actions"]</span></th></tr></thead>
                 <tbody>
                     @foreach (var s in Model.Sessions)
                     {
                         <tr>
-                            <td data-label="Gerät">@s.Device @if (s.IsThis) { <span class="mb-chip mb-chip--accent">dieses Gerät</span> }</td>
-                            <td data-label="Adresse" class="mat-hide-sm mat-mono">@s.Ip</td>
-                            <td data-label="Zuletzt aktiv">@Fmt.Moment(s.LastSeen)</td>
+                            <td data-label="@L["Account.Security.Device"]">@s.Device @if (s.IsThis) { <span class="mb-chip mb-chip--accent">@L["Account.Security.ThisDevice"]</span> }</td>
+                            <td data-label="@L["Account.Security.Address"]" class="mat-hide-sm mat-mono">@s.Ip</td>
+                            <td data-label="@L["Account.Security.LastActive"]">@Fmt.Moment(s.LastSeen)</td>
                             <td class="mat-table__cell-actions">
                                 @if (!s.IsThis)
                                 {
                                     <form method="post" asp-page-handler="EndSession" asp-route-id="@s.Id" class="mat-table__actions">
-                                        <button type="submit" class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" aria-label="Gerät abmelden" data-tip="Abmelden">@Ui.Icon("logout")</button>
+                                        <button type="submit" class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" aria-label="@L["Account.Security.SignOutDevice"]" data-tip="@L["Account.Security.SignOut"]">@Ui.Icon("logout")</button>
                                     </form>
                                 }
                             </td>
@@ -96,7 +96,7 @@
         {
             <form method="post" asp-page-handler="EndOthers">
                 <div class="mat-actions">
-                    <button type="submit" class="mat-btn mat-btn--secondary" data-confirm="Alle anderen Geräte abmelden?" data-confirm-ok="Abmelden">@Ui.Icon("logout")<span>Alle anderen abmelden</span></button>
+                    <button type="submit" class="mat-btn mat-btn--secondary" data-confirm="@L["Account.Security.SignOutOthers.Confirm"]" data-confirm-ok="@L["Account.Security.SignOut"]">@Ui.Icon("logout")<span>@L["Account.Security.SignOutOthers"]</span></button>
                 </div>
             </form>
         }

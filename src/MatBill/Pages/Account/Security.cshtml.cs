@@ -2,6 +2,7 @@ using System.Security.Claims;
 using MatBill.Core.Security;
 using MatBill.Data;
 using MatBill.Data.Entities;
+using MatBill.Localization;
 using MatBill.Services;
 using MatBill.Services.Auth;
 using Microsoft.AspNetCore.Mvc;
@@ -53,13 +54,13 @@ public sealed class SecurityModel(MbDbContext db, ICurrentUser current, TwoFacto
         var codes = await twoFactor.ConfirmEnrollmentAsync(user, Code);
         if (codes is null)
         {
-            ModelState.AddModelError(nameof(Code), "Der Code stimmt nicht. Prüfe die Uhrzeit deines Handys und versuche es noch einmal.");
+            ModelState.AddModelError(nameof(Code), L["Account.Security.WrongCodeClock"]);
             await LoadAsync(user);
             Enrollment = await twoFactor.PendingAsync(user);
             return Page();
         }
 
-        await log.LogAsync("Zweiter Faktor eingerichtet", "User", user.Id);
+        await log.LogAsync(L["Account.Security.Log.Enabled"], "User", user.Id);
         await LoadAsync(user);
         RecoveryCodes = codes;
         return Page();
@@ -90,8 +91,8 @@ public sealed class SecurityModel(MbDbContext db, ICurrentUser current, TwoFacto
         }
 
         await twoFactor.DisableAsync(user);
-        await log.LogAsync("Zweiter Faktor entfernt", "User", user.Id);
-        Flash("Der zweite Faktor ist entfernt.");
+        await log.LogAsync(L["Account.Security.Log.Removed"], "User", user.Id);
+        Flash(L["Account.Security.Removed"]);
         return RedirectToPage();
     }
 
@@ -103,7 +104,7 @@ public sealed class SecurityModel(MbDbContext db, ICurrentUser current, TwoFacto
             session.RevokedDate = clock.GetUtcNow().UtcDateTime;
             await db.SaveChangesAsync();
             HttpContext.RequestServices.GetRequiredService<SessionCache>().InvalidateUser(session.UserId);
-            Flash("Das Gerät ist abgemeldet.");
+            Flash(L["Account.Security.DeviceSignedOut"]);
         }
 
         return RedirectToPage();
@@ -112,7 +113,7 @@ public sealed class SecurityModel(MbDbContext db, ICurrentUser current, TwoFacto
     public async Task<IActionResult> OnPostEndOthersAsync()
     {
         await signIn.EndAllSessionsAsync(current.UserId!.Value, ThisSession());
-        Flash("Alle anderen Geräte sind abgemeldet.");
+        Flash(L["Account.Security.OthersSignedOut"]);
         return RedirectToPage();
     }
 
@@ -128,7 +129,7 @@ public sealed class SecurityModel(MbDbContext db, ICurrentUser current, TwoFacto
                 return true;
             }
 
-            ModelState.AddModelError(nameof(Confirm), "Das Passwort stimmt nicht.");
+            ModelState.AddModelError(nameof(Confirm), L["Account.Security.WrongPassword"]);
             return false;
         }
 
@@ -137,7 +138,7 @@ public sealed class SecurityModel(MbDbContext db, ICurrentUser current, TwoFacto
             return true;
         }
 
-        ModelState.AddModelError(nameof(Confirm), "Der Code stimmt nicht.");
+        ModelState.AddModelError(nameof(Confirm), L["Account.WrongCode"]);
         return false;
     }
 
@@ -147,7 +148,7 @@ public sealed class SecurityModel(MbDbContext db, ICurrentUser current, TwoFacto
     {
         user ??= await LoadUserAsync();
         Enabled = user.Totp is { IsConfirmed: true };
-        Head("Sicherheit", "Zweiter Faktor und angemeldete Geräte.", ("Mein Konto", "/Account/Profile"), ("Sicherheit", null));
+        Head(L["Account.Security.Title"], L["Account.Security.Sub"], (L["Profile.Title"], "/Account/Profile"), (L["Account.Security.Title"], null));
         if (Enabled)
         {
             RemainingCodes = await twoFactor.RemainingRecoveryCodesAsync(user);
@@ -163,18 +164,18 @@ public sealed class SecurityModel(MbDbContext db, ICurrentUser current, TwoFacto
             .ToList();
     }
 
-    /// <summary>A readable name from a user-agent string: "Edge auf Windows".</summary>
+    /// <summary>A readable name from a user-agent string: "Edge on Windows".</summary>
     public static string DeviceName(string? agent)
     {
         if (string.IsNullOrWhiteSpace(agent))
         {
-            return "Unbekanntes Gerät";
+            return Text.T("Account.Security.UnknownDevice");
         }
 
         var browser = agent.Contains("Edg/") ? "Edge" : agent.Contains("OPR/") ? "Opera" : agent.Contains("Firefox/") ? "Firefox"
             : agent.Contains("Chrome/") ? "Chrome" : agent.Contains("Safari/") ? "Safari" : "Browser";
         var os = agent.Contains("Windows") ? "Windows" : agent.Contains("Android") ? "Android" : agent.Contains("iPhone") || agent.Contains("iPad") ? "iOS"
-            : agent.Contains("Mac OS") ? "macOS" : agent.Contains("Linux") ? "Linux" : "unbekanntem System";
-        return $"{browser} auf {os}";
+            : agent.Contains("Mac OS") ? "macOS" : agent.Contains("Linux") ? "Linux" : Text.T("Account.Security.UnknownSystem");
+        return Text.T("Account.Security.DeviceOn", browser, os);
     }
 }
