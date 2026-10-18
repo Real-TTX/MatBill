@@ -167,7 +167,7 @@ public sealed class EditModel(MbDbContext db, NumberService numbers, ActivityLog
         Invoices = await db.Invoice.AsNoTracking().Where(i => i.CustomerId == Customer.Id).OrderByDescending(i => i.InvoiceDate).ThenByDescending(i => i.Id).Take(20).ToListAsync();
         Series = await db.RecurringInvoice.AsNoTracking().Where(s => s.CustomerId == Customer.Id).OrderBy(s => s.Name).ToListAsync();
         OpenSum = await db.Invoice.Where(i => i.CustomerId == Customer.Id && i.Status == InvoiceStatus.Open).SumAsync(i => i.GrossTotal);
-        YearSum = await db.Invoice.Where(i => i.CustomerId == Customer.Id && (i.Status == InvoiceStatus.Open || i.Status == InvoiceStatus.Paid) && i.InvoiceDate.Year == Today.Year).SumAsync(i => i.GrossTotal);
+        YearSum = await db.Invoice.Where(i => i.CustomerId == Customer.Id && i.Status != InvoiceStatus.Draft && i.InvoiceDate.Year == Today.Year).SumAsync(i => i.GrossTotal);
     }
 
     private static string? Clean(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();

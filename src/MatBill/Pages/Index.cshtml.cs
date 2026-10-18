@@ -66,7 +66,7 @@ public sealed class IndexModel(MbDbContext db, ConfigStore config, ICurrentUser 
         OpenCount = await db.Invoice.CountAsync(i => i.Status == InvoiceStatus.Open);
         Overdue = await db.Invoice.Where(i => i.Status == InvoiceStatus.Open && i.DueDate < Today).SumAsync(i => i.GrossTotal);
         OverdueCount = await db.Invoice.CountAsync(i => i.Status == InvoiceStatus.Open && i.DueDate < Today);
-        PaidThisMonth = await db.Invoice.Where(i => i.Status == InvoiceStatus.Paid && i.PaidDate >= monthStart).SumAsync(i => i.GrossTotal);
+        PaidThisMonth = await db.Invoice.Where(i => i.Status == InvoiceStatus.Paid && i.Kind == InvoiceKind.Invoice && i.PaidDate >= monthStart).SumAsync(i => i.GrossTotal);
         RevenueThisYear = await db.Invoice.Where(i => i.Status != InvoiceStatus.Draft && i.InvoiceDate >= yearStart).SumAsync(i => i.NetTotal);
         ExpensesThisYear = await db.Expense.Where(e => e.ExpenseDate >= yearStart).SumAsync(e => e.NetAmount);
         OpenBookings = await db.BankTransaction.CountAsync(t => t.State == MatchState.Open);

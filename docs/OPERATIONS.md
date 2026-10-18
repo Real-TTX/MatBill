@@ -23,6 +23,7 @@ environment variables, which win over the file and are never written back:
 | `MATBILL__Server__TimeZone` | default `Europe/Berlin` |
 | `MATBILL__Server__ForceSecureCookie` | `true` behind HTTPS |
 | `MATBILL_DATA`, `MATBILL_PORT` | the data folder (`/data`) and the port (2505) |
+| `MATBILL_DB_PASSWORD` (compose only) | one password for both services of `docker-compose.yml` (in `.env`); set it before the first start, Postgres keeps it in its volume |
 
 ## Sign-in, sessions, second factor
 

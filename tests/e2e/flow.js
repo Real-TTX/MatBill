@@ -217,11 +217,32 @@ async function confirmDialog(page) {
   const [download] = await Promise.all([page.waitForEvent('download'), page.locator('button', { hasText: 'ZIP herunterladen' }).click()]);
   check(download.suggestedFilename().endsWith('.zip'), 'the export is a ZIP: ' + download.suggestedFilename());
 
+  console.log('More lists');
+  for (const [url, file] of [['/Quotes', 'quotes'], ['/Expenses', 'expenses']]) {
+    const response = await page.goto(base + url);
+    check(response.ok() && await page.locator('h1').count() === 1, url + ' opens');
+    await shot(page, file);
+  }
+
+  console.log('Dark');
+  const dark = await browser.newContext({ viewport: { width: 1440, height: 1000 }, colorScheme: 'dark', locale: 'de-DE', timezoneId: 'Europe/Berlin', storageState: await context.storageState() });
+  const night = await dark.newPage();
+  night.on('pageerror', err => problems.push('page error (dark): ' + err.message));
+  const paid = await night.goto(base + '/').then(() => night.locator('.mb-stat', { hasText: 'Bezahlt' }).innerText());
+  check(!/-\s*\d/.test(paid), 'cancellation invoices do not count as payments: ' + paid.replace(/\s+/g, ' '));
+  for (const [url, file] of [['/', 'dark-dashboard'], ['/Invoices/Edit', 'dark-editor']]) {
+    await night.goto(base + url);
+    await night.waitForTimeout(400);
+    check(await night.evaluate(() => matchMedia('(prefers-color-scheme: dark)').matches), url + ' is shown dark');
+    await shot(night, file);
+  }
+  await dark.close();
+
   console.log('A phone');
   const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: 'de-DE', storageState: await context.storageState() });
   const mobile = await phone.newPage();
   mobile.on('pageerror', err => problems.push('page error (phone): ' + err.message));
-  for (const [url, file] of [['/', 'mobile-dashboard'], ['/Invoices/Edit', 'mobile-editor'], ['/Invoices', 'mobile-invoices'], ['/Invoices/Edit?id=' + id, 'mobile-invoice']]) {
+  for (const [url, file] of [['/', 'mobile-dashboard'], ['/Invoices/Edit', 'mobile-editor'], ['/Invoices', 'mobile-invoices'], ['/Invoices/Edit?id=' + id, 'mobile-invoice'], ['/Banking', 'mobile-banking'], ['/Expenses', 'mobile-expenses']]) {
     await mobile.goto(base + url);
     const overflow = await mobile.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     check(overflow <= 1, url + ' fits the phone (overflow ' + overflow + ' px)');

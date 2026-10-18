@@ -1,133 +1,305 @@
+<div align="center">
+
+<img src="src/MatBill/wwwroot/img/icon-192.png" width="96" alt="MatBill" />
+
 # MatBill
 
-Rechnungen schreiben, versenden und wiederholen: ein minimalistischer, dokumentbasierter Rechnungseditor auf einer DIN-A4-Vorschau, wiederkehrende
-Rechnungen mit automatischer Erstellung und Versand, Angebote, Ausgaben mit Belegen, Banking mit automatischer Zuordnung der Zahlungen, E-Rechnung
-(ZUGFeRD/XRechnung) und Export für Finanzamt oder Steuerberater, als installierbare Web-App (PWA). ASP.NET Core 10 Razor Pages, PostgreSQL 17, ein Container
-(Port **2505**) plus Datenbank. Das Aussehen folgt MatDesign (MatUi).
+**Rechnungen und Finanzen für kleine Firmen – im Browser, auf dem eigenen Server.**
 
-![Übersicht](docs/images/dashboard.png)
+Rechnungen direkt auf dem A4-Papier schreiben, wiederkehrend verschicken, Angebote, Ausgaben mit Belegen,
+Banking mit automatischer Zuordnung, E-Rechnung (ZUGFeRD/XRechnung) und Export für das Finanzamt.
+Ein Container plus PostgreSQL, keine Cloud, installierbar als App.
 
-## Was MatBill kann
+</div>
 
-**Das Dokument ist die Oberfläche.** Eine Rechnung wird direkt an ihrer Stelle auf dem Papier bearbeitet: Empfänger per Autocomplete aus den Kunden
-(oder einfach einen neuen Namen tippen, er wird als Kunde angelegt), Positionen per Produktauswahl, Texte durch Anklicken. Summen und Umsatzsteuer
-(je Steuersatz) rechnen sich beim Tippen. Ein Schalter wechselt zur **normalen Formularansicht** mit denselben Feldern; die Wahl wird pro Person gemerkt.
+![Die Übersicht mit offenen Beträgen, Umsatz, Ergebnis und Aufgaben](docs/images/dashboard.png)
+
+---
+
+## Worum es geht
+
+Rechnungsprogramme sind entweder Formularwüsten oder Cloud-Abos, die die eigenen Zahlen auf fremden Servern halten.
+MatBill macht das Dokument selbst zur Oberfläche: Man schreibt die Rechnung dort, wo sie auf dem Papier steht, und sieht dabei
+genau das, was der Kunde bekommt. Drumherum steht, was eine kleine Firma sonst noch braucht – Angebote, Serien, Belege, Kontoumsätze
+und ein Export für Steuerberater oder Finanzamt – auf einem Server im eigenen Netz.
+
+## Auf einen Blick
+
+**Schreiben**
+- **Dokument-Editor auf A4:** Empfänger per Autocomplete aus den Kunden, Positionen per Produktsuche, Texte durch Anklicken
+- Summen und Umsatzsteuer **je Steuersatz** rechnen sich beim Tippen; Kleinunternehmer-Regelung (§ 19 UStG) auf Knopfdruck
+- Umschalten auf eine **normale Formularansicht** mit denselben Feldern – die Wahl bleibt pro Person gemerkt
+- **Entwurf → Ausstellen:** lückenloser Nummernkreis (`RE-{JJJJ}-{NNNN}`), danach ist die Rechnung unveränderlich (GoBD)
+- **Storno** als Stornorechnung mit eigener Nummer und negativen Beträgen; das Original bleibt erhalten
+- **Angebote** im selben Editor, mit Gültigkeit, Annahme/Ablehnung und Umwandlung in eine Rechnung
+
+**Versenden und wiederholen**
+- PDF im Layout des Editors (Fensteranschrift nach DIN 5008), Versand per SMTP mit Protokoll jeder Zustellung
+- **E-Rechnung:** jede Rechnung ist ein ZUGFeRD-PDF (2.3, Profil EN 16931, PDF/A-3); die XML gibt es einzeln und als **XRechnung**
+- **Wiederkehrende Rechnungen:** wöchentlich bis jährlich, mit Start, Ende oder unbegrenzt, automatischer Erstellung und Versand
+- Pausieren, fortsetzen, bearbeiten, beenden; Fehler werden erkannt, erneut versucht und gemeldet
+- **Freigabelinks** für Kunden, zeitlich begrenzt und optional mit Passwort
+
+**Finanzen**
+- **Ausgaben:** Belege per **Drag & Drop** hochladen – E-Rechnungen von Lieferanten füllen sich selbst aus
+- **Banking:** universeller **CSV-Import** jeder Bank, dazu **CAMT** und **MT940**; online über **Enable Banking** (PSD2)
+- **Automatische Zuordnung** von Zahlungen zu Rechnungen und Ausgaben über Nummer, Betrag (auch mit Skonto), Name und IBAN
+- **Auswertung** je Monat nach Soll oder Ist: Einnahmen, Ausgaben, Umsatzsteuer, Vorsteuer, Zahllast
+- **Export als ZIP** mit allen Rechnungen, Belegen und CSV-Listen für Finanzamt oder Steuerberater
+
+**Betrieb**
+- Lokale Anmeldung mit **TOTP** (Authenticator-App), Rollen Administrator, Benutzer und Anonym (Freigabelink)
+- Sitzungen überstehen einen Neustart des Containers
+- **Backup** nach Zeitplan direkt auf ein **NAS** (SMB) oder in einen Ordner, mit Retention, optional verschlüsselt
+- **Installierbar (PWA)**, für das Handy gemacht, mit Offline-Ansicht der zuletzt geöffneten Seiten; hell und dunkel
+
+## Screenshots
+
+### Die Rechnung ist die Oberfläche
 
 | Dokument | Formular |
 |---|---|
-| ![Editor als Dokument](docs/images/editor-document.png) | ![Editor als Formular](docs/images/editor-form.png) |
+| ![Der Editor als A4-Dokument](docs/images/editor-document.png) | ![Derselbe Editor als Formular](docs/images/editor-form.png) |
 
-- **Entwurf → Ausstellen:** Ein Entwurf hat keine Nummer und ist frei änderbar. Beim Ausstellen bekommt er die nächste Nummer (lückenloser
-  Nummernkreis, z. B. `RE-{JJJJ}-{NNNN}`), die PDF wird gespeichert und die Rechnung ist danach unveränderlich (bezahlt, storniert, dupliziert).
-- **PDF und Versand:** A4-PDF im Layout des Editors (Logo, Absender, Fensteranschrift nach DIN 5008, Bank und Steuernummer im Fuß), Versand per SMTP
-  mit Protokoll jeder Zustellung, erneut senden bei Fehlern.
-- **Freigabelinks (Rolle „Anonym“):** Ein Link zeigt dem Kunden die Rechnung samt PDF, zeitlich begrenzt und optional mit Passwort.
-- **Kunden, Produkte, Branding:** Stammdaten als Liste plus Bearbeitungsseite; Branding mit Logo (SVG/PNG/JPEG), Farbe des Dokuments, Gruß und Live-Vorschau.
-  Kleinunternehmer-Regelung (§ 19 UStG) auf Knopfdruck.
+Jeder Wert wird dort bearbeitet, wo er auf dem Papier steht; die Felder sehen aus wie Text, bis man sie anklickt.
+Wer lieber ein Formular ausfüllt, schaltet um – es sind dieselben Felder.
+
+### Ausgestellt, storniert, als E-Rechnung
+
+| Ausgestellte Rechnung | Stornorechnung |
+|---|---|
+| ![Eine ausgestellte Rechnung](docs/images/invoice-issued.png) | ![Eine Stornorechnung mit negativen Beträgen](docs/images/storno.png) |
+
+Eine ausgestellte Rechnung ändert sich nie mehr. Ein Fehler wird storniert: Es entsteht eine Stornorechnung mit eigener Nummer,
+die auf das Original verweist. ZUGFeRD-XML und XRechnung liegen direkt an der Rechnung.
 
 ### Wiederkehrende Rechnungen
 
-![Serie](docs/images/series.png)
+| Serie | Übersicht |
+|---|---|
+| ![Eine Serie mit den nächsten Terminen](docs/images/series.png) | ![Die Liste der Serien](docs/images/recurring.png) |
 
-- Aus jeder Rechnung mit **„Wiederholung einrichten“**: wöchentlich, monatlich, quartalsweise, halbjährlich oder jährlich; Startdatum, Enddatum oder unbegrenzt.
-- Eine Serie ist eine **Vorlage**. Zu jedem Termin entsteht daraus eine eigenständige Rechnung mit eigener Nummer, Rechnungsdatum, Leistungszeitraum und
-  Zahlungsziel; die Anschrift kommt aktuell aus den Kundendaten. Änderungen an der Vorlage gelten nur für künftige Rechnungen.
-- **Automatischer Versand** als PDF an die E-Mail-Adresse des Kunden (optional).
-- **Steuerung:** pausieren, fortsetzen, bearbeiten, beenden, „Jetzt ausführen“. Termine zählen vom Start aus (ein Start am 31. läuft am Monatsletzten).
-- **Fehlerbehandlung:** Eine fehlgeschlagene Erstellung oder ein fehlgeschlagener Versand steht im Protokoll, wird automatisch mit wachsendem Abstand erneut
-  versucht und kann jederzeit von Hand wiederholt werden. Verpasste Termine (Server aus) werden nachgeholt, kein Termin wird doppelt berechnet.
-- **Benachrichtigungen** (Glocke oben rechts): anstehende Rechnungen, erstellte und versendete Rechnungen, Probleme.
-
-### Storno und E-Rechnung
-
-![Stornorechnung](docs/images/storno.png)
-
-- **Stornieren** legt eine **Stornorechnung** mit eigener Nummer und negativen Beträgen an, die auf die Originalrechnung verweist; das Original wird
-  als storniert markiert und bleibt unverändert (GoBD). Danach wird die Rechnung bei Bedarf neu geschrieben (Duplizieren).
-- **ZUGFeRD 2.3 (Profil EN 16931):** Jede ausgestellte Rechnung ist eine PDF/A-3 mit eingebetteter `factur-x.xml`. Die XML gibt es auch einzeln,
-  ebenso als **XRechnung** für öffentliche Auftraggeber (Leitweg-ID beim Kunden als „Käuferreferenz“).
+„Wiederholung einrichten“ macht aus einer Rechnung eine Vorlage. Zu jedem Termin entsteht eine eigenständige Rechnung mit
+eigener Nummer, Datum und Zahlungsziel; Änderungen an der Vorlage gelten nur für künftige Rechnungen.
 
 ### Angebote
 
-![Angebot](docs/images/quote.png)
-
-- Derselbe A4-Editor wie für Rechnungen, mit eigenem Nummernkreis (`AN-{JJJJ}-{NNNN}`), Gültigkeit und Angebotsbedingungen.
-- Ausstellen, als PDF versenden, als angenommen oder abgelehnt markieren, neue Version anlegen und mit einem Klick **in eine Rechnung umwandeln**.
-
-### Ausgaben
-
-![Ausgabe](docs/images/expense.png)
-
-- **Belege per Drag & Drop** (PDF, Bilder, XML) in die Liste ziehen: Je Datei entsteht eine Ausgabe mit dem Beleg. E-Rechnungen (ZUGFeRD, XRechnung)
-  werden ausgelesen (Lieferant, Nummer, Datum, Beträge); andere Belege sind als „zu prüfen“ markiert und werden nacheinander vervollständigt.
-- Kategorie, netto/brutto mit Steuersatz, Fälligkeit, bezahlt am; der Beleg wird neben dem Formular angezeigt.
-
-### Banking
-
-| Umsätze | Zuordnung |
+| Angebot | Liste |
 |---|---|
-| ![Banking](docs/images/banking.png) | ![Umsatz](docs/images/bank-transaction.png) |
+| ![Ein ausgestelltes Angebot](docs/images/quote.png) | ![Die Liste der Angebote](docs/images/quotes.png) |
 
-- **Universeller CSV-Import** jeder Bank: Spalten, Trennzeichen, Kodierung und Kopfzeile werden erkannt, die Zuordnung der Spalten lässt sich anpassen
-  und wird je Konto gemerkt. Außerdem **CAMT.052/053/054** (XML) und **MT940**. Doppelte Umsätze werden beim erneuten Import übersprungen.
-- **Online-Anbindung** über [Enable Banking](https://enablebanking.com) (PSD2, praktisch alle Banken in Europa): Bank wählen, beim Online-Banking
-  zustimmen, die Umsätze werden danach regelmäßig abgerufen. Dafür braucht es ein eigenes Konto bei Enable Banking (*Einstellungen › Banking*).
-- **Automatische Zuordnung:** Rechnungsnummer im Verwendungszweck, Betrag (auch mit Skonto), Name oder IBAN ergeben eine Punktzahl; eindeutige Treffer
-  werden automatisch zugeordnet und die Rechnung bzw. Ausgabe als bezahlt markiert. Für den Rest gibt es Vorschläge, eine Suche von Hand, „Ausgabe anlegen“
-  und „Ignorieren“ (Umbuchungen, Steuern, Privates).
+Derselbe Editor mit eigenem Nummernkreis und Gültigkeit. Ein angenommenes Angebot wird mit einem Klick zur Rechnung.
+
+### Ausgaben per Drag & Drop
+
+| Liste mit Ablage | Beleg prüfen |
+|---|---|
+| ![Ausgaben mit der Ablage für Belege](docs/images/expenses.png) | ![Eine Ausgabe neben ihrem Beleg](docs/images/expense.png) |
+
+Belege auf die Liste ziehen, einfügen oder auswählen: Jede Datei wird zu einer Ausgabe. E-Rechnungen werden vollständig ausgelesen,
+alles andere ist „zu prüfen“ und wird nacheinander vervollständigt – der Beleg steht daneben.
+
+### Banking mit automatischer Zuordnung
+
+| Konten und Umsätze | Ein Umsatz | CSV-Import |
+|---|---|---|
+| ![Konten und Umsätze](docs/images/banking.png) | ![Vorschläge für einen Umsatz](docs/images/bank-transaction.png) | ![Spalten eines CSV-Imports](docs/images/bank-import.png) |
+
+Kontoauszüge kommen als CSV (jede Bank, die Spalten werden erkannt und pro Konto gemerkt), CAMT oder MT940 – oder online über
+Enable Banking. Eindeutige Zahlungen werden automatisch zugeordnet und die Rechnung als bezahlt markiert; für den Rest gibt es Vorschläge.
 
 ### Auswertung und Export
 
-![Auswertung](docs/images/report.png)
+![Einnahmen, Ausgaben und Umsatzsteuer je Monat](docs/images/report.png)
 
-- Einnahmen, Ausgaben, Umsatzsteuer, Vorsteuer und Zahllast je Monat, nach Belegdatum (Soll) oder Zahlung (Ist).
-- **Export als ZIP** für einen Zeitraum: alle Rechnungen und Belege als Dateien (sortierbar benannt `Datum_Nummer_Partner`), dazu `Rechnungen.csv`,
-  `Ausgaben.csv`, `Uebersicht.csv` und optional `Kontoumsaetze.csv` (Excel-tauglich).
+Ein Jahr auf einen Blick, nach Belegdatum (Soll) oder Zahlung (Ist). Der Export packt alle Rechnungen und Belege eines Zeitraums
+mit `Rechnungen.csv`, `Ausgaben.csv`, `Uebersicht.csv` und `Kontoumsaetze.csv` in ein ZIP.
 
-### Installierbar und mobil
+### Stammdaten, Branding, Einstellungen
 
-| Übersicht | Editor | Rechnung |
+| Kunden | Branding | Backup |
 |---|---|---|
-| ![](docs/images/mobile-dashboard.png) | ![](docs/images/mobile-editor.png) | ![](docs/images/mobile-invoice.png) |
+| ![Kunden](docs/images/customers.png) | ![Branding mit Vorschau](docs/images/branding.png) | ![Backup](docs/images/backup.png) |
 
-- Web App Manifest, Service Worker, Icons (auch maskable und Apple Touch Icon), Shortcuts „Neue Rechnung“, „Rechnungen“, „Wiederkehrend“.
-- iOS: Safe Areas (Notch, Home Indicator), Statusleiste in der Farbe der Kopfleiste (hell und dunkel, folgt auch dem in der App gewählten Thema),
-  Eingabefelder mit 16 px (kein ungewolltes Zoomen), Zoomen bleibt für die Barrierefreiheit erlaubt.
-- **Offline:** Bereits geöffnete Seiten bleiben lesbar (als „Stand von …“ gekennzeichnet), sonst erklärt eine Offline-Seite die Lage. Automatischer
-  Reconnect mit wachsendem Abstand und ein Knopf „Erneut verbinden“; nach der Rückkehr wird eine Offline-Kopie sofort durch die aktuelle Seite ersetzt.
-  Formulare werden ohne Verbindung nicht abgeschickt (keine verlorenen Eingaben), und der Editor sichert ungespeicherte Eingaben im Browser zum Wiederherstellen.
-  Beim Abmelden werden die zwischengespeicherten Seiten gelöscht.
+### Dunkel und auf dem Handy
 
-### Betrieb
+| Dunkel | Editor dunkel |
+|---|---|
+| ![Die Übersicht im dunklen Modus](docs/images/dark-dashboard.png) | ![Der Editor im dunklen Modus](docs/images/dark-editor.png) |
 
-- **Anmeldung** lokal mit Passwort und optional **TOTP** (Authenticator-App, Wiederherstellungscodes); Rollen Administrator, Benutzer, Anonym (Freigabelink).
-- **Sitzungen** liegen in der Datenbank, die Schlüssel im Volume: Ein Neustart des Containers meldet niemanden ab.
-- **Backup** mit Zeitplänen (stündlich, täglich, wöchentlich, monatlich) direkt auf ein NAS (SMB) oder in einen Ordner, mit Retention
-  (letzte N, täglich, wöchentlich, monatlich), optional verschlüsselt, und Wiederherstellung mit Prüfung und Sicherheitskopie.
+| Übersicht | Editor | Rechnung | Banking | Ausgaben |
+|---|---|---|---|---|
+| ![](docs/images/mobile-dashboard.png) | ![](docs/images/mobile-editor.png) | ![](docs/images/mobile-invoice.png) | ![](docs/images/mobile-banking.png) | ![](docs/images/mobile-expenses.png) |
 
-Details: [docs/OPERATIONS.md](docs/OPERATIONS.md).
+Installierbar auf iOS und Android, mit Safe Areas, Statusleiste in der Farbe der App und Offline-Ansicht der zuletzt geöffneten Seiten.
 
-## Start
+## Schnellstart
 
-```bash
-docker compose up -d          # Release: ghcr.io/real-ttx/matbill:latest + PostgreSQL
+Fertige Images liegen in der GitHub Container Registry:
+
+| Tag | Gebaut aus | Wofür |
+|---|---|---|
+| `ghcr.io/real-ttx/matbill:latest` | `main` | Releases |
+| `ghcr.io/real-ttx/matbill:nightly` | `dev` | die neuesten Funktionen |
+
+### 1. Einfach starten
+
+Das hier als `docker-compose.yml` speichern und starten – mehr braucht es nicht:
+
+```yaml
+name: matbill
+
+services:
+  matbill:
+    image: ghcr.io/real-ttx/matbill:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "2505:2505"
+    environment:
+      TZ: Europe/Berlin
+      MATBILL__Database__Password: ${MATBILL_DB_PASSWORD:-matbill}
+    volumes:
+      - matbill-data:/data
+
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${MATBILL_DB_PASSWORD:-matbill}
+      POSTGRES_DB: matbill
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d matbill"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - matbill-db:/var/lib/postgresql/data
+
+volumes:
+  matbill-data:
+  matbill-db:
 ```
 
-Dann `http://localhost:2505` öffnen: Der erste Besuch legt den Administrator an, danach im **Branding** Absender, Steuernummer und Bankverbindung eintragen.
-Zum Ausprobieren legt *Einstellungen › System › Beispieldaten anlegen* die Firma „MatBill Demo“ mit Logo, Kunden, Produkte, Angebote, Rechnungen
-(auch eine Stornierte), zwei Serien, Ausgaben und ein Geschäftskonto mit zugeordneten Umsätzen an.
+```bash
+echo "MATBILL_DB_PASSWORD=$(openssl rand -hex 24)" > .env   # eigenes Datenbank-Passwort, vor dem ersten Start
+docker compose up -d
+```
 
-Hinter einem Reverse Proxy mit HTTPS: `MATBILL__Server__PublicUrl` (für Freigabelinks) und `MATBILL__Server__ForceSecureCookie=true` setzen.
+**http://localhost:2505** öffnen: Der erste Besuch legt den **Administrator** an (es gibt kein Standard-Passwort), danach führt
+MatBill ins **Branding** für Firma, Logo, Steuernummer und Bankverbindung. Zum Ausprobieren legt
+*Einstellungen › System › Beispieldaten anlegen* die Firma „MatBill Demo“ mit Logo, Kunden, Angeboten, Rechnungen, Serien,
+Ausgaben und einem Geschäftskonto an.
+
+Health-Check: `/health`. Ein Update ist `docker compose pull && docker compose up -d`; die Migrationen laufen beim Start.
+
+### 2. Hinter einem Reverse Proxy, mit Backup aufs NAS
+
+MatBill spricht HTTP auf Port 2505. Für den Betrieb gehört ein Reverse Proxy mit TLS davor (Caddy, Traefik, nginx, der Proxy der
+Synology). Dann zwei Variablen setzen – die öffentliche Adresse wird für Freigabelinks, Mails und die Rückkehr vom Online-Banking gebraucht:
+
+```yaml
+    environment:
+      TZ: Europe/Berlin
+      MATBILL__Database__Password: ${MATBILL_DB_PASSWORD:-matbill}
+      MATBILL__Server__PublicUrl: https://rechnungen.example.de
+      MATBILL__Server__ForceSecureCookie: "true"
+    volumes:
+      - matbill-data:/data
+      # optional: ein Ordner des NAS als Backup-Ziel (sonst direkt per SMB aus der App)
+      - /volume1/backup/matbill:/backups
+```
+
+Backups laufen aus der App: *Einstellungen › Backup* – ein **Ziel** (Ordner wie `/backups` oder eine SMB-Freigabe des NAS mit
+Verbindungstest), ein **Plan** (stündlich bis monatlich) und die **Aufbewahrung** (letzte N, täglich, wöchentlich, monatlich).
+
+### 3. Aus dem Quellcode
+
+```bash
+docker compose -f docker-compose.dev.yml up -d --build    # Entwicklungs-Stack: Web 2505, pgAdmin 2506, Postgres 12505
+```
+
+### Einstellungen, die zählen
+
+Fast alles wird in der App eingestellt und landet in `/data/config/app.json`. Umgebungsvariablen gewinnen und werden nie zurückgeschrieben:
+
+| Variable | Standard | Bedeutung |
+|---|---|---|
+| `MATBILL__Database__Host` | `db` | Host der PostgreSQL |
+| `MATBILL__Database__Port` | `5432` | Port |
+| `MATBILL__Database__Database` | `matbill` | Datenbank |
+| `MATBILL__Database__Username` | `postgres` | Benutzer |
+| `MATBILL__Database__Password` | `matbill` | Passwort – im Compose aus `MATBILL_DB_PASSWORD` |
+| `MATBILL__Server__PublicUrl` | – | die Adresse, unter der MatBill erreichbar ist (Links, Mails, Online-Banking) |
+| `MATBILL__Server__TimeZone` | `Europe/Berlin` | Zeitzone für Daten und Zeitpläne |
+| `MATBILL__Server__ForceSecureCookie` | `false` | `true` hinter HTTPS |
+| `MATBILL_PORT` | `2505` | Port im Container |
+| `MATBILL_DATA` | `/data` | Datenverzeichnis |
+| `TZ` | `Europe/Berlin` | Zeitzone des Containers |
+
+### Nach der ersten Anmeldung
+
+- **Branding:** Firma, Anschrift, Logo (SVG/PNG/JPEG), Farbe des Dokuments, Steuernummer/USt-IdNr., Bankverbindung – alles, was auf
+  Rechnung und E-Rechnung gehört
+- *Einstellungen › Rechnungen:* Nummernkreise, Zahlungsziel, Texte, Kategorien der Ausgaben, ZUGFeRD an/aus
+- *Einstellungen › E-Mail:* SMTP-Server, Absender, Texte für Rechnung und Angebot, Testmail
+- *Einstellungen › Banking:* Enable Banking (eigene App-ID und Schlüssel), automatische Zuordnung, Abrufintervall
+- *Mein Konto › Sicherheit:* zweiter Faktor (TOTP); *Einstellungen › Sicherheit* kann ihn für Administratoren verlangen
+
+### Das Volume `/data`
+
+```
+/data
+├─ config/    app.json – die Einstellungen
+├─ keys/      Schlüssel für Cookies und gespeicherte Passwörter (Sitzungen überstehen Neustarts)
+├─ files/     PDFs der Rechnungen und Angebote, Belege, Logo (leer, wenn sie auf dem NAS liegen)
+├─ backups/   lokale Backup-Ziele und Sicherheitskopien vor einer Wiederherstellung
+└─ tmp/       Zwischenablage für Backups und Importe
+```
+
+Die Daten selbst stehen in der PostgreSQL (`matbill-db`). **Geht `/data/keys` verloren**, muss sich jeder neu anmelden und
+gespeicherte Passwörter (NAS, Mailserver, Banking-Schlüssel) müssen neu eingetragen werden – deshalb gehört es ins Backup.
+
+Mehr zum Betrieb: [docs/OPERATIONS.md](docs/OPERATIONS.md) (englisch).
 
 ## Entwicklung
 
+Getestet wird über den Container – nach jeder Änderung neu bauen und den Stack neu deployen:
+
 ```powershell
-./scripts/redeploy.ps1            # Container neu bauen und Dev-Stack neu deployen (Web 2505, pgAdmin 2506, Postgres 12505)
+./scripts/redeploy.ps1            # Image neu bauen, Dev-Stack neu deployen
 ./scripts/redeploy.ps1 -Fresh     # dasselbe mit leeren Volumes
-dotnet build MatBill.slnx
-$env:MATBILL_TEST_DB="Host=localhost;Port=12505;Username=postgres;Password=matbill"; dotnet test MatBill.slnx
-cd tests/e2e; npm install; node flow.js http://localhost:2505      # Browser-Prüfung mit Edge (SHOTS=<Ordner> für Screenshots)
 ```
 
-Versionen: Release `<major>.<minor>.<build>-<datum>` (Branch `main`), Entwicklung `nightly-<build>-<datum>` (Branch `dev`), lokal `local-<datum>`.
-Die GitHub Action baut, testet (mit PostgreSQL und Samba) und veröffentlicht das Image unter `ghcr.io/real-ttx/matbill`.
+Tests:
+
+```powershell
+dotnet build MatBill.slnx
+$env:MATBILL_TEST_DB="Host=localhost;Port=12505;Username=postgres;Password=matbill"; dotnet test MatBill.slnx
+cd tests/e2e; npm install; node flow.js http://localhost:2505    # Browser-Durchlauf mit Edge, SHOTS=<Ordner> für Screenshots
+```
+
+Die Unit-Tests brauchen nichts, die Integrationstests die PostgreSQL des Dev-Stacks, die NAS-Tests einen Samba-Server
+(`MATBILL_TEST_SMB`, die CI startet einen). Der Browser-Durchlauf schreibt eine Rechnung, ein Angebot, storniert, lädt einen Beleg hoch,
+importiert Umsätze, prüft Handy, PWA und Offline – und erzeugt dabei die Screenshots dieser Seite.
+
+## Wie es gebaut ist
+
+- **ASP.NET Core 10 Razor Pages**, **EF Core 10** auf **PostgreSQL 17**
+- Oberfläche aus **MatUi** (MatDesign), schlichtes JavaScript ohne Framework und ohne Build-Schritt, strikte CSP ohne Inline-Skripte
+- PDFs mit **QuestPDF** (Community-Lizenz: frei unter 1 Mio. USD Jahresumsatz), E-Rechnung mit **ZUGFeRD-csharp**, PDF lesen mit **PdfPig**
+- Kontoauszüge: eigene Parser für CSV, CAMT.052/053/054 und MT940; online über die API von **Enable Banking**
+- Mail mit **MailKit**, Backup auf SMB mit **SMBLibrary**, Geheimnisse verschlüsselt über **DataProtection**
+
+## Branches und Versionen
+
+| Branch | Zweck | Version |
+|---|---|---|
+| `main` | Release | `<major>.<minor>.<build>-<yyyyMMdd>` |
+| `dev` | Entwicklung | `nightly-<build>-<yyyyMMdd>` |
+| lokal | – | `local-<yyyyMMdd>` |
+
+`Major`/`Minor` stehen in [`Directory.Build.props`](Directory.Build.props), die Build-Nummer kommt aus der GitHub Action
+(`github.run_number`). Die Action baut, testet (mit PostgreSQL und Samba) und veröffentlicht das Image unter `ghcr.io/real-ttx/matbill`.

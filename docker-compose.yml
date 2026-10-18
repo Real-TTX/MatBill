@@ -1,11 +1,14 @@
 # MatBill - release stack: the published image and a PostgreSQL.
 #   docker compose up -d
 # Web: http://localhost:2505 (the first visit creates the administrator)
+#
+# Change the database password before the first start: put MATBILL_DB_PASSWORD=<something long> into a file ".env" next to this one.
+# It is used by both services; after the first start it is stored in the database volume, so change it there too if you change it later.
 name: matbill
 
 services:
   matbill:
-    image: ghcr.io/real-ttx/matbill:latest
+    image: ghcr.io/real-ttx/matbill:latest   # :nightly for the newest state of the branch dev
     restart: unless-stopped
     depends_on:
       db:
@@ -14,7 +17,10 @@ services:
       - "2505:2505"   # web interface (HTTP: put a reverse proxy with TLS in front)
     environment:
       TZ: Europe/Berlin
-      # MATBILL__Server__PublicUrl: https://rechnungen.example.de   # for share links and mails
+      MATBILL__Database__Password: ${MATBILL_DB_PASSWORD:-matbill}
+      # Behind a reverse proxy with HTTPS (share links, mails, the return from the online banking):
+      # MATBILL__Server__PublicUrl: https://rechnungen.example.de
+      # MATBILL__Server__ForceSecureCookie: "true"
     volumes:
       - matbill-data:/data
       # Backups to a NAS go over SMB from the app (Einstellungen > Backup > Ziele); a mounted folder works as well:
@@ -24,7 +30,7 @@ services:
     image: postgres:17
     restart: unless-stopped
     environment:
-      POSTGRES_PASSWORD: matbill
+      POSTGRES_PASSWORD: ${MATBILL_DB_PASSWORD:-matbill}
       POSTGRES_DB: matbill
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d matbill"]

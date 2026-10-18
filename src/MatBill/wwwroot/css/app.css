@@ -115,6 +115,11 @@ button.mb-note__title:focus-visible { outline: none; box-shadow: var(--mat-focus
 .mb-doc__head { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--mat-space-6); }
 .mb-doc__logo { min-width: 0; max-width: 60%; }
 .mb-doc__logo img { display: block; max-height: 64px; max-width: 100%; width: auto; height: auto; }
+/* A logo is made for white paper (the PDF): on the dark paper of the dark mode it keeps a white ground, or dark letters would vanish. */
+:root[data-theme="dark"] .mb-doc__logo img { padding: 6px 10px; background: #fff; border-radius: var(--mat-radius-sm); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) .mb-doc__logo img { padding: 6px 10px; background: #fff; border-radius: var(--mat-radius-sm); }
+}
 .mb-doc__logo .mb-doc__company { font-size: 1.75rem; font-weight: 700; letter-spacing: -.01em; line-height: 1.15; }
 .mb-doc__sender { font-style: normal; text-align: right; font-size: 13px; color: var(--mat-text-muted); line-height: 1.55; }
 .mb-doc__sender strong { color: var(--mat-text); font-weight: 600; }
