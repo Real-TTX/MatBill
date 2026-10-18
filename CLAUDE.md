@@ -1,7 +1,8 @@
 # MatBill: notes for working in this repository
 
 Invoices in a document editor, recurring invoices with automatic creation and sending, an installable PWA: ASP.NET Core 10 Razor Pages, EF Core 10 on
-PostgreSQL 17, one container (port **2505**) plus a database. User-facing text is **German**; code, comments and docs (except the README) are English.
+PostgreSQL 17, one container (port **2505**) plus a database. The interface speaks **English and German** (see "Languages"); documents (invoice, quote, PDF, e-invoice,
+mails to customers, export) are **German**. Code, identifiers, URLs, comments and docs (except the README) are English.
 The infrastructure (setup, sign-in, TOTP, sessions, backup to a NAS, list controls) came from `../NextProject`; the look is MatDesign (`../MatDesign`,
 MatUi copied into `src/MatBill/wwwroot/ui`). Before changing UI read MatDesign's `CLAUDE.md` and `docs/ADOPTING.md`.
 
@@ -22,6 +23,7 @@ Test changes by **rebuilding the container and redeploying the stack**. Wait for
 
 ## Layout
 
+- `src/MatBill/Localization` (TextCatalog, Languages, ClientTexts) + `Resources/Texts/*.json`: the two languages of the interface.
 - `src/MatBill.Core`: no web types. `Billing/` (InvoiceMath: tax once per rate; Recurrence: dates counted from the anchor; NumberPattern: `{JJJJ}{JJ}{MM}{NNNN}`; Amount: German input), `Security/`,
   `Banking/` (StatementLine + dedup keys, SepaPurpose, CsvStatement: read/guess/map any bank CSV, CamtStatement, Mt940Statement, StatementFormats.Detect, PaymentMatcher).
 - `src/MatBill`: `Pages/` (Invoices, Quotes, Recurring, Expenses, Banking, Export, Customers, Products, Branding, Notifications, Admin, Account, Share, Offline), `Services/` (InvoiceService, QuoteService,
@@ -66,7 +68,26 @@ Test changes by **rebuilding the container and redeploying the stack**. Wait for
 - The accent is blue `#1d4ed8` (`[data-app="matbill"]` in `app.css`; theme-color metas follow `--mat-glass`). The document colour of a company is `CompanyConfig.AccentColor`.
 - PWA: `sw.js` is registered as `/sw.js?v=<version>-<sprite hash>` (a build is a new worker). Static files cache-first, pages network-first with a kept copy marked
   `data-offline-copy`; never cached: POST, `/api`, `/Account`, `/s/`, PDFs. Logout and the sign-in page clear the kept pages.
-- Formatting: request culture invariant; text a person reads goes through `Fmt` (de-DE). Razor encodes umlauts as entities: tests compare decoded text.
+- Formatting: request culture invariant; text a person reads goes through `Fmt` (the UI language: de-DE or en-GB), documents through `DocFmt` (always de-DE).
+  Razor encodes umlauts as entities: tests compare decoded text.
+
+## Languages
+
+- **No interface text in code.** Every text a person reads is a key in `src/MatBill/Resources/Texts/<Area>.json` (embedded): `{ "Area.Key": { "en": "…", "de": "…" } }`.
+  The part before the first dot names the file; a key lives in one file; placeholders `{0}` are the same in both languages. Shared words: `Common.json`.
+- Use: Razor `@L["Key"]` (injected in `_ViewImports`), page models `L["Key", arg]` (`PageModelBase`), elsewhere `Text.T("Key", args)`; data annotations take keys
+  (`[Display(Name = "Area.Key")]`, `ErrorMessage = "Area.Key"`); `app.js` uses `t('Js.Key')` (keys `Js.*` are written into the page as JSON by `ClientTexts`).
+  Core (no web types) returns keys (`NumberPattern.Problem`, `MatchReason`, `StatementProblem`) and the pages translate them.
+- The language: the account (`User.Language`, claim `mb:lang`) → the cookie of the sign-in page (`.MatBill.Language`) → Accept-Language → English
+  (`Localization/Languages.cs`, `AccountLanguageProvider`, after the authentication). `POST /language` switches it; *My account* has the select.
+  Only the UI culture changes; the request culture stays invariant (forms and query strings are read the same way in both languages).
+- **Documents stay German**: the paper in `_DocumentView`/`_DocumentEditor`/`_DocumentLine`, `InvoicePdf`, `EInvoice`, mail templates, `ExportService`, `DemoData`.
+  What only the writer sees on the paper (placeholders, hints) is interface and translates.
+- Stored texts keep the language they were written in: notifications are written per recipient in their language (`NotifyAllAsync(tone, () => (Text.T(…), …))`),
+  activity entries in the language of whoever acted, scheduler texts in the default language (English).
+- Tests: `TextsTests` checks both languages, the file of each key, the placeholders, that every key in the code exists, and that no German (umlauts) is left
+  outside the allowed document files. Integration tests read German (`AppFixture`: German browser, German accounts); `LanguageTests` cover English and the switch;
+  the e2e has an English pass that looks for German interface words.
 
 ## Gotchas
 

@@ -200,6 +200,6 @@ public sealed class PaymentMatcherTests
     {
         var skonto = PaymentMatcher.Candidates(new PaymentInfo(2770.32m, new DateOnly(2026, 10, 8), "Studio Nord GmbH", null, "RE-2026-0004 abzgl. 3% Skonto"), [Nord]);
         Assert.True(skonto[0].Score >= 80);
-        Assert.Contains(skonto[0].Reasons, r => r.Contains("Skonto", StringComparison.Ordinal));
+        Assert.Contains(MatchReason.CashDiscount, skonto[0].Reasons);
     }
 }

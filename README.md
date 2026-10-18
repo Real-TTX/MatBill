@@ -52,6 +52,8 @@ und ein Export für Steuerberater oder Finanzamt – auf einem Server im eigenen
 - Sitzungen überstehen einen Neustart des Containers
 - **Backup** nach Zeitplan direkt auf ein **NAS** (SMB) oder in einen Ordner, mit Retention, optional verschlüsselt
 - **Installierbar (PWA)**, für das Handy gemacht, mit Offline-Ansicht der zuletzt geöffneten Seiten; hell und dunkel
+- **Englisch und Deutsch:** jede Person wählt ihre Sprache unter *Mein Konto*, vor der Anmeldung gilt die Sprache des Browsers
+  (Umschalter EN | DE auf der Anmeldeseite); Rechnungen, Angebote, Mails an Kunden und der Export bleiben deutsch
 
 ## Screenshots
 
@@ -120,6 +122,15 @@ mit `Rechnungen.csv`, `Ausgaben.csv`, `Uebersicht.csv` und `Kontoumsaetze.csv` i
 | Kunden | Branding | Backup |
 |---|---|---|
 | ![Kunden](docs/images/customers.png) | ![Branding mit Vorschau](docs/images/branding.png) | ![Backup](docs/images/backup.png) |
+
+### Englisch und Deutsch
+
+| Übersicht (Englisch) | Editor (Englisch) |
+|---|---|
+| ![Die Übersicht auf Englisch](docs/images/en-dashboard.png) | ![Der Editor auf Englisch, das Papier bleibt deutsch](docs/images/en-editor.png) |
+
+Die Oberfläche spricht Englisch oder Deutsch, je Person in *Mein Konto* eingestellt. Das Papier selbst – Rechnung, Angebot, PDF,
+E-Rechnung, Mail an den Kunden – bleibt deutsch, denn es ist ein deutsches Geschäftsdokument.
 
 ### Dunkel und auf dem Handy
 
@@ -246,6 +257,7 @@ Fast alles wird in der App eingestellt und landet in `/data/config/app.json`. Um
 - *Einstellungen › Rechnungen:* Nummernkreise, Zahlungsziel, Texte, Kategorien der Ausgaben, ZUGFeRD an/aus
 - *Einstellungen › E-Mail:* SMTP-Server, Absender, Texte für Rechnung und Angebot, Testmail
 - *Einstellungen › Banking:* Enable Banking (eigene App-ID und Schlüssel), automatische Zuordnung, Abrufintervall
+- *Mein Konto:* Name, Darstellung (hell/dunkel) und **Sprache** (English/Deutsch)
 - *Mein Konto › Sicherheit:* zweiter Faktor (TOTP); *Einstellungen › Sicherheit* kann ihn für Administratoren verlangen
 
 ### Das Volume `/data`

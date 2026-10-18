@@ -28,7 +28,7 @@
   "Products.Description": { "en": "Description", "de": "Beschreibung" },
   "Products.Description.Hint": { "en": "Appears on the invoice below the name.", "de": "Steht auf der Rechnung unter dem Namen." },
   "Products.Price": { "en": "Price (net)", "de": "Preis (netto)" },
-  "Products.Price.Hint": { "en": "For example 1.200,00", "de": "Zum Beispiel 1.200,00" },
+  "Products.Price.Hint": { "en": "For example 1,200.00", "de": "Zum Beispiel 1.200,00" },
   "Products.Price.Required": { "en": "Please enter a price.", "de": "Bitte gib einen Preis ein." },
   "Products.Price.Invalid": { "en": "That is not an amount.", "de": "Das ist kein Betrag." },
   "Products.Unit": { "en": "Unit", "de": "Einheit" },

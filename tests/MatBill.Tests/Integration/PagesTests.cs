@@ -50,15 +50,15 @@ public sealed class PagesTests : IClassFixture<AppFixture>
 
         string[] urls =
         [
-            "/", "/Invoices", "/Invoices?status=offen&sort=betrag&dir=desc", "/Invoices?status=ueberfaellig", "/Invoices/Edit", $"/Invoices/Edit?customer={customer}",
+            "/", "/Invoices", "/Invoices?status=open&sort=amount&dir=desc", "/Invoices?status=overdue", "/Invoices/Edit", $"/Invoices/Edit?customer={customer}",
             $"/Invoices/Edit?id={issued}", $"/Invoices/Edit?id={draft}", $"/Invoices/Send?id={issued}", $"/Invoices/Share?id={issued}",
-            "/Recurring", "/Recurring?status=aktiv", "/Recurring/Edit", $"/Recurring/Edit?id={series}", "/Customers", "/Customers?offen=ja", "/Customers/Edit", $"/Customers/Edit?id={customer}",
+            "/Recurring", "/Recurring?status=active", "/Recurring/Edit", $"/Recurring/Edit?id={series}", "/Customers", "/Customers?open=true", "/Customers/Edit", $"/Customers/Edit?id={customer}",
             "/Products", "/Products/Edit", $"/Products/Edit?id={product}", "/Branding", "/Notifications", "/Notifications?unread=true",
             "/Admin/Users", "/Admin/Users/Edit", "/Admin/Shares", $"/Admin/Shares/Edit?id={share}", "/Admin/Invoicing", "/Admin/Mail",
             "/Admin/Storage", "/Admin/Backup", "/Admin/Backup/Plans", "/Admin/Backup/Plans/Edit", "/Admin/Backup/Targets", "/Admin/Backup/Targets/Edit", "/Admin/Backup/Restore", "/Admin/Security", "/Admin/Activity",
             "/Admin/System", "/Account/Profile", "/Account/Security", "/Admin/Banking",
-            "/Quotes", "/Quotes/Edit", "/Quotes?status=offen", "/Expenses", "/Expenses/Edit", "/Expenses?status=pruefen", "/Banking", "/Banking/Import", "/Banking/Accounts/Edit",
-            "/Banking/Connect", "/Banking?status=offen", "/Export", "/Export?basis=ist",
+            "/Quotes", "/Quotes/Edit", "/Quotes?status=open", "/Expenses", "/Expenses/Edit", "/Expenses?status=review", "/Banking", "/Banking/Import", "/Banking/Accounts/Edit",
+            "/Banking/Connect", "/Banking?status=open", "/Export", "/Export?basis=cash",
         ];
 
         var failures = new List<string>();

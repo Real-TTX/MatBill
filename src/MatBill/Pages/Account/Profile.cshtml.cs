@@ -63,8 +63,7 @@ public sealed class ProfileModel(MbDbContext db, ICurrentUser current, UserServi
     public async Task<IActionResult> OnPostProfileAsync()
     {
         var user = await LoadAsync();
-        ModelState.Remove("Password.New");
-        ModelState.Remove("Password.Repeat");
+        Only("Profile.");
         if (!ModelState.IsValid)
         {
             Prepare(user);
@@ -85,7 +84,7 @@ public sealed class ProfileModel(MbDbContext db, ICurrentUser current, UserServi
     public async Task<IActionResult> OnPostPasswordAsync()
     {
         var user = await LoadAsync();
-        ModelState.Remove("Profile.DisplayName");
+        Only("Password.");
         if (user.PasswordHash is not null && !PasswordHasher.Verify(Password.Current ?? string.Empty, user.PasswordHash))
         {
             ModelState.AddModelError("Password.Current", L["Profile.Password.Wrong"]);
@@ -112,6 +111,15 @@ public sealed class ProfileModel(MbDbContext db, ICurrentUser current, UserServi
         await log.LogAsync(L["Profile.Log.PasswordChanged"], "User", user.Id);
         Flash(L["Profile.Password.Changed"]);
         return RedirectToPage();
+    }
+
+    // Each form posts only its own fields; the other one is bound from nothing (even without its prefix), so only the errors of this form count.
+    private void Only(string prefix)
+    {
+        foreach (var key in ModelState.Keys.Where(k => !k.StartsWith(prefix, StringComparison.Ordinal)).ToList())
+        {
+            ModelState.Remove(key);
+        }
     }
 
     private async Task<User> LoadAsync()

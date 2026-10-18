@@ -190,7 +190,7 @@ async function confirmDialog(page) {
   await page.fill('#Input_Name', 'Testkonto');
   await page.locator('button', { hasText: 'Speichern' }).first().click();
   await page.waitForURL(/Banking\/Import/, { timeout: 15000 });
-  const open = await page.request.get(base + '/Invoices?status=offen');
+  const open = await page.request.get(base + '/Invoices?status=open');
   const openHtml = await open.text();
   const number = (openHtml.match(/RE-\d{4}-\d{4}/) || [])[0];
   const csvPath = path.join(require('os').tmpdir(), 'matbill-e2e-umsaetze.csv');
@@ -223,6 +223,41 @@ async function confirmDialog(page) {
     check(response.ok() && await page.locator('h1').count() === 1, url + ' opens');
     await shot(page, file);
   }
+
+  console.log('English');
+  // My account › Language: the interface turns English, the documents (the paper of an invoice) stay German.
+  const en = await browser.newContext({ viewport: { width: 1440, height: 1000 }, locale: 'de-DE', timezoneId: 'Europe/Berlin', storageState: await context.storageState() });
+  const english = await en.newPage();
+  english.on('pageerror', err => problems.push('page error (english): ' + err.message));
+  await english.goto(base + '/Account/Profile');
+  await english.selectOption('#Profile_Language', 'en');
+  await english.locator('form[action*="handler=Profile"] button[type=submit]').first().click();
+  await english.waitForLoadState('networkidle');
+  check(await english.getAttribute('html', 'lang') === 'en', 'My account switches the interface to English');
+  // words of the German interface that must not show up in the English one (data like customer names may be German)
+  const germanWords = /\b(Speichern|Zurück|Abbrechen|Löschen|Bearbeiten|Übersicht|Einstellungen|Sortierung|Suchen|Neue Rechnung|Rechnungen|Angebote|Ausgaben|Wiederkehrend|Auswertung|Stammdaten|Kunden|Produkte|Zuordnung|Bezahlt|Überfällig|Entwurf|Fällig|Gespeichert|Abmelden|Mein Konto|Benachrichtigungen|Keine|Alle)\b/;
+  for (const [url, file] of [['/', 'en-dashboard'], ['/Invoices', 'en-invoices'], ['/Invoices/Edit', 'en-editor'], ['/Invoices/Edit?id=' + id, 'en-invoice'], ['/Quotes', 'en-quotes'], ['/Recurring', 'en-recurring'],
+    ['/Expenses', 'en-expenses'], ['/Banking', 'en-banking'], ['/Export', 'en-report'], ['/Customers', 'en-customers'], ['/Products', 'en-products'], ['/Branding', 'en-branding'],
+    ['/Notifications', 'en-notifications'], ['/Admin/Invoicing', 'en-settings-invoicing'], ['/Admin/Mail', 'en-settings-mail'], ['/Admin/Banking', 'en-settings-banking'], ['/Admin/Backup', 'en-backup'],
+    ['/Admin/Users', 'en-users'], ['/Admin/System', 'en-system'], ['/Account/Profile', 'en-profile'], ['/Account/Security', 'en-security']]) {
+    await english.goto(base + url);
+    const textOfInterface = await english.evaluate(() => {
+      const copy = document.body.cloneNode(true);
+      // not interface: the paper, notifications (stored in the language they were written in)
+      copy.querySelectorAll('.mb-paper, script, template, [hidden], .mb-preview, iframe, .mb-note').forEach(n => n.remove());
+      // German data: the sample expenses, the German file names of the export for the tax office
+      return copy.innerText.replace(/Fahrt zum Kunden/g, '').replace(/\b\w+\.csv\b/g, '');
+    });
+    const found = textOfInterface.match(germanWords);
+    check(!found, url + ' has no German interface text' + (found ? ': "' + found[0] + '" in "' + textOfInterface.slice(Math.max(0, found.index - 40), found.index + 40).replace(/\s+/g, ' ') + '"' : ''));
+    await shot(english, file);
+  }
+  await english.goto(base + '/Account/Profile');
+  await english.selectOption('#Profile_Language', 'de');
+  await english.locator('form[action*="handler=Profile"] button[type=submit]').first().click();
+  await english.waitForLoadState('networkidle');
+  check(await english.getAttribute('html', 'lang') === 'de', 'and back to German');
+  await en.close();
 
   console.log('Dark');
   const dark = await browser.newContext({ viewport: { width: 1440, height: 1000 }, colorScheme: 'dark', locale: 'de-DE', timezoneId: 'Europe/Berlin', storageState: await context.storageState() });

@@ -96,3 +96,12 @@ Versions: releases `<major>.<minor>.<build>-<date>` (from `main`), `nightly-<bui
 - *Auswertung*: income, expenses, VAT and input tax per month, by document date (Soll) or by payment (Ist). It is an overview, not a tax return.
 - *Export*: a ZIP for a period with the PDFs of the invoices, the receipts of the expenses, `Rechnungen.csv`, `Ausgaben.csv`, `Uebersicht.csv`, optionally
   `Kontoumsaetze.csv` and a `LIESMICH.txt`. CSV files are UTF-8 with BOM and semicolons (Excel in German).
+
+## Languages
+
+- The interface is English or German. Each person picks it under *My account › Language*; before signing in the browser decides (and the EN | DE switch
+  below the sign-in card, kept in a cookie). New accounts start in the language they were created in; accounts from before the switch read German.
+- Documents stay German in both languages: invoices, quotes, PDFs, e-invoices, mails to customers, the export for the tax office.
+- Placeholders of number ranges and texts are English now ({YYYY} {YY} {MM} {NNNN}, {Number} {Customer} {Amount} {Date} {DueDate} {ValidUntil} {Days} {Company});
+  the German ones of earlier versions ({JJJJ}, {Nummer}, {Faellig} …) keep working in saved settings.
+- List filters in the address bar are English (`/Invoices?status=open`, `/Expenses?status=review`, `/Export?basis=cash`); old German bookmarks show the unfiltered list.

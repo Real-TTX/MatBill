@@ -25,6 +25,10 @@ public sealed class AppFixture : WebApplicationFactory<Program>, IAsyncLifetime
 
     public string DatabaseName { get; } = "mb_it_" + Guid.NewGuid().ToString("N")[..10];
 
+    // The tests read the German interface (a German browser, accounts in German); code that runs outside of a request writes German too.
+    // The English interface and the switch between the languages have their own tests (LanguageTests).
+    static AppFixture() => System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = System.Globalization.CultureInfo.GetCultureInfo("de");
+
     // The application reads where it lives from the environment while it starts. The test classes share one collection, so they start one after the other.
     protected override IHost CreateHost(IHostBuilder builder)
     {
@@ -112,8 +116,12 @@ public sealed class AppFixture : WebApplicationFactory<Program>, IAsyncLifetime
 
     // ------------------------------------------------------------------------------------------------ talking to the pages
 
-    public HttpClient NewClient(bool followRedirects = false)
-        => CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = followRedirects, HandleCookies = true });
+    public HttpClient NewClient(bool followRedirects = false, string language = "de-DE")
+    {
+        var client = CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = followRedirects, HandleCookies = true });
+        client.DefaultRequestHeaders.AcceptLanguage.ParseAdd(language);
+        return client;
+    }
 
     private static readonly Regex Token = new("name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"", RegexOptions.Compiled);
 

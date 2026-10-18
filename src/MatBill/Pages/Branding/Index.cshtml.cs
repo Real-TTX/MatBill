@@ -182,7 +182,7 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
             PaymentTermDays = 14,
             ServiceFrom = today,
             // The sample recipient is part of the (German) document, not of the interface.
-            RecipientLines = ["Studio Nord GmbH", "z. Hd. Frau Keller", "Hafenstraße 12", "68159 Mannheim"],
+            RecipientLines = ["Studio Nord GmbH", "z. Hd. Frau Keller", "Hafenstra\u00DFe 12", "68159 Mannheim"],
             IntroText = config.Current.Invoicing.IntroText,
             PaymentTerms = Texts.Expand(config.Current.Invoicing.PaymentTerms, 14, today.AddDays(14)),
             ClosingText = config.Current.Invoicing.ClosingText,
