@@ -10,6 +10,13 @@
   var $ = function (sel, scope) { return (scope || doc).querySelector(sel); };
   var $$ = function (sel, scope) { return Array.prototype.slice.call((scope || doc).querySelectorAll(sel)); };
   var csrf = function () { var m = $('meta[name="mb-csrf"]'); return m ? m.getAttribute('content') : ''; };
+  // The texts in the language of the page: the JSON block #mb-texts holds every key "Js.*" (Resources/Texts/Js.json). t('Js.Key', a, b) fills {0}, {1}.
+  var texts = (function () { var el = doc.getElementById('mb-texts'); try { return el ? JSON.parse(el.textContent || '{}') : {}; } catch (e) { return {}; } })();
+  var t = function (key) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    var text = Object.prototype.hasOwnProperty.call(texts, key) ? texts[key] : key;
+    return text.replace(/\{(\d+)\}/g, function (m, i) { return args[+i] !== undefined ? String(args[+i]) : m; });
+  };
   var toast = function (message, tone) { if (window.MatUi && window.MatUi.toast) { window.MatUi.toast(message, { tone: tone || 'danger' }); } };
 
   function post(url, data) {

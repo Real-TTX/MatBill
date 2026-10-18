@@ -90,9 +90,9 @@ public sealed record InvoiceDocument
     /// <summary>"Leistungsdatum 17.10.2026" or "Leistungszeitraum 01.10.2026 bis 31.10.2026"; null when there is none.</summary>
     public string? ServiceText => (ServiceFrom, ServiceTo) switch
     {
-        ({ } a, { } b) when a != b => $"{Fmt.Date(a)} bis {Fmt.Date(b)}",
-        ({ } a, _) => Fmt.Date(a),
-        (null, { } b) => Fmt.Date(b),
+        ({ } a, { } b) when a != b => $"{DocFmt.Date(a)} bis {DocFmt.Date(b)}",
+        ({ } a, _) => DocFmt.Date(a),
+        (null, { } b) => DocFmt.Date(b),
         _ => null,
     };
 
@@ -144,31 +144,41 @@ public enum DocumentKind
     Quote,
 }
 
-/// <summary>The placeholders of the texts of an invoice and a mail.</summary>
+/// <summary>
+/// The placeholders of the texts of an invoice, a quote and a mail: {Days}, {DueDate}, {ValidUntil}, {Number}, {Customer}, {Amount}, {Date}, {Company}.
+/// The German names of earlier versions ({Tage}, {Faellig}, {Gueltig}, {Nummer}, {Kunde}, {Betrag}, {Datum}, {Firma}) still work.
+/// </summary>
 public static class Texts
 {
     /// <summary>The payment terms with the days and the due date filled in.</summary>
     public static string? Expand(string? text, int days, DateOnly? due)
-        => text?.Replace("{Tage}", days.ToString(Fmt.Culture), StringComparison.Ordinal).Replace("{Faellig}", Fmt.Date(due), StringComparison.Ordinal);
+        => Fill(text, ("Days", "Tage", days.ToString(DocFmt.Culture)), ("DueDate", "Faellig", DocFmt.Date(due)));
 
     /// <summary>The terms of a quote with the last day filled in.</summary>
-    public static string? ExpandQuote(string? text, DateOnly validUntil) => text?.Replace("{Gueltig}", Fmt.Date(validUntil), StringComparison.Ordinal);
+    public static string? ExpandQuote(string? text, DateOnly validUntil) => Fill(text, ("ValidUntil", "Gueltig", DocFmt.Date(validUntil)));
 
     public static string Mail(string template, Quote quote, CompanyConfig company)
-        => template
-            .Replace("{Nummer}", quote.Number ?? "", StringComparison.Ordinal)
-            .Replace("{Kunde}", quote.RecipientName ?? "", StringComparison.Ordinal)
-            .Replace("{Betrag}", Fmt.Money(quote.GrossTotal), StringComparison.Ordinal)
-            .Replace("{Gueltig}", Fmt.Date(quote.ValidUntil), StringComparison.Ordinal)
-            .Replace("{Datum}", Fmt.Date(quote.QuoteDate), StringComparison.Ordinal)
-            .Replace("{Firma}", company.Name, StringComparison.Ordinal);
+        => Fill(template,
+            ("Number", "Nummer", quote.Number ?? ""), ("Customer", "Kunde", quote.RecipientName ?? ""), ("Amount", "Betrag", DocFmt.Money(quote.GrossTotal)),
+            ("ValidUntil", "Gueltig", DocFmt.Date(quote.ValidUntil)), ("Date", "Datum", DocFmt.Date(quote.QuoteDate)), ("Company", "Firma", company.Name))!;
 
     public static string Mail(string template, Invoice invoice, CompanyConfig company)
-        => template
-            .Replace("{Nummer}", invoice.Number ?? "", StringComparison.Ordinal)
-            .Replace("{Kunde}", invoice.RecipientName ?? "", StringComparison.Ordinal)
-            .Replace("{Betrag}", Fmt.Money(invoice.GrossTotal), StringComparison.Ordinal)
-            .Replace("{Faellig}", Fmt.Date(invoice.DueDate), StringComparison.Ordinal)
-            .Replace("{Datum}", Fmt.Date(invoice.InvoiceDate), StringComparison.Ordinal)
-            .Replace("{Firma}", company.Name, StringComparison.Ordinal);
+        => Fill(template,
+            ("Number", "Nummer", invoice.Number ?? ""), ("Customer", "Kunde", invoice.RecipientName ?? ""), ("Amount", "Betrag", DocFmt.Money(invoice.GrossTotal)),
+            ("DueDate", "Faellig", DocFmt.Date(invoice.DueDate)), ("Date", "Datum", DocFmt.Date(invoice.InvoiceDate)), ("Company", "Firma", company.Name))!;
+
+    private static string? Fill(string? text, params (string Name, string Legacy, string Value)[] values)
+    {
+        if (text is null)
+        {
+            return null;
+        }
+
+        foreach (var (name, legacy, value) in values)
+        {
+            text = text.Replace("{" + name + "}", value, StringComparison.Ordinal).Replace("{" + legacy + "}", value, StringComparison.Ordinal);
+        }
+
+        return text;
+    }
 }

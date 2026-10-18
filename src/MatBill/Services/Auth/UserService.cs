@@ -44,6 +44,7 @@ public sealed class UserService(MbDbContext db, SignInService signIn, SessionCac
         var user = new User
         {
             Email = normalized,
+            Language = Localization.Languages.Current,
             DisplayName = displayName.Trim(),
             Role = role,
             PasswordHash = PasswordHasher.Hash(password),

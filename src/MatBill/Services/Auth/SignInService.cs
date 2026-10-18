@@ -114,7 +114,7 @@ public sealed class SignInService(MbDbContext db, ConfigStore config, TimeProvid
         user.LockoutEndDate = null;
         await db.SaveChangesAsync(ct);
 
-        var snapshot = new SessionSnapshot(user.Id, user.DisplayName, user.Email, user.Role, user.Theme, NeedsSecondFactor(user));
+        var snapshot = new SessionSnapshot(user.Id, user.DisplayName, user.Email, user.Role, user.Theme, user.Language, NeedsSecondFactor(user));
         await http.SignInAsync(CookieScheme, BuildPrincipal(snapshot, session.Token), new AuthenticationProperties
         {
             IsPersistent = true,
@@ -163,7 +163,7 @@ public sealed class SignInService(MbDbContext db, ConfigStore config, TimeProvid
         }
 
         cache.InvalidateUser(user.Id);
-        var snapshot = new SessionSnapshot(user.Id, user.DisplayName, user.Email, user.Role, user.Theme, NeedsSecondFactor(user));
+        var snapshot = new SessionSnapshot(user.Id, user.DisplayName, user.Email, user.Role, user.Theme, user.Language, NeedsSecondFactor(user));
         var current = await http.AuthenticateAsync(CookieScheme);
         await http.SignInAsync(CookieScheme, BuildPrincipal(snapshot, token), current.Properties);
     }
@@ -178,6 +178,7 @@ public sealed class SignInService(MbDbContext db, ConfigStore config, TimeProvid
                 new Claim(ClaimTypes.Role, s.Role.ToString()),
                 new Claim(AppClaims.Session, token.ToString()),
                 new Claim(AppClaims.Theme, s.Theme),
+                new Claim(AppClaims.Language, s.Language),
             ],
             CookieScheme);
         return new ClaimsPrincipal(identity);

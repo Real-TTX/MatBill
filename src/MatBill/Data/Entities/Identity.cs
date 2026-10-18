@@ -28,6 +28,9 @@ public class User : AuditedEntity, ISoftDeletable
     /// <summary>"document" or "form": how the invoice editor opens for this person (the switch in the editor remembers it).</summary>
     public string EditorView { get; set; } = "document";
 
+    /// <summary>"en" or "de": the language of the interface for this person (documents keep their own language).</summary>
+    public string Language { get; set; } = "en";
+
     public DateTime? LastLoginDate { get; set; }
 
     public int FailedLogins { get; set; }

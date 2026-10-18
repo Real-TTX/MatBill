@@ -88,16 +88,16 @@ public sealed class CompanyConfig
 public sealed class InvoicingConfig
 {
     /// <summary>The pattern of invoice numbers (see <see cref="Core.Billing.NumberPattern"/>).</summary>
-    public string QuoteNumberPattern { get; set; } = "AN-{JJJJ}-{NNNN}";
+    public string QuoteNumberPattern { get; set; } = "AN-{YYYY}-{NNNN}";
 
     /// <summary>The own receipt numbers of expenses ("Belegnummer").</summary>
-    public string ExpenseNumberPattern { get; set; } = "BE-{JJJJ}-{NNNN}";
+    public string ExpenseNumberPattern { get; set; } = "BE-{YYYY}-{NNNN}";
 
     public int QuoteValidityDays { get; set; } = 30;
 
     public string QuoteIntroText { get; set; } = "Guten Tag,\ngerne bieten wir Ihnen folgende Leistungen an:";
 
-    public string QuoteTerms { get; set; } = "Dieses Angebot ist gültig bis {Gueltig}. Wir freuen uns auf Ihren Auftrag.";
+    public string QuoteTerms { get; set; } = "Dieses Angebot ist gültig bis {ValidUntil}. Wir freuen uns auf Ihren Auftrag.";
 
     /// <summary>The categories of expenses (one list for the select and the reports).</summary>
     public List<string> ExpenseCategories { get; set; } =
@@ -109,7 +109,7 @@ public sealed class InvoicingConfig
     /// <summary>Every issued invoice is a ZUGFeRD e-invoice: a PDF/A-3 with the structured data (EN 16931) inside.</summary>
     public bool ZugferdPdf { get; set; } = true;
 
-    public string InvoiceNumberPattern { get; set; } = "RE-{JJJJ}-{NNNN}";
+    public string InvoiceNumberPattern { get; set; } = "RE-{YYYY}-{NNNN}";
 
     public string CustomerNumberPattern { get; set; } = "K-{NNNN}";
 
@@ -117,8 +117,8 @@ public sealed class InvoicingConfig
 
     public string IntroText { get; set; } = "Hallo,\nvielen Dank für die gute Zusammenarbeit. Hiermit berechnen wir folgende Leistungen:";
 
-    /// <summary>The payment terms; <c>{Tage}</c> becomes the days of the term, <c>{Faellig}</c> the due date.</summary>
-    public string PaymentTerms { get; set; } = "Bitte überweisen Sie den Rechnungsbetrag innerhalb von {Tage} Tagen auf das unten angegebene Konto.";
+    /// <summary>The payment terms; <c>{Days}</c> becomes the days of the term, <c>{DueDate}</c> the due date.</summary>
+    public string PaymentTerms { get; set; } = "Bitte überweisen Sie den Rechnungsbetrag innerhalb von {Days} Tagen auf das unten angegebene Konto.";
 
     public string ClosingText { get; set; } = "Mit freundlichen Grüßen";
 
@@ -142,7 +142,7 @@ public enum MailSecurity
     None,
 }
 
-/// <summary>The mail server that sends invoices, and the text of the mail. <c>{Nummer}</c>, <c>{Kunde}</c>, <c>{Betrag}</c>, <c>{Faellig}</c> and <c>{Firma}</c> are filled in.</summary>
+/// <summary>The mail server that sends invoices, and the text of the mail. <c>{Number}</c>, <c>{Customer}</c>, <c>{Amount}</c>, <c>{DueDate}</c> and <c>{Company}</c> are filled in.</summary>
 public sealed class MailConfig
 {
     public string Host { get; set; } = "";
@@ -162,13 +162,13 @@ public sealed class MailConfig
     /// <summary>A copy of every invoice mail goes here (the own archive); empty sends none.</summary>
     public string Bcc { get; set; } = "";
 
-    public string Subject { get; set; } = "Rechnung {Nummer} von {Firma}";
+    public string Subject { get; set; } = "Rechnung {Number} von {Company}";
 
-    public string Body { get; set; } = "Guten Tag,\n\nanbei erhalten Sie unsere Rechnung {Nummer} über {Betrag}, fällig am {Faellig}.\n\nMit freundlichen Grüßen\n{Firma}";
+    public string Body { get; set; } = "Guten Tag,\n\nanbei erhalten Sie unsere Rechnung {Number} über {Amount}, fällig am {DueDate}.\n\nMit freundlichen Grüßen\n{Company}";
 
-    public string QuoteSubject { get; set; } = "Angebot {Nummer} von {Firma}";
+    public string QuoteSubject { get; set; } = "Angebot {Number} von {Company}";
 
-    public string QuoteBody { get; set; } = "Guten Tag,\n\nanbei erhalten Sie unser Angebot {Nummer} über {Betrag}, gültig bis {Gueltig}.\n\nMit freundlichen Grüßen\n{Firma}";
+    public string QuoteBody { get; set; } = "Guten Tag,\n\nanbei erhalten Sie unser Angebot {Number} über {Amount}, gültig bis {ValidUntil}.\n\nMit freundlichen Grüßen\n{Company}";
 
     [JsonIgnore]
     public bool IsConfigured => !string.IsNullOrWhiteSpace(Host) && !string.IsNullOrWhiteSpace(FromAddress);

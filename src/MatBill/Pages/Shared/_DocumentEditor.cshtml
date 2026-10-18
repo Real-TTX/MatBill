@@ -111,7 +111,7 @@
                 </div>
                 @if (!template)
                 {
-                    <div><dt>@(quote ? "Gültig bis" : "Fällig am")</dt><dd data-due>@(input.InvoiceDate is { } d ? Fmt.Date(InvoiceMath.DueDate(d, input.PaymentTermDays ?? 0)) : "–")</dd></div>
+                    <div><dt>@(quote ? "Gültig bis" : "Fällig am")</dt><dd data-due>@(input.InvoiceDate is { } d ? DocFmt.Date(InvoiceMath.DueDate(d, input.PaymentTermDays ?? 0)) : "–")</dd></div>
                 }
             </dl>
         </section>
@@ -136,14 +136,14 @@
     </div>
 
     <dl class="mb-doc__totals" aria-live="polite">
-        <div><dt>Zwischensumme</dt><dd data-sum-net>@Fmt.Money(totals.Net)</dd></div>
+        <div><dt>Zwischensumme</dt><dd data-sum-net>@DocFmt.Money(totals.Net)</dd></div>
         <div data-tax-rows class="mb-doc__taxes">
             @foreach (var g in totals.Taxes.Where(t => t.Rate > 0))
             {
-                <div><dt>@(totals.Taxes.Count(t => t.Rate > 0) > 1 ? $"Umsatzsteuer {Amount.Quantity(g.Rate)} % auf {Fmt.Money(g.Net)}" : $"Umsatzsteuer ({Amount.Quantity(g.Rate)} %)")</dt><dd>@Fmt.Money(g.Tax)</dd></div>
+                <div><dt>@(totals.Taxes.Count(t => t.Rate > 0) > 1 ? $"Umsatzsteuer {Amount.Quantity(g.Rate)} % auf {DocFmt.Money(g.Net)}" : $"Umsatzsteuer ({Amount.Quantity(g.Rate)} %)")</dt><dd>@DocFmt.Money(g.Tax)</dd></div>
             }
         </div>
-        <div class="mb-doc__grand"><dt>Gesamtbetrag</dt><dd data-sum-gross>@Fmt.Money(totals.Gross)</dd></div>
+        <div class="mb-doc__grand"><dt>Gesamtbetrag</dt><dd data-sum-gross>@DocFmt.Money(totals.Gross)</dd></div>
     </dl>
     @if (Model.TaxExempt)
     {

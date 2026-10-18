@@ -3,6 +3,7 @@ using System.Security.Claims;
 using MatBill.Core.Security;
 using MatBill.Data;
 using MatBill.Data.Entities;
+using MatBill.Localization;
 using MatBill.Services;
 using MatBill.Services.Auth;
 using Microsoft.AspNetCore.Mvc;
@@ -14,28 +15,31 @@ public sealed class ProfileModel(MbDbContext db, ICurrentUser current, UserServi
 {
     public sealed class ProfileInput
     {
-        [Required(ErrorMessage = "Bitte gib deinen Namen ein.")]
-        [Display(Name = "Name")]
+        [Required(ErrorMessage = "Profile.Name.Required")]
+        [Display(Name = "Profile.Name")]
         public string DisplayName { get; set; } = "";
 
-        [Display(Name = "Telefon")]
+        [Display(Name = "Common.Phone")]
         public string? Phone { get; set; }
 
-        [Display(Name = "Darstellung")]
+        [Display(Name = "Profile.Theme")]
         public string Theme { get; set; } = "system";
+
+        [Display(Name = "Common.Language")]
+        public string Language { get; set; } = Languages.Default;
     }
 
     public sealed class PasswordInput
     {
-        [Display(Name = "Aktuelles Passwort")]
+        [Display(Name = "Profile.Password.Current")]
         public string? Current { get; set; }
 
-        [Required(ErrorMessage = "Bitte gib das neue Passwort ein.")]
-        [Display(Name = "Neues Passwort")]
+        [Required(ErrorMessage = "Profile.Password.New.Required")]
+        [Display(Name = "Profile.Password.New")]
         public string New { get; set; } = "";
 
-        [Required(ErrorMessage = "Bitte wiederhole das neue Passwort.")]
-        [Display(Name = "Neues Passwort wiederholen")]
+        [Required(ErrorMessage = "Profile.Password.Repeat.Required")]
+        [Display(Name = "Profile.Password.Repeat")]
         public string Repeat { get; set; } = "";
     }
 
@@ -52,7 +56,7 @@ public sealed class ProfileModel(MbDbContext db, ICurrentUser current, UserServi
     public async Task OnGetAsync()
     {
         var user = await LoadAsync();
-        Profile = new ProfileInput { DisplayName = user.DisplayName, Phone = user.Phone, Theme = user.Theme };
+        Profile = new ProfileInput { DisplayName = user.DisplayName, Phone = user.Phone, Theme = user.Theme, Language = Languages.Normalize(user.Language) };
         Prepare(user);
     }
 
@@ -70,9 +74,11 @@ public sealed class ProfileModel(MbDbContext db, ICurrentUser current, UserServi
         user.DisplayName = Profile.DisplayName.Trim();
         user.Phone = string.IsNullOrWhiteSpace(Profile.Phone) ? null : Profile.Phone.Trim();
         user.Theme = Profile.Theme is "light" or "dark" ? Profile.Theme : "system";
+        user.Language = Languages.Normalize(Profile.Language);
+        Languages.SetCookie(Response, user.Language, Request.IsHttps);
         await db.SaveChangesAsync();
         await signIn.RefreshAsync(HttpContext, user);
-        Flash("Dein Profil ist gespeichert.");
+        Flash(Languages.In(user.Language, () => L["Profile.Saved"].Value));
         return RedirectToPage();
     }
 
@@ -82,7 +88,7 @@ public sealed class ProfileModel(MbDbContext db, ICurrentUser current, UserServi
         ModelState.Remove("Profile.DisplayName");
         if (user.PasswordHash is not null && !PasswordHasher.Verify(Password.Current ?? string.Empty, user.PasswordHash))
         {
-            ModelState.AddModelError("Password.Current", "Das aktuelle Passwort stimmt nicht.");
+            ModelState.AddModelError("Password.Current", L["Profile.Password.Wrong"]);
         }
 
         if (UserService.CheckPassword(Password.New, user.Email) is { } problem)
@@ -91,20 +97,20 @@ public sealed class ProfileModel(MbDbContext db, ICurrentUser current, UserServi
         }
         else if (Password.New != Password.Repeat)
         {
-            ModelState.AddModelError("Password.Repeat", "Die Passwörter stimmen nicht überein.");
+            ModelState.AddModelError("Password.Repeat", L["Profile.Password.Mismatch"]);
         }
 
         if (!ModelState.IsValid)
         {
-            Profile = new ProfileInput { DisplayName = user.DisplayName, Phone = user.Phone, Theme = user.Theme };
+            Profile = new ProfileInput { DisplayName = user.DisplayName, Phone = user.Phone, Theme = user.Theme, Language = Languages.Normalize(user.Language) };
             Prepare(user);
             return Page();
         }
 
         var keep = Guid.TryParse(User.FindFirstValue(AppClaims.Session), out var token) ? token : (Guid?)null;
         await users.ChangePasswordAsync(user, Password.New, keep);
-        await log.LogAsync("Passwort geändert", "User", user.Id);
-        Flash("Das Passwort ist geändert. Andere Geräte sind abgemeldet.");
+        await log.LogAsync(L["Profile.Log.PasswordChanged"], "User", user.Id);
+        Flash(L["Profile.Password.Changed"]);
         return RedirectToPage();
     }
 
@@ -115,6 +121,6 @@ public sealed class ProfileModel(MbDbContext db, ICurrentUser current, UserServi
     {
         Email = user.Email;
         HasPassword = user.PasswordHash is not null;
-        Head("Mein Konto", "Dein Name, deine Darstellung und dein Passwort.", ("Mein Konto", null));
+        Head(L["Profile.Title"], L["Profile.Sub"], (L["Profile.Title"], null));
     }
 }

@@ -398,3 +398,11 @@ select.mb-in { appearance: none; -webkit-appearance: none; cursor: pointer; text
 .mb-receipt__image { display: block; max-width: 100%; height: auto; border: 1px solid var(--mat-border); border-radius: var(--mat-radius-sm); }
 .mb-receipt__frame { display: block; width: 100%; height: min(75vh, 52rem); border: 1px solid var(--mat-border); border-radius: var(--mat-radius-sm); background: var(--mat-surface-2); }
 select.mb-multi { min-height: 7rem; padding-block: var(--mat-space-1); }
+
+/* ---- The choice of language below the sign-in card (Pages/Shared/_LanguageSwitch) ---- */
+.mb-langs { display: flex; align-items: center; justify-content: center; gap: var(--mat-space-1); margin-top: var(--mat-space-4); color: var(--mat-text-muted); }
+.mb-langs .mat-icon { width: 16px; height: 16px; margin-right: var(--mat-space-1); }
+.mb-langs__item { min-width: 2.75rem; min-height: 2.25rem; padding: 0 var(--mat-space-2); border: 1px solid transparent; border-radius: var(--mat-radius-sm); background: none; color: inherit; font: inherit; font-size: var(--mat-fs-sm); font-weight: 600; cursor: pointer; }
+.mb-langs__item:hover { color: var(--mat-text); background: var(--mat-bg-2); }
+.mb-langs__item.is-active { color: var(--mat-accent-text); border-color: var(--mat-border); background: var(--mat-surface); }
+.mb-langs__item:focus-visible { outline: none; box-shadow: var(--mat-focus-ring); }

@@ -2,6 +2,7 @@ using System.Globalization;
 using MatBill.Configuration;
 using MatBill.Data;
 using MatBill.Data.Entities;
+using MatBill.Localization;
 using MatBill.Services;
 using MatBill.Services.Auth;
 using MatBill.Services.Backup;
@@ -131,14 +132,20 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AllowAnonymousToFolder("/Share");
 })
 // A non-nullable string is not "required" by itself: the pages say what is required (the star, the message, the check).
-.AddMvcOptions(options => options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true);
+.AddMvcOptions(options => options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true)
+.AddDataAnnotationsLocalization(options => options.DataAnnotationLocalizerProvider = (_, factory) => factory.Create(typeof(SharedResource)));
 
-// Numbers in forms and in the query string are always written the invariant way ("12.5"); the pages show them German with Fmt.
+// The interface speaks English and German (MatBill.Localization); every localizer reads the one catalog of JSON texts.
+// Numbers in forms and in the query string are always written the invariant way ("12.5"): only the UI culture follows the language.
+builder.Services.AddSingleton<Microsoft.Extensions.Localization.IStringLocalizerFactory, CatalogLocalizerFactory>();
+builder.Services.AddSingleton(typeof(Microsoft.Extensions.Localization.IStringLocalizer<>), typeof(CatalogLocalizer<>));
 builder.Services.Configure<RequestLocalizationOptions>(options =>
 {
-    options.DefaultRequestCulture = new RequestCulture(CultureInfo.InvariantCulture);
+    options.DefaultRequestCulture = new RequestCulture(CultureInfo.InvariantCulture, Languages.UiCulture(Languages.Default));
     options.SupportedCultures = [CultureInfo.InvariantCulture];
-    options.SupportedUICultures = [CultureInfo.InvariantCulture];
+    options.SupportedUICultures = [.. Languages.Codes.Select(Languages.UiCulture)];
+    options.FallBackToParentUICultures = true;
+    options.RequestCultureProviders = [new AccountLanguageProvider(), new AcceptLanguageHeaderRequestCultureProvider()];
 });
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -154,7 +161,6 @@ var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Sta
 await DatabaseInitializer.InitializeAsync(app.Services, config, logger);
 
 app.UseForwardedHeaders();
-app.UseRequestLocalization();
 
 if (!app.Environment.IsDevelopment())
 {
@@ -193,11 +199,14 @@ app.UseStaticFiles(new StaticFileOptions
 });
 app.UseAuthentication();
 
+// After the authentication: the language of a signed-in person comes from their account.
+app.UseRequestLocalization();
+
 // While there is no administrator the only page is the one that makes the first one.
 app.Use(async (context, next) =>
 {
     var path = context.Request.Path;
-    if (!path.StartsWithSegments("/Account/Setup") && !path.StartsWithSegments("/health") && !path.StartsWithSegments("/css")
+    if (!path.StartsWithSegments("/Account/Setup") && !path.StartsWithSegments("/language") && !path.StartsWithSegments("/health") && !path.StartsWithSegments("/css")
         && !path.StartsWithSegments("/js") && !path.StartsWithSegments("/ui") && !path.StartsWithSegments("/img") && !path.StartsWithSegments("/Offline")
         && !path.Value!.EndsWith(".svg", StringComparison.OrdinalIgnoreCase) && !path.Value.EndsWith(".webmanifest", StringComparison.OrdinalIgnoreCase)
         && path.Value != "/sw.js"
@@ -233,6 +242,24 @@ app.MapPost("/api/theme", async (HttpContext http, IAntiforgery antiforgery, MbD
     await signIn.RefreshAsync(http, entity);
     return Results.NoContent();
 }).RequireAuthorization("SignedIn");
+
+// The language of the interface: kept in the account of a signed-in person and in a cookie (the sign-in page); back to where it was chosen.
+app.MapPost("/language", async (HttpContext http, IAntiforgery antiforgery, MbDbContext db, SignInService signIn, ICurrentUser user) =>
+{
+    await antiforgery.ValidateRequestAsync(http);
+    var code = Languages.Normalize(http.Request.Form["language"].ToString());
+    Languages.SetCookie(http.Response, code, http.Request.IsHttps);
+    if (user.UserId is { } id)
+    {
+        var entity = await db.User.Include(u => u.Totp).FirstAsync(u => u.Id == id);
+        entity.Language = code;
+        await db.SaveChangesAsync();
+        await signIn.RefreshAsync(http, entity);
+    }
+
+    var back = http.Request.Form["returnUrl"].ToString();
+    return Results.LocalRedirect(!string.IsNullOrEmpty(back) && back.StartsWith('/') && !back.StartsWith("//", StringComparison.Ordinal) && !back.StartsWith("/\\", StringComparison.Ordinal) ? back : "/");
+}).AllowAnonymous();
 
 // The switch of the invoice editor between the document and the form: remembered per person.
 app.MapPost("/api/editor-view", async (HttpContext http, IAntiforgery antiforgery, MbDbContext db, ICurrentUser user) =>

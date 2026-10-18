@@ -47,7 +47,7 @@
             <h2 class="mb-doc__title">@d.Title</h2>
             <dl class="mb-doc__facts">
                 <div><dt>@d.NumberLabel</dt><dd>@(d.Number ?? "–")</dd></div>
-                <div><dt>@d.DateLabel</dt><dd>@Fmt.Date(d.InvoiceDate)</dd></div>
+                <div><dt>@d.DateLabel</dt><dd>@DocFmt.Date(d.InvoiceDate)</dd></div>
                 @if (d.Kind == DocumentKind.Cancellation && d.CancelsNumber is { } cancels)
                 {
                     <div><dt>Storno zu Rechnung</dt><dd>@cancels</dd></div>
@@ -66,12 +66,12 @@
                 }
                 @if (d.Kind == DocumentKind.Quote)
                 {
-                    <div><dt>Gültig bis</dt><dd>@Fmt.Date(d.ValidUntil)</dd></div>
+                    <div><dt>Gültig bis</dt><dd>@DocFmt.Date(d.ValidUntil)</dd></div>
                 }
                 else if (d.Kind == DocumentKind.Invoice)
                 {
                     <div><dt>Zahlungsziel</dt><dd>@(d.PaymentTermDays == 0 ? "sofort" : $"{d.PaymentTermDays} Tage")</dd></div>
-                    <div><dt>Fällig am</dt><dd>@Fmt.Date(d.DueDate)</dd></div>
+                    <div><dt>Fällig am</dt><dd>@DocFmt.Date(d.DueDate)</dd></div>
                 }
             </dl>
         </section>
@@ -90,24 +90,24 @@
                 <div class="mb-line" role="listitem">
                     <div><div class="mb-line__name">@l.Name</div>@if (!string.IsNullOrWhiteSpace(l.Description)) { <div class="mb-line__desc">@l.Description</div> }</div>
                     <div data-label="Menge">@Amount.Quantity(l.Quantity) @l.Unit</div>
-                    <div data-label="Einzelpreis">@Fmt.Money(l.UnitPrice)</div>
+                    <div data-label="Einzelpreis">@DocFmt.Money(l.UnitPrice)</div>
                     @if (showTax) { <div data-label="USt.">@Amount.Quantity(l.TaxRate) %</div> }
-                    <div data-label="Gesamtpreis">@Fmt.Money(l.Net)</div>
+                    <div data-label="Gesamtpreis">@DocFmt.Money(l.Net)</div>
                 </div>
             }
         </div>
     </div>
 
     <dl class="mb-doc__totals">
-        <div><dt>Zwischensumme</dt><dd>@Fmt.Money(d.Totals.Net)</dd></div>
+        <div><dt>Zwischensumme</dt><dd>@DocFmt.Money(d.Totals.Net)</dd></div>
         @if (!d.TaxExempt)
         {
             foreach (var g in d.Totals.Taxes.Where(t => t.Rate > 0))
             {
-                <div><dt>@(d.Totals.Taxes.Count(t => t.Rate > 0) > 1 ? $"Umsatzsteuer {Amount.Quantity(g.Rate)} % auf {Fmt.Money(g.Net)}" : $"Umsatzsteuer ({Amount.Quantity(g.Rate)} %)")</dt><dd>@Fmt.Money(g.Tax)</dd></div>
+                <div><dt>@(d.Totals.Taxes.Count(t => t.Rate > 0) > 1 ? $"Umsatzsteuer {Amount.Quantity(g.Rate)} % auf {DocFmt.Money(g.Net)}" : $"Umsatzsteuer ({Amount.Quantity(g.Rate)} %)")</dt><dd>@DocFmt.Money(g.Tax)</dd></div>
             }
         }
-        <div class="mb-doc__grand"><dt>Gesamtbetrag</dt><dd>@Fmt.Money(d.Totals.Gross)</dd></div>
+        <div class="mb-doc__grand"><dt>Gesamtbetrag</dt><dd>@DocFmt.Money(d.Totals.Gross)</dd></div>
     </dl>
     @if (d.TaxExempt && !string.IsNullOrWhiteSpace(d.TaxExemptNote))
     {

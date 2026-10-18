@@ -127,7 +127,7 @@ public sealed partial class ExportService(MbDbContext db, FileStoreService files
             }
 
             await WriteAsync(zip, $"{root}/LIESMICH.txt", Encoding.UTF8.GetBytes(
-                $"Export von MatBill für {company.Name}\r\nZeitraum: {Fmt.Date(from)} bis {Fmt.Date(to)}\r\nErstellt: {Fmt.Moment(DateTime.UtcNow)}\r\n\r\n" +
+                $"Export von MatBill für {company.Name}\r\nZeitraum: {DocFmt.Date(from)} bis {DocFmt.Date(to)}\r\nErstellt: {DocFmt.Moment(DateTime.UtcNow)}\r\n\r\n" +
                 $"Rechnungen: {invoiceList.Count} (Ordner Rechnungen, Liste Rechnungen.csv; ausgestellte Rechnungen sind ZUGFeRD-E-Rechnungen, die XML-Daten stecken in der PDF)\r\n" +
                 $"Ausgaben: {expenseList.Count} (Ordner Ausgaben, Liste Ausgaben.csv){(missing > 0 ? $"; ohne Beleg: {missing}" : "")}\r\n" +
                 "Übersicht.csv: Einnahmen, Ausgaben, Umsatzsteuer und Vorsteuer je Monat (nach Rechnungs- und Belegdatum).\r\n" +
@@ -168,7 +168,7 @@ public sealed partial class ExportService(MbDbContext db, FileStoreService files
 
     private static string D(DateOnly? d) => d is null ? "" : d.Value.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture);
 
-    private static string M(decimal v) => v.ToString("0.00", Fmt.Culture);
+    private static string M(decimal v) => v.ToString("0.00", DocFmt.Culture);
 
     /// <summary>A CSV for Excel: UTF-8 with BOM, semicolons, every field in quotes when it needs them; a field that starts with = + - @ is made harmless.</summary>
     public static byte[] Csv(string[] header, IEnumerable<string[]> rows)
@@ -187,7 +187,7 @@ public sealed partial class ExportService(MbDbContext db, FileStoreService files
     private static string Field(string value)
     {
         var v = value ?? "";
-        if (v.Length > 0 && "=+@".Contains(v[0]) || (v.StartsWith('-') && !decimal.TryParse(v, NumberStyles.Number, Fmt.Culture, out _)))
+        if (v.Length > 0 && "=+@".Contains(v[0]) || (v.StartsWith('-') && !decimal.TryParse(v, NumberStyles.Number, DocFmt.Culture, out _)))
         {
             v = "'" + v;
         }

@@ -1,0 +1,16 @@
+@*
+    The choice of language for somebody who is not signed in (sign-in, first set-up, second factor): EN | DE below the card.
+    A signed-in person chooses it in My account; both end at POST /language.
+*@
+@{
+    var current = Languages.Current;
+    var back = Context.Request.Path + Context.Request.QueryString;
+}
+<form class="mb-langs" method="post" action="/language" asp-antiforgery="true" aria-label="@L["Common.Language"]">
+    <input type="hidden" name="returnUrl" value="@back" />
+    @Ui.Icon("globe")
+    @foreach (var (code, label, name) in Languages.Supported)
+    {
+        <button type="submit" name="language" value="@code" class="mb-langs__item @(code == current ? "is-active" : "")" lang="@code" title="@name" aria-pressed="@(code == current ? "true" : "false")">@label</button>
+    }
+</form>

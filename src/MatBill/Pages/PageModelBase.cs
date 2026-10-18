@@ -1,4 +1,6 @@
+using MatBill.Localization;
 using MatBill.UiKit;
+using Microsoft.Extensions.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -7,6 +9,9 @@ namespace MatBill.Pages;
 /// <summary>What every page of the application needs: the title and the breadcrumb for the layout, and the messages that survive a redirect.</summary>
 public abstract class PageModelBase : PageModel
 {
+    /// <summary>The texts of the interface in the language of the request: <c>L["Invoices.Title"]</c>, <c>L["Invoices.Issued", number]</c>.</summary>
+    protected IStringLocalizer L => Text.L;
+
     protected void Head(string title, string? sub = null, params (string Text, string? Url)[] crumbs)
     {
         ViewData["Title"] = title;

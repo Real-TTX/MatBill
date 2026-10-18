@@ -141,7 +141,7 @@ public static class InvoicePdf
                 col.Item().Text(doc.Title).FontSize(20).Bold();
                 col.Item().PaddingTop(3, Unit.Millimetre);
                 Fact(col, doc.NumberLabel, doc.Number ?? (doc.IsDraft ? "wird beim Ausstellen vergeben" : "–"));
-                Fact(col, doc.DateLabel, doc.InvoiceDate is { } d ? Fmt.Date(d) : "–");
+                Fact(col, doc.DateLabel, doc.InvoiceDate is { } d ? DocFmt.Date(d) : "–");
                 if (doc.Kind == DocumentKind.Cancellation && doc.CancelsNumber is { } cancels)
                 {
                     Fact(col, "Storno zu Rechnung", cancels);
@@ -166,7 +166,7 @@ public static class InvoicePdf
                 {
                     if (doc.ValidUntil is { } valid)
                     {
-                        Fact(col, "Gültig bis", Fmt.Date(valid));
+                        Fact(col, "Gültig bis", DocFmt.Date(valid));
                     }
                 }
                 else if (doc.Kind == DocumentKind.Invoice)
@@ -174,7 +174,7 @@ public static class InvoicePdf
                     Fact(col, "Zahlungsziel", doc.PaymentTermDays == 0 ? "sofort" : $"{doc.PaymentTermDays} Tage");
                     if (doc.DueDate is { } due)
                     {
-                        Fact(col, "Fällig am", Fmt.Date(due));
+                        Fact(col, "Fällig am", DocFmt.Date(due));
                     }
                 }
             });
@@ -229,13 +229,13 @@ public static class InvoicePdf
                     }
                 });
                 table.Cell().Element(BodyCell).AlignRight().Text(Join(" ", Amount.Quantity(line.Quantity), line.Unit));
-                table.Cell().Element(BodyCell).AlignRight().Text(Fmt.Money(line.UnitPrice));
+                table.Cell().Element(BodyCell).AlignRight().Text(DocFmt.Money(line.UnitPrice));
                 if (showTax)
                 {
                     table.Cell().Element(BodyCell).AlignRight().Text($"{Amount.Quantity(line.TaxRate)} %");
                 }
 
-                table.Cell().Element(BodyCell).AlignRight().Text(Fmt.Money(line.Net));
+                table.Cell().Element(BodyCell).AlignRight().Text(DocFmt.Money(line.Net));
             }
         });
     }
@@ -249,19 +249,19 @@ public static class InvoicePdf
     private static void Totals(IContainer container, InvoiceDocument doc, string accent)
         => container.Column(col =>
         {
-            TotalRow(col, "Zwischensumme", Fmt.Money(doc.Totals.Net));
+            TotalRow(col, "Zwischensumme", DocFmt.Money(doc.Totals.Net));
             if (!doc.TaxExempt)
             {
                 foreach (var g in doc.Totals.Taxes.Where(g => g.Rate > 0))
                 {
-                    TotalRow(col, doc.Totals.Taxes.Count(t => t.Rate > 0) > 1 ? $"Umsatzsteuer {Amount.Quantity(g.Rate)} % auf {Fmt.Money(g.Net)}" : $"Umsatzsteuer ({Amount.Quantity(g.Rate)} %)", Fmt.Money(g.Tax));
+                    TotalRow(col, doc.Totals.Taxes.Count(t => t.Rate > 0) > 1 ? $"Umsatzsteuer {Amount.Quantity(g.Rate)} % auf {DocFmt.Money(g.Net)}" : $"Umsatzsteuer ({Amount.Quantity(g.Rate)} %)", DocFmt.Money(g.Tax));
                 }
             }
 
             col.Item().PaddingTop(2, Unit.Millimetre).BorderTop(1).BorderColor("#cbd5e1").PaddingTop(2, Unit.Millimetre).Row(r =>
             {
                 r.RelativeItem().AlignBottom().Text("Gesamtbetrag").Bold().FontSize(11);
-                r.AutoItem().Text(Fmt.Money(doc.Totals.Gross)).Bold().FontSize(15).FontColor(accent);
+                r.AutoItem().Text(DocFmt.Money(doc.Totals.Gross)).Bold().FontSize(15).FontColor(accent);
             });
         });
 

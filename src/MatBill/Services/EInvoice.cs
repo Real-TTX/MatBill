@@ -108,7 +108,7 @@ public static class EInvoice
 
         if (invoice.Kind == InvoiceKind.Invoice)
         {
-            d.AddTradePaymentTerms(Texts.Expand(invoice.PaymentTerms, invoice.PaymentTermDays, invoice.DueDate) ?? $"Zahlbar bis {Fmt.Date(invoice.DueDate)}", invoice.DueDate.ToDateTime(TimeOnly.MinValue));
+            d.AddTradePaymentTerms(Texts.Expand(invoice.PaymentTerms, invoice.PaymentTermDays, invoice.DueDate) ?? $"Zahlbar bis {DocFmt.Date(invoice.DueDate)}", invoice.DueDate.ToDateTime(TimeOnly.MinValue));
             if (!string.IsNullOrWhiteSpace(company.Iban))
             {
                 d.SetPaymentMeans(PaymentMeansTypeCodes.SEPACreditTransfer, "Überweisung");

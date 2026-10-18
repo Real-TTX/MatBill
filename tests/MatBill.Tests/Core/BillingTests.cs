@@ -79,6 +79,7 @@ public sealed class NumberPatternTests
     [Fact]
     public void Numbers_are_formatted_with_year_month_and_counter()
     {
+        Assert.Equal("RE-2026-0042", NumberPattern.Format("RE-{YYYY}-{NNNN}", new DateOnly(2026, 10, 17), 42));
         Assert.Equal("RE-2026-0042", NumberPattern.Format("RE-{JJJJ}-{NNNN}", new DateOnly(2026, 10, 17), 42));
         Assert.Equal("26/10/007", NumberPattern.Format("{JJ}/{MM}/{NNN}", new DateOnly(2026, 10, 17), 7));
         Assert.Equal("K-12345", NumberPattern.Format("K-{NNNN}", new DateOnly(2026, 1, 1), 12345));
@@ -95,6 +96,7 @@ public sealed class NumberPatternTests
 
     [Theory]
     [InlineData("RE-{JJJJ}-{NNNN}", true)]
+    [InlineData("RE-{YYYY}-{NNNN}", true)]
     [InlineData("RE-{JJJJ}", false)]
     [InlineData("{NN}-{NN}", false)]
     [InlineData("RE-{XYZ}-{NNNN}", false)]

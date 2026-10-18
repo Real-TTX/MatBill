@@ -11,6 +11,32 @@ namespace MatBill.Services;
 /// </summary>
 public sealed class NotificationService(MbDbContext db, TimeProvider clock, IMemoryCache cache)
 {
+    /// <summary>
+    /// A note for every active person, written in the language of each of them: <paramref name="render"/> runs once per language
+    /// (<c>() =&gt; (Text.T("Notify.Sent.Title", number), Text.T("Notify.Sent.Text", to, Fmt.Money(gross)))</c>).
+    /// </summary>
+    public async Task NotifyAllAsync(NotificationTone tone, Func<(string Title, string? Text)> render, string? url, string? key = null, CancellationToken ct = default)
+    {
+        var users = await db.User.AsNoTracking().Where(u => u.IsActive).Select(u => new { u.Id, u.Language }).ToListAsync(ct);
+        var already = key is null ? [] : await db.Notification.AsNoTracking().Where(n => n.Key == key).Select(n => n.UserId).ToListAsync(ct);
+        var now = clock.GetUtcNow().UtcDateTime;
+        var texts = new Dictionary<string, (string Title, string? Text)>(StringComparer.Ordinal);
+        foreach (var user in users.Where(u => !already.Contains(u.Id)))
+        {
+            var language = Localization.Languages.Normalize(user.Language);
+            if (!texts.TryGetValue(language, out var text))
+            {
+                text = Localization.Languages.In(language, render);
+                texts[language] = text;
+            }
+
+            db.Notification.Add(new Notification { UserId = user.Id, Tone = tone, Title = Cut(text.Title, 200), Text = text.Text is null ? null : Cut(text.Text, 1000), Url = url, Key = key, OccurredDate = now });
+            cache.Remove(CountKey(user.Id));
+        }
+
+        await db.SaveChangesAsync(ct);
+    }
+
     public async Task NotifyAllAsync(NotificationTone tone, string title, string? text, string? url, string? key = null, CancellationToken ct = default)
     {
         var users = await db.User.AsNoTracking().Where(u => u.IsActive).Select(u => u.Id).ToListAsync(ct);

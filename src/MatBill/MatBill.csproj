@@ -37,4 +37,9 @@
     <InternalsVisibleTo Include="MatBill.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The texts of the interface, English and German (MatBill.Localization.TextCatalog) -->
+    <EmbeddedResource Include="Resources\Texts\*.json" />
+  </ItemGroup>
+
 </Project>

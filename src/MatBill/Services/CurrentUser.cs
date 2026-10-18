@@ -29,6 +29,8 @@ public static class AppClaims
     public const string Session = "mb:session";
 
     public const string Theme = "mb:theme";
+
+    public const string Language = "mb:lang";
 }
 
 public sealed class CurrentUser(IHttpContextAccessor accessor) : ICurrentUser

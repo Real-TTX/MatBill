@@ -1,0 +1,6 @@
+{
+  "NumberPattern.Empty": { "en": "The pattern must not be empty.", "de": "Das Muster darf nicht leer sein." },
+  "NumberPattern.Counter": { "en": "The pattern needs exactly one counter, for example {NNNN}.", "de": "Das Muster braucht genau einen Zähler, zum Beispiel {NNNN}." },
+  "NumberPattern.TooLong": { "en": "The pattern is too long (40 characters at most).", "de": "Das Muster ist zu lang (höchstens 40 Zeichen)." },
+  "NumberPattern.Unknown": { "en": "Unknown placeholder. Allowed are {YYYY}, {YY}, {MM} and {NNNN}.", "de": "Unbekannter Platzhalter. Erlaubt sind {YYYY}, {YY}, {MM} und {NNNN}." }
+}
