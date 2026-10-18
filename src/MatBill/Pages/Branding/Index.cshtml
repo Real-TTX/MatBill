@@ -4,75 +4,75 @@
 <div class="mb-split">
     <form class="mat-form" method="post" enctype="multipart/form-data" novalidate>
         <mb-summary />
-        <mb-card title="Logo" icon="image">
+        <mb-card title="@L["Branding.Logo"]" icon="image">
             <div class="mb-logo-current">
                 @if (Model.LogoUrl is not null)
                 {
-                    <img src="@Model.LogoUrl" alt="Aktuelles Logo" />
-                    <button type="submit" class="mat-btn mat-btn--ghost mat-btn--sm" formnovalidate asp-page-handler="RemoveLogo" data-confirm="Das Logo entfernen? Auf neuen Rechnungen steht dann der Name." data-confirm-ok="Entfernen">@Ui.Icon("trash")<span>Entfernen</span></button>
+                    <img src="@Model.LogoUrl" alt="@L["Branding.Logo.Current"]" />
+                    <button type="submit" class="mat-btn mat-btn--ghost mat-btn--sm" formnovalidate asp-page-handler="RemoveLogo" data-confirm="@L["Branding.Logo.Remove.Confirm"]" data-confirm-ok="@L["Branding.Logo.Remove"]">@Ui.Icon("trash")<span>@L["Branding.Logo.Remove"]</span></button>
                 }
                 else
                 {
-                    <p class="mat-muted">Noch kein Logo: Auf der Rechnung steht der Name des Unternehmens.</p>
+                    <p class="mat-muted">@L["Branding.Logo.None"]</p>
                 }
             </div>
             <div class="mat-field">
-                <label class="mat-label" for="Logo">@(Model.LogoUrl is null ? "Logo hochladen" : "Neues Logo")</label>
+                <label class="mat-label" for="Logo">@(Model.LogoUrl is null ? L["Branding.Logo.Upload"] : L["Branding.Logo.New"])</label>
                 <div class="mat-upload" data-upload data-max-size="2MB" data-max-files="1"><input class="mat-upload__input" type="file" id="Logo" name="Logo" accept=".svg,.png,.jpg,.jpeg,image/svg+xml,image/png,image/jpeg" /></div>
-                <span class="mat-hint">SVG, PNG oder JPEG, höchstens 2 MB. Am besten ein breites Logo auf transparentem Grund.</span>
+                <span class="mat-hint">@L["Branding.Logo.Hint"]</span>
                 <span class="mat-error" aria-live="polite">@ViewData.ModelState["Logo"]?.Errors.FirstOrDefault()?.ErrorMessage</span>
             </div>
         </mb-card>
 
-        <mb-card title="Absender" icon="building">
+        <mb-card title="@L["Branding.Sender"]" icon="building">
             <div class="mat-form__grid">
-                <mb-input for="Input.Name" label="Name des Unternehmens" required="true" full="true" autocomplete="organization" />
-                <mb-input for="Input.Street" label="Straße und Hausnummer" full="true" autocomplete="street-address" />
-                <mb-input for="Input.PostalCode" label="PLZ" inputmode="numeric" autocomplete="postal-code" />
-                <mb-input for="Input.City" label="Ort" autocomplete="address-level2" />
-                <mb-input for="Input.Country" label="Land" autocomplete="country-name" />
-                <mb-input for="Input.Email" label="E-Mail" type="email" inputmode="email" autocomplete="email" hint="Steht im Kopf; Antworten auf Rechnungsmails gehen hierhin." />
-                <mb-input for="Input.Phone" label="Telefon" type="tel" autocomplete="tel" />
-                <mb-input for="Input.Website" label="Website" autocomplete="url" />
+                <mb-input for="Input.Name" label="@L["Branding.Name"]" required="true" full="true" autocomplete="organization" />
+                <mb-input for="Input.Street" label="@L["Branding.Street"]" full="true" autocomplete="street-address" />
+                <mb-input for="Input.PostalCode" label="@L["Branding.PostalCode"]" inputmode="numeric" autocomplete="postal-code" />
+                <mb-input for="Input.City" label="@L["Branding.City"]" autocomplete="address-level2" />
+                <mb-input for="Input.Country" label="@L["Branding.Country"]" autocomplete="country-name" />
+                <mb-input for="Input.Email" label="@L["Common.Email"]" type="email" inputmode="email" autocomplete="email" hint="@L["Branding.Email.Hint"]" />
+                <mb-input for="Input.Phone" label="@L["Common.Phone"]" type="tel" autocomplete="tel" />
+                <mb-input for="Input.Website" label="@L["Branding.Website"]" autocomplete="url" />
             </div>
         </mb-card>
 
-        <mb-card title="Steuer und Register" icon="file-text">
+        <mb-card title="@L["Branding.Tax"]" icon="file-text">
             <div class="mat-form__grid">
-                <mb-input for="Input.TaxNumber" label="Steuernummer" autocomplete="off" />
-                <mb-input for="Input.VatId" label="USt-IdNr." autocomplete="off" />
-                <mb-input for="Input.Manager" label="Inhaber oder Geschäftsführung" hint="Zum Beispiel „Geschäftsführer: Jonas Dierksen“." full="true" />
-                <mb-input for="Input.Register" label="Registereintrag" hint="Zum Beispiel „Amtsgericht München, HRB 12345“." full="true" />
-                <mb-switch for="Input.SmallBusiness" label="Kleinunternehmer (§ 19 UStG): keine Umsatzsteuer berechnen" full="true" />
+                <mb-input for="Input.TaxNumber" label="@L["Branding.TaxNumber"]" autocomplete="off" />
+                <mb-input for="Input.VatId" label="@L["Branding.VatId"]" autocomplete="off" />
+                <mb-input for="Input.Manager" label="@L["Branding.Manager"]" hint="@L["Branding.Manager.Hint"]" full="true" />
+                <mb-input for="Input.Register" label="@L["Branding.Register"]" hint="@L["Branding.Register.Hint"]" full="true" />
+                <mb-switch for="Input.SmallBusiness" label="@L["Branding.SmallBusiness"]" full="true" />
             </div>
         </mb-card>
 
-        <mb-card title="Bankverbindung" icon="credit-card">
+        <mb-card title="@L["Branding.Bank"]" icon="credit-card">
             <div class="mat-form__grid">
-                <mb-input for="Input.BankName" label="Bank" />
+                <mb-input for="Input.BankName" label="@L["Branding.BankName"]" />
                 <mb-input for="Input.Iban" label="IBAN" autocomplete="off" />
                 <mb-input for="Input.Bic" label="BIC" autocomplete="off" />
             </div>
         </mb-card>
 
-        <mb-card title="Gestaltung" icon="palette">
+        <mb-card title="@L["Branding.Design"]" icon="palette">
             <div class="mat-form__grid">
                 <div class="mat-field">
-                    <label class="mat-label" for="Input_AccentColor">Farbe des Dokuments</label>
+                    <label class="mat-label" for="Input_AccentColor">@L["Branding.Accent"]</label>
                     <div class="mat-picker" data-picker="colour"><input class="mat-picker__input" id="Input_AccentColor" name="Input.AccentColor" value="@Model.Input.AccentColor" /></div>
-                    <span class="mat-hint">Für den Gesamtbetrag, die Linie im Fuß und den Gruß.</span>
+                    <span class="mat-hint">@L["Branding.Accent.Hint"]</span>
                     <span class="mat-error" aria-live="polite">@ViewData.ModelState["Input.AccentColor"]?.Errors.FirstOrDefault()?.ErrorMessage</span>
                 </div>
-                <mb-input for="Input.Signature" label="Gruß in Handschrift" hint="Steht unten rechts, zum Beispiel „Danke!“. Leer: kein Gruß." />
+                <mb-input for="Input.Signature" label="@L["Branding.Signature"]" hint="@L["Branding.Signature.Hint"]" />
             </div>
         </mb-card>
 
         <mb-buttons back-href="/" />
     </form>
 
-    <aside aria-label="Vorschau">
+    <aside aria-label="@L["Branding.Preview"]">
         <div class="mat-card">
-            <div class="mat-card__head">@Ui.Icon("eye")<h2 class="mat-card__title">Vorschau</h2><span class="mat-card__sub">gespeicherter Stand</span></div>
+            <div class="mat-card__head">@Ui.Icon("eye")<h2 class="mat-card__title">@L["Branding.Preview"]</h2><span class="mat-card__sub">@L["Branding.Preview.Sub"]</span></div>
             <div class="mat-card__body">
                 <div class="mb-brand-preview" data-editor data-readonly data-doc-accent="@Model.Preview.Company.AccentColor">
                     <partial name="_DocumentView" model="Model.Preview" />

@@ -1,19 +1,23 @@
 @page
 @model MatBill.Pages.Quotes.SendModel
+@{
+    var pdfLink = $"<a href=\"/quotes/{Model.Quote.Id}/pdf?download=1\">{System.Net.WebUtility.HtmlEncode(L["Quotes.Send.DownloadPdf"].Value)}</a>";
+    var mailLink = $"<a href=\"/Admin/Mail\">{System.Net.WebUtility.HtmlEncode(L["Quotes.Send.MailSettings"].Value)}</a>";
+}
 
 @if (!Model.Configured)
 {
     <div class="mat-alert mat-alert--warning" role="status">
         @Ui.Icon("alert")
         <div class="mat-alert__body">
-            <strong>Es ist noch kein Mailserver eingerichtet.</strong>
+            <strong>@L["Quotes.Send.NoMail"]</strong>
             @if (Model.IsAdmin)
             {
-                <span>Richte ihn unter <a href="/Admin/Mail">Einstellungen &gt; E-Mail</a> ein. Bis dahin kannst du die <a href="/quotes/@Model.Quote.Id/pdf?download=1">PDF herunterladen</a> und selbst versenden.</span>
+                <span>@Html.Raw(L["Quotes.Send.NoMail.Admin", mailLink, pdfLink].Value)</span>
             }
             else
             {
-                <span>Ein Administrator muss ihn einrichten. Bis dahin kannst du die <a href="/quotes/@Model.Quote.Id/pdf?download=1">PDF herunterladen</a> und selbst versenden.</span>
+                <span>@Html.Raw(L["Quotes.Send.NoMail.User", pdfLink].Value)</span>
             }
         </div>
     </div>
@@ -21,18 +25,18 @@
 
 <form class="mat-form" method="post" novalidate>
     <input type="hidden" name="Id" value="@Model.Id" />
-    <mb-summary title="Das Angebot wurde nicht versendet." />
-    <mb-card title="E-Mail" icon="mail">
+    <mb-summary title="@L["Quotes.Send.NotSent"]" />
+    <mb-card title="@L["Common.Email"]" icon="mail">
         <div class="mat-form__grid">
-            <mb-input for="Input.To" label="An" type="text" inputmode="email" required="true" full="true" hint="Mehrere Adressen mit Komma trennen." autocomplete="off" />
-            <mb-input for="Input.Cc" label="Kopie an (CC)" type="text" inputmode="email" full="true" autocomplete="off" />
-            <mb-input for="Input.Subject" label="Betreff" required="true" full="true" />
-            <mb-textarea for="Input.Body" label="Text" rows="9" required="true" full="true" />
+            <mb-input for="Input.To" label="@L["Quotes.Send.To"]" type="text" inputmode="email" required="true" full="true" hint="@L["Quotes.Send.To.Hint"]" autocomplete="off" />
+            <mb-input for="Input.Cc" label="@L["Quotes.Send.Cc"]" type="text" inputmode="email" full="true" autocomplete="off" />
+            <mb-input for="Input.Subject" label="@L["Quotes.Send.Subject"]" required="true" full="true" />
+            <mb-textarea for="Input.Body" label="@L["Quotes.Send.Body"]" rows="9" required="true" full="true" />
         </div>
-        <p class="mat-hint">Anhang: <a href="/quotes/@Model.Quote.Id/pdf" target="_blank" rel="noopener">@QuoteService.PdfName(Model.Quote)</a></p>
+        <p class="mat-hint">@L["Quotes.Send.Attachment"] <a href="/quotes/@Model.Quote.Id/pdf" target="_blank" rel="noopener">@QuoteService.PdfName(Model.Quote)</a></p>
     </mb-card>
     <div class="mat-btn-row">
-        <button type="submit" class="mat-btn mat-btn--primary mb-needs-online" disabled="@(!Model.Configured)">@Ui.Icon("send")<span>Senden</span></button>
-        <a class="mat-btn mat-btn--secondary" href="/Quotes/Edit?id=@Model.Id">@Ui.Icon("back")<span>Zurück</span></a>
+        <button type="submit" class="mat-btn mat-btn--primary mb-needs-online" disabled="@(!Model.Configured)">@Ui.Icon("send")<span>@L["Quotes.Send.Send"]</span></button>
+        <a class="mat-btn mat-btn--secondary" href="/Quotes/Edit?id=@Model.Id">@Ui.Icon("back")<span>@L["Common.Back"]</span></a>
     </div>
 </form>

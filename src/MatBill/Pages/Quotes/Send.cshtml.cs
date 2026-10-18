@@ -12,15 +12,19 @@ public sealed class SendModel(QuoteService quotes, MailService mail, ICurrentUse
 {
     public sealed class MailInput
     {
-        [Required(ErrorMessage = "Bitte gib eine E-Mail-Adresse ein.")]
+        [Required(ErrorMessage = "Quotes.Send.To.Required")]
+        [Display(Name = "Quotes.Send.To")]
         public string To { get; set; } = "";
 
+        [Display(Name = "Quotes.Send.Cc")]
         public string? Cc { get; set; }
 
-        [Required(ErrorMessage = "Bitte gib einen Betreff ein.")]
+        [Required(ErrorMessage = "Quotes.Send.Subject.Required")]
+        [Display(Name = "Quotes.Send.Subject")]
         public string Subject { get; set; } = "";
 
-        [Required(ErrorMessage = "Bitte schreib einen Text.")]
+        [Required(ErrorMessage = "Quotes.Send.Body.Required")]
+        [Display(Name = "Quotes.Send.Body")]
         public string Body { get; set; } = "";
     }
 
@@ -67,7 +71,7 @@ public sealed class SendModel(QuoteService quotes, MailService mail, ICurrentUse
             return Page();
         }
 
-        Flash($"Angebot {Quote.Number} an {Input.To} versendet.");
+        Flash(L["Quotes.Send.Sent", Quote.Number!, Input.To]);
         return RedirectToPage("/Quotes/Edit", new { id = Quote.Id });
     }
     private async Task<IActionResult?> LoadAsync()
@@ -80,12 +84,12 @@ public sealed class SendModel(QuoteService quotes, MailService mail, ICurrentUse
 
         if (quote.IsDraft)
         {
-            FlashError("Stelle das Angebot zuerst aus, dann kann es versendet werden.");
+            FlashError(L["Quotes.Send.IssueFirst"]);
             return RedirectToPage("/Quotes/Edit", new { id = quote.Id });
         }
 
         Quote = quote;
-        Head($"Angebot {quote.Number} senden", $"{quote.RecipientName} · {Fmt.Money(quote.GrossTotal)}", ("Angebote", "/Quotes"), (quote.Number!, $"/Quotes/Edit?id={quote.Id}"), ("Senden", null));
+        Head(L["Quotes.Send.Title", quote.Number!], $"{quote.RecipientName} · {Fmt.Money(quote.GrossTotal)}", (L["Quotes.Title"], "/Quotes"), (quote.Number!, $"/Quotes/Edit?id={quote.Id}"), (L["Quotes.Send.Crumb"], null));
         ViewData["Width"] = "narrow";
         ViewData["ActiveHref"] = "/Quotes";
         return null;

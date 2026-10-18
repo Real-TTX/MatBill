@@ -77,7 +77,7 @@ public sealed class EditModel(MbDbContext db, QuoteService quotes, NumberService
         Quote = quote;
         if (!quote.IsDraft)
         {
-            FlashError("Dieses Angebot ist bereits ausgestellt.");
+            FlashError(L["Quotes.AlreadyIssued"]);
             return RedirectToPage(new { id = quote.Id });
         }
 
@@ -85,7 +85,7 @@ public sealed class EditModel(MbDbContext db, QuoteService quotes, NumberService
         await quotes.LinkCustomerAsync(quote);
         if (issue && (string.IsNullOrWhiteSpace(quote.RecipientName) || quote.Lines.Count == 0))
         {
-            problems.Add(new("", "Ein Angebot braucht einen Empfänger und mindestens eine Position."));
+            problems.Add(new("", L["Quotes.NeedsRecipient"]));
         }
 
         if (problems.Count > 0)
@@ -117,19 +117,19 @@ public sealed class EditModel(MbDbContext db, QuoteService quotes, NumberService
                 return RedirectToPage(new { id = quote.Id });
             }
 
-            Flash($"Angebot {quote.Number} ausgestellt.");
+            Flash(L["Quotes.Issued", quote.Number!]);
         }
         else
         {
-            Flash(Id is null ? "Angebotsentwurf angelegt." : "Angebotsentwurf gespeichert.");
+            Flash(Id is null ? L["Quotes.DraftCreated"] : L["Quotes.DraftSaved"]);
         }
 
         return RedirectToPage(new { id = quote.Id });
     }
 
-    public Task<IActionResult> OnPostAcceptAsync() => ChangeAsync(q => quotes.AnswerAsync(q, true), q => $"Angebot {q.Number} ist angenommen.");
+    public Task<IActionResult> OnPostAcceptAsync() => ChangeAsync(q => quotes.AnswerAsync(q, true), q => L["Quotes.Accepted", q.Number!].Value);
 
-    public Task<IActionResult> OnPostDeclineAsync() => ChangeAsync(q => quotes.AnswerAsync(q, false), q => $"Angebot {q.Number} ist abgelehnt.");
+    public Task<IActionResult> OnPostDeclineAsync() => ChangeAsync(q => quotes.AnswerAsync(q, false), q => L["Quotes.Declined", q.Number!].Value);
 
     public async Task<IActionResult> OnPostInvoiceAsync()
     {
@@ -142,7 +142,7 @@ public sealed class EditModel(MbDbContext db, QuoteService quotes, NumberService
         try
         {
             var invoice = await quotes.ToInvoiceAsync(quote);
-            Flash($"Rechnungsentwurf aus Angebot {quote.Number} angelegt. Prüfe ihn und stelle ihn aus.");
+            Flash(L["Quotes.InvoiceCreated", quote.Number!]);
             return RedirectToPage("/Invoices/Edit", new { id = invoice.Id });
         }
         catch (InvoiceException ex)
@@ -161,7 +161,7 @@ public sealed class EditModel(MbDbContext db, QuoteService quotes, NumberService
         }
 
         var copy = await quotes.DuplicateAsync(quote);
-        Flash("Kopie als neuer Angebotsentwurf angelegt.");
+        Flash(L["Quotes.Duplicated"]);
         return RedirectToPage(new { id = copy.Id });
     }
 
@@ -176,7 +176,7 @@ public sealed class EditModel(MbDbContext db, QuoteService quotes, NumberService
         try
         {
             await quotes.DeleteDraftAsync(quote);
-            Flash("Angebotsentwurf gelöscht.");
+            Flash(L["Quotes.DraftDeleted"]);
             return RedirectToPage("/Quotes/Index");
         }
         catch (InvoiceException ex)
@@ -215,8 +215,8 @@ public sealed class EditModel(MbDbContext db, QuoteService quotes, NumberService
         ViewData["OwnHead"] = true;
         ViewData["Width"] = "wide";
         ViewData["ActiveHref"] = "/Quotes";
-        var title = IsNew ? "Neues Angebot" : Quote.Number is { } n ? $"Angebot {n}" : "Angebotsentwurf";
-        Head(title, null, ("Angebote", "/Quotes"), (IsNew ? "Neu" : Quote.Number ?? "Entwurf", null));
+        string title = IsNew ? L["Quotes.New"] : Quote.Number is { } n ? L["Quotes.Numbered", n] : L["Quotes.DraftTitle"];
+        Head(title, null, (L["Quotes.Title"], "/Quotes"), (IsNew ? L["Common.New"] : Quote.Number ?? L["Quotes.Draft"], null));
 
         if (!Quote.IsDraft)
         {

@@ -13,35 +13,35 @@
             }
             else
             {
-                <strong>@(Model.Company.Length > 0 ? Model.Company : "Rechnung")</strong>
+                <strong>@(Model.Company.Length > 0 ? Model.Company : L["Share.Invoice"])</strong>
             }
         </div>
         @if (Model.CanShow)
         {
-            <a class="mat-btn mat-btn--primary" href="/s/@Model.Token/pdf">@Ui.Icon("download")<span>PDF herunterladen</span></a>
+            <a class="mat-btn mat-btn--primary" href="/s/@Model.Token/pdf">@Ui.Icon("download")<span>@L["Share.DownloadPdf"]</span></a>
         }
     </header>
 
     @if (Model.State == ShareState.Unknown)
     {
-        <div class="mat-empty mat-empty--framed"><span class="mat-empty__icon">@Ui.Icon("lock")</span><div class="mat-empty__title">Diesen Link gibt es nicht</div><p>Prüfe, ob die Adresse vollständig ist.</p></div>
+        <div class="mat-empty mat-empty--framed"><span class="mat-empty__icon">@Ui.Icon("lock")</span><div class="mat-empty__title">@L["Share.Unknown.Title"]</div><p>@L["Share.Unknown.Text"]</p></div>
     }
     else if (Model.State != ShareState.Active)
     {
-        <div class="mat-empty mat-empty--framed"><span class="mat-empty__icon">@Ui.Icon("lock")</span><div class="mat-empty__title">@(Model.State == ShareState.Revoked ? "Dieser Link ist widerrufen" : "Dieser Link ist abgelaufen")</div><p>Bitte frage den Absender nach einem neuen Link.</p></div>
+        <div class="mat-empty mat-empty--framed"><span class="mat-empty__icon">@Ui.Icon("lock")</span><div class="mat-empty__title">@(Model.State == ShareState.Revoked ? L["Share.Revoked"] : L["Share.Expired"])</div><p>@L["Share.AskSender"]</p></div>
     }
     else if (Model.NeedsPassword)
     {
         <div class="mat-auth__card">
-            <h1>Passwort</h1>
-            <p class="mat-muted">Für diese Rechnung brauchst du ein Passwort.</p>
+            <h1>@L["Share.Password"]</h1>
+            <p class="mat-muted">@L["Share.Password.Needed"]</p>
             <form class="mat-form" method="post" asp-page-handler="Password" asp-route-token="@Model.Token" novalidate>
                 <div class="mat-field @(ViewData.ModelState.ContainsKey("Password") ? "is-invalid" : "")">
-                    <label class="mat-label" for="share-password">Passwort</label>
+                    <label class="mat-label" for="share-password">@L["Share.Password"]</label>
                     <input class="mat-input" type="password" id="share-password" name="Password" autocomplete="off" autofocus @(Model.Locked ? "disabled" : "") />
                     <span class="mat-error" aria-live="polite">@(ViewData.ModelState["Password"]?.Errors.FirstOrDefault()?.ErrorMessage)</span>
                 </div>
-                <div class="mat-btn-row mat-btn-row--plain"><button type="submit" class="mat-btn mat-btn--primary mat-btn--block" disabled="@Model.Locked">@Ui.Icon("lock-open")<span>Öffnen</span></button></div>
+                <div class="mat-btn-row mat-btn-row--plain"><button type="submit" class="mat-btn mat-btn--primary mat-btn--block" disabled="@Model.Locked">@Ui.Icon("lock-open")<span>@L["Share.Password.Open"]</span></button></div>
             </form>
         </div>
     }
@@ -51,7 +51,7 @@
         {
             <div class="mat-alert mat-alert--info" role="note">@Ui.Icon("info")<div class="mat-alert__body mb-prewrap">@Model.Link.Message</div></div>
         }
-        <p class="mat-muted">@(Model.Link.Invoice!.Status == InvoiceStatus.Paid ? "Diese Rechnung ist bezahlt. Vielen Dank!" : $"Fällig am {Fmt.Date(Model.Link.Invoice.DueDate)}.") Der Link ist @Model.RemainingText gültig.</p>
+        <p class="mat-muted">@(Model.Link.Invoice!.Status == InvoiceStatus.Paid ? L["Share.Paid"] : L["Share.Due", Fmt.Date(Model.Link.Invoice.DueDate)]) @Model.RemainingText</p>
         <partial name="_DocumentView" model="Model.View" />
     }
 </div>

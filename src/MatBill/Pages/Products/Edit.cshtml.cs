@@ -16,21 +16,27 @@ public sealed class EditModel(MbDbContext db, ConfigStore config, ActivityLogger
     {
         public ProductKind Kind { get; set; } = ProductKind.Service;
 
-        [Required(ErrorMessage = "Bitte gib einen Namen ein."), StringLength(300)]
+        [Required(ErrorMessage = "Products.Name.Required"), StringLength(300)]
+        [Display(Name = "Common.Name")]
         public string Name { get; set; } = "";
 
         [StringLength(2000)]
+        [Display(Name = "Products.Description")]
         public string? Description { get; set; }
 
         [StringLength(30)]
+        [Display(Name = "Products.Unit")]
         public string? Unit { get; set; }
 
-        [Required(ErrorMessage = "Bitte gib einen Preis ein.")]
+        [Required(ErrorMessage = "Products.Price.Required")]
+        [Display(Name = "Products.Price")]
         public string UnitPrice { get; set; } = "";
 
+        [Display(Name = "Products.TaxRate")]
         public string TaxRate { get; set; } = "19";
 
         [StringLength(50)]
+        [Display(Name = "Products.Sku")]
         public string? Sku { get; set; }
 
         public bool IsActive { get; set; } = true;
@@ -66,7 +72,7 @@ public sealed class EditModel(MbDbContext db, ConfigStore config, ActivityLogger
         else
         {
             Input.TaxRate = Amount.Quantity(config.Current.Invoicing.DefaultTaxRate);
-            Input.Unit = "Stunde";
+            Input.Unit = "Stunde"; // the unit is printed on the (German) invoice
         }
 
         await LoadAsync();
@@ -84,12 +90,12 @@ public sealed class EditModel(MbDbContext db, ConfigStore config, ActivityLogger
         Product = product;
         if (!Amount.TryParse(Input.UnitPrice, out var price) || price is < -99_999_999 or > 99_999_999)
         {
-            ModelState.AddModelError("Input.UnitPrice", "Das ist kein Betrag.");
+            ModelState.AddModelError("Input.UnitPrice", L["Products.Price.Invalid"]);
         }
 
         if (!Amount.TryParse(Input.TaxRate, out var rate) || rate is < 0 or > 100)
         {
-            ModelState.AddModelError("Input.TaxRate", "Der Steuersatz liegt zwischen 0 und 100 %.");
+            ModelState.AddModelError("Input.TaxRate", L["Products.TaxRate.Invalid"]);
         }
 
         if (!ModelState.IsValid)
@@ -113,8 +119,8 @@ public sealed class EditModel(MbDbContext db, ConfigStore config, ActivityLogger
         product.Sku = string.IsNullOrWhiteSpace(Input.Sku) ? null : Input.Sku.Trim();
         product.IsActive = Input.IsActive;
         await db.SaveChangesAsync();
-        await log.LogAsync(Id is null ? "Produkt angelegt" : "Produkt geändert", nameof(Product), product.Id, product.Name);
-        Flash(Id is null ? $"Produkt {product.Name} angelegt." : "Produkt gespeichert.");
+        await log.LogAsync(Id is null ? L["Products.Log.Created"] : L["Products.Log.Changed"], nameof(Product), product.Id, product.Name);
+        Flash(Id is null ? L["Products.Created", product.Name] : L["Products.Saved"]);
         return RedirectToPage("/Products/Index");
     }
 
@@ -125,8 +131,8 @@ public sealed class EditModel(MbDbContext db, ConfigStore config, ActivityLogger
         {
             db.Product.Remove(product);
             await db.SaveChangesAsync();
-            await log.LogAsync("Produkt gelöscht", nameof(Product), product.Id, product.Name);
-            Flash("Produkt gelöscht. Rechnungen, die es enthalten, bleiben unverändert.");
+            await log.LogAsync(L["Products.Log.Deleted"], nameof(Product), product.Id, product.Name);
+            Flash(L["Products.Deleted"]);
         }
 
         return RedirectToPage("/Products/Index");
@@ -134,8 +140,8 @@ public sealed class EditModel(MbDbContext db, ConfigStore config, ActivityLogger
 
     private async Task LoadAsync()
     {
-        var title = Product?.Name ?? "Neues Produkt";
-        Head(title, null, ("Produkte", "/Products"), (title, null));
+        var title = Product?.Name ?? L["Products.New"];
+        Head(title, null, (L["Products.Title"], "/Products"), (title, null));
         ViewData["ActiveHref"] = "/Products";
         ViewData["Width"] = "narrow";
         if (Product is not null)

@@ -17,14 +17,14 @@ public sealed class IndexModel(MbDbContext db) : PageModelBase
 
     public async Task OnGetAsync()
     {
-        Head("Kunden", "An wen du Rechnungen schreibst.", ("Kunden", null));
+        Head(L["Customers.Title"], L["Customers.Sub"], (L["Customers.Title"], null));
         var spec = new ListSpec<Customer>
         {
             Id = "customers",
             Action = "/Customers",
-            Label = "Kunden",
-            Noun = "Kunden",
-            SearchPlaceholder = "Name, Nummer, Ort oder E-Mail ...",
+            Label = L["Customers.Title"],
+            Noun = L["Customers.Noun"],
+            SearchPlaceholder = L["Customers.List.Search"],
             Search = (q, text) =>
             {
                 var like = Like.Contains(text);
@@ -33,18 +33,18 @@ public sealed class IndexModel(MbDbContext db) : PageModelBase
             },
             Filters =
             [
-                new FilterSpec<Customer>("art", "Art", ListBuilder.EnumOptions<CustomerKind>(Labels.Of), (q, v) => q.Where(c => c.Kind == Enum.Parse<CustomerKind>(v))),
-                new FilterSpec<Customer>("offen", "Offene Rechnungen", [new("ja", "Mit offenen Rechnungen"), new("nein", "Ohne offene Rechnungen")], (q, v) => v == "ja"
+                new FilterSpec<Customer>("kind", L["Customers.Filter.Kind"], ListBuilder.EnumOptions<CustomerKind>(Labels.Of), (q, v) => q.Where(c => c.Kind == Enum.Parse<CustomerKind>(v))),
+                new FilterSpec<Customer>("open", L["Customers.Filter.Open"], [new("true", L["Customers.Filter.Open.Yes"]), new("false", L["Customers.Filter.Open.No"])], (q, v) => v == "true"
                     ? q.Where(c => db.Invoice.Any(i => i.CustomerId == c.Id && i.Status == InvoiceStatus.Open))
                     : q.Where(c => !db.Invoice.Any(i => i.CustomerId == c.Id && i.Status == InvoiceStatus.Open))),
-                new FilterSpec<Customer>("email", "E-Mail", [new("ja", "Mit E-Mail-Adresse"), new("nein", "Ohne E-Mail-Adresse")], (q, v) => v == "ja" ? q.Where(c => c.Email != null && c.Email != "") : q.Where(c => c.Email == null || c.Email == "")),
+                new FilterSpec<Customer>("email", L["Common.Email"], [new("true", L["Customers.Filter.Email.Yes"]), new("false", L["Customers.Filter.Email.No"])], (q, v) => v == "true" ? q.Where(c => c.Email != null && c.Email != "") : q.Where(c => c.Email == null || c.Email == "")),
             ],
             Sorts = new Dictionary<string, (string, Func<IQueryable<Customer>, bool, IOrderedQueryable<Customer>>)>
             {
-                ["name"] = ("Name", (q, d) => d ? q.OrderByDescending(c => c.Name) : q.OrderBy(c => c.Name)),
-                ["nummer"] = ("Kundennummer", (q, d) => d ? q.OrderByDescending(c => c.Number) : q.OrderBy(c => c.Number)),
-                ["ort"] = ("Ort", (q, d) => d ? q.OrderByDescending(c => c.City) : q.OrderBy(c => c.City)),
-                ["neu"] = ("Angelegt", (q, d) => d ? q.OrderBy(c => c.CreateDate) : q.OrderByDescending(c => c.CreateDate)),
+                ["name"] = (L["Common.Name"], (q, d) => d ? q.OrderByDescending(c => c.Name) : q.OrderBy(c => c.Name)),
+                ["number"] = (L["Customers.Sort.Number"], (q, d) => d ? q.OrderByDescending(c => c.Number) : q.OrderBy(c => c.Number)),
+                ["city"] = (L["Customers.Column.City"], (q, d) => d ? q.OrderByDescending(c => c.City) : q.OrderBy(c => c.City)),
+                ["created"] = (L["Customers.Sort.Created"], (q, d) => d ? q.OrderBy(c => c.CreateDate) : q.OrderByDescending(c => c.CreateDate)),
             },
             DefaultSort = "name",
         };
@@ -56,19 +56,21 @@ public sealed class IndexModel(MbDbContext db) : PageModelBase
         var open = await db.Invoice.Where(i => i.CustomerId != null && ids.Contains(i.CustomerId.Value) && i.Status == InvoiceStatus.Open)
             .GroupBy(i => i.CustomerId!.Value).Select(g => new { g.Key, Sum = g.Sum(i => i.GrossTotal) }).ToDictionaryAsync(x => x.Key, x => x.Sum);
 
-        Table = TableModel.Of("customer-table", "Kunden", result.Items,
+        var edit = L["Common.Edit"].Value;
+        var newInvoice = L["Customers.NewInvoice"].Value;
+        Table = TableModel.Of("customer-table", L["Customers.Title"], result.Items,
         [
-            (new TableColumn("Name"), c => Ui.NameWithSub(c.Name, $"/Customers/Edit?id={c.Id}", c.ContactName)),
-            (new TableColumn("Nummer", HideOnPhone: true, Mono: true), c => Ui.Text(c.Number)),
-            (new TableColumn("Ort", HideOnPhone: true), c => Ui.Text(string.Join(" ", new[] { c.PostalCode, c.City }.Where(s => !string.IsNullOrWhiteSpace(s))))),
-            (new TableColumn("E-Mail", HideOnPhone: true), c => string.IsNullOrWhiteSpace(c.Email) ? Ui.None() : Ui.Text(c.Email)),
-            (new TableColumn("Offen", Numeric: true), c => open.TryGetValue(c.Id, out var sum) ? Ui.Money(sum) : Ui.None()),
+            (new TableColumn(L["Common.Name"]), c => Ui.NameWithSub(c.Name, $"/Customers/Edit?id={c.Id}", c.ContactName)),
+            (new TableColumn(L["Customers.Column.Number"], HideOnPhone: true, Mono: true), c => Ui.Text(c.Number)),
+            (new TableColumn(L["Customers.Column.City"], HideOnPhone: true), c => Ui.Text(string.Join(" ", new[] { c.PostalCode, c.City }.Where(s => !string.IsNullOrWhiteSpace(s))))),
+            (new TableColumn(L["Common.Email"], HideOnPhone: true), c => string.IsNullOrWhiteSpace(c.Email) ? Ui.None() : Ui.Text(c.Email)),
+            (new TableColumn(L["Customers.Column.Open"], Numeric: true), c => open.TryGetValue(c.Id, out var sum) ? Ui.Money(sum) : Ui.None()),
         ],
-        c => [new RowAction("edit", "Bearbeiten", $"/Customers/Edit?id={c.Id}"), new RowAction("file-plus", "Neue Rechnung", $"/Invoices/Edit?customer={c.Id}")]);
+        c => [new RowAction("edit", edit, $"/Customers/Edit?id={c.Id}"), new RowAction("file-plus", newInvoice, $"/Invoices/Edit?customer={c.Id}")]);
         Table = Table with
         {
-            EmptyTitle = Toolbar.Total == 0 ? "Noch keine Kunden" : "Nichts gefunden",
-            EmptyText = Toolbar.Total == 0 ? "Lege deinen ersten Kunden an, oder tippe beim Schreiben einer Rechnung einfach einen neuen Namen." : "Ändere die Suche oder den Filter.",
+            EmptyTitle = Toolbar.Total == 0 ? L["Customers.Empty.Title"] : L["Customers.Empty.NothingFound"],
+            EmptyText = Toolbar.Total == 0 ? L["Customers.Empty.Text"] : L["Customers.Empty.ChangeSearch"],
             EmptyIcon = Toolbar.Total == 0 ? "users" : "search",
         };
     }

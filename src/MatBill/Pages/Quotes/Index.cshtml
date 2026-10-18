@@ -2,9 +2,9 @@
 @model MatBill.Pages.Quotes.IndexModel
 
 <div class="mb-stats">
-    @Ui.Kpi("Offene Angebote", Fmt.Money(Model.OpenSum), Ui.CountNoun(Model.OpenCount, "Angebote"), "clock", href: "/Quotes?status=offen")
-    @Ui.Kpi("Angenommen " + DateTime.Today.Year, Fmt.Money(Model.AcceptedSum), "angenommen oder in Rechnung", "check-circle", href: "/Quotes?status=angenommen")
-    @Ui.Kpi("Erfolgsquote", Model.Rate + " %", "der beantworteten Angebote", "trending-up")
+    @Ui.Kpi(L["Quotes.Kpi.Open"], Fmt.Money(Model.OpenSum), (Model.OpenCount == 1 ? L["Quotes.Count.One", Fmt.Integer(Model.OpenCount)] : L["Quotes.Count.Many", Fmt.Integer(Model.OpenCount)]), "clock", href: "/Quotes?status=open")
+    @Ui.Kpi(L["Quotes.Kpi.Accepted", DateTime.Today.Year], Fmt.Money(Model.AcceptedSum), L["Quotes.Kpi.Accepted.Note"], "check-circle", href: "/Quotes?status=accepted")
+    @Ui.Kpi(L["Quotes.Kpi.Rate"], Model.Rate + " %", L["Quotes.Kpi.Rate.Note"], "trending-up")
 </div>
 
 <div class="mat-list">
@@ -12,6 +12,6 @@
     <partial name="_Table" model="Model.Table" />
     <partial name="_Pager" model="Model.Pager" />
     <div class="mat-actions">
-        <a class="mat-btn mat-btn--primary" href="/Quotes/Edit">@Ui.Icon("plus")<span>Neues Angebot</span></a>
+        <a class="mat-btn mat-btn--primary" href="/Quotes/Edit">@Ui.Icon("plus")<span>@L["Quotes.New"]</span></a>
     </div>
 </div>

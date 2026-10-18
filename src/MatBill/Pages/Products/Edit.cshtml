@@ -4,21 +4,22 @@
 @{
     var kinds = Controls.Options.Of<ProductKind>(Labels.Of);
     var rates = InvoiceMath.CommonTaxRates.Select(r => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem($"{Amount.Quantity(r)} %", Amount.Quantity(r))).ToList();
+    string? usedIn = Model.Product is null ? null : L["Products.UsedIn", Model.UsedIn];
 }
 
 <form class="mat-form" method="post" novalidate>
     <input type="hidden" name="Id" value="@Model.Id" />
     <mb-summary />
-    <mb-card title="Produkt" icon="box" sub="@(Model.Product is null ? null : $"in {Model.UsedIn} Positionen verwendet")">
+    <mb-card title="@L["Products.Card"]" icon="box" sub="@usedIn">
         <div class="mat-form__grid">
-            <mb-radios for="Input.Kind" label="Art" items="kinds" />
-            <mb-input for="Input.Name" label="Name" required="true" full="true" autocomplete="off" />
-            <mb-textarea for="Input.Description" label="Beschreibung" rows="2" full="true" hint="Steht auf der Rechnung unter dem Namen." />
-            <mb-input for="Input.UnitPrice" label="Preis (netto)" required="true" inputmode="decimal" hint="Zum Beispiel 1.200,00" autocomplete="off" />
-            <mb-input for="Input.Unit" label="Einheit" hint="Stunde, Stück, Pauschal, Monat ..." autocomplete="off" />
-            <mb-select for="Input.TaxRate" label="Umsatzsteuer" items="rates" />
-            <mb-input for="Input.Sku" label="Artikelnummer (optional)" autocomplete="off" />
-            <mb-switch for="Input.IsActive" label="Im Editor zur Auswahl anbieten" full="true" />
+            <mb-radios for="Input.Kind" label="@L["Products.Kind"]" items="kinds" />
+            <mb-input for="Input.Name" label="@L["Common.Name"]" required="true" full="true" autocomplete="off" />
+            <mb-textarea for="Input.Description" label="@L["Products.Description"]" rows="2" full="true" hint="@L["Products.Description.Hint"]" />
+            <mb-input for="Input.UnitPrice" label="@L["Products.Price"]" required="true" inputmode="decimal" hint="@L["Products.Price.Hint"]" autocomplete="off" />
+            <mb-input for="Input.Unit" label="@L["Products.Unit"]" hint="@L["Products.Unit.Hint"]" autocomplete="off" />
+            <mb-select for="Input.TaxRate" label="@L["Products.TaxRate"]" items="rates" />
+            <mb-input for="Input.Sku" label="@L["Products.Sku"]" autocomplete="off" />
+            <mb-switch for="Input.IsActive" label="@L["Products.IsActive"]" full="true" />
         </div>
     </mb-card>
 
@@ -28,6 +29,6 @@
     }
     else
     {
-        <mb-buttons back-href="/Products" delete-url="@Url.Page("/Products/Edit", "Delete", new { id = Model.Id })" delete-confirm="Dieses Produkt löschen? Rechnungen, die es enthalten, bleiben unverändert." />
+        <mb-buttons back-href="/Products" delete-url="@Url.Page("/Products/Edit", "Delete", new { id = Model.Id })" delete-confirm="@L["Products.Delete.Confirm"]" />
     }
 </form>

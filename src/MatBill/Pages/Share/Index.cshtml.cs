@@ -34,7 +34,17 @@ public sealed class IndexModel(ShareService shares, ConfigStore config, TimeProv
 
     public DocumentViewModel? View { get; private set; }
 
-    public string RemainingText => ShareService.Remaining(Link, clock.GetUtcNow().UtcDateTime);
+    /// <summary>How long the link still works, as a sentence in the language of the visitor.</summary>
+    public string RemainingText
+    {
+        get
+        {
+            var span = Link.ExpiresDate - clock.GetUtcNow().UtcDateTime;
+            return span.TotalDays >= 2 ? L["Share.Valid.Days", (int)span.TotalDays]
+                : span.TotalHours >= 1 ? L["Share.Valid.Hours", (int)span.TotalHours]
+                : L["Share.Valid.Soon"];
+        }
+    }
 
     public async Task<IActionResult> OnGetAsync()
     {
@@ -61,14 +71,14 @@ public sealed class IndexModel(ShareService shares, ConfigStore config, TimeProv
         }
 
         Locked = shares.IsLocked(Link);
-        ModelState.AddModelError(nameof(Password), Locked ? "Zu viele falsche Versuche. Bitte warte einige Minuten." : "Das Passwort stimmt nicht.");
+        ModelState.AddModelError(nameof(Password), Locked ? L["Share.Password.Locked"] : L["Share.Password.Wrong"]);
         return Page();
     }
 
     private async Task<bool> InitAsync()
     {
         ViewData["Wide"] = true;
-        ViewData["Title"] = "Rechnung";
+        ViewData["Title"] = L["Share.Invoice"].Value;
         var resolution = await shares.ResolveAsync(Token, HttpContext.RequestAborted);
         State = resolution.State;
         if (resolution.Link is null)
@@ -86,7 +96,7 @@ public sealed class IndexModel(ShareService shares, ConfigStore config, TimeProv
 
         NeedsPassword = shares.NeedsPassword(Link, HttpContext);
         Locked = NeedsPassword && shares.IsLocked(Link);
-        ViewData["Title"] = NeedsPassword ? "Rechnung" : Link.Title;
+        ViewData["Title"] = NeedsPassword ? L["Share.Invoice"].Value : Link.Title;
         return !NeedsPassword;
     }
 }

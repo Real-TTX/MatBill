@@ -7,38 +7,38 @@
 @if (Model.Customer is not null)
 {
     <div class="mb-stats">
-        @Ui.Kpi("Offen", Fmt.Money(Model.OpenSum), "noch nicht bezahlt", "clock", href: $"/Invoices?kunde={Model.Customer.Id}&status=offen")
-        @Ui.Kpi($"Umsatz {Model.Today.Year}", Fmt.Money(Model.YearSum), "brutto, ausgestellt", "euro", href: $"/Invoices?kunde={Model.Customer.Id}&jahr={Model.Today.Year}")
-        @Ui.Kpi("Serien", Model.Series.Count(s => s.Status == RecurringStatus.Active).ToString(), "aktiv", "repeat", href: $"/Recurring?kunde={Model.Customer.Id}")
+        @Ui.Kpi(L["Customers.Kpi.Open"], Fmt.Money(Model.OpenSum), L["Customers.Kpi.Open.Note"], "clock", href: $"/Invoices?customer={Model.Customer.Id}&status=open")
+        @Ui.Kpi(L["Customers.Kpi.Revenue", Model.Today.Year], Fmt.Money(Model.YearSum), L["Customers.Kpi.Revenue.Note"], "euro", href: $"/Invoices?customer={Model.Customer.Id}&year={Model.Today.Year}")
+        @Ui.Kpi(L["Customers.Kpi.Series"], Model.Series.Count(s => s.Status == RecurringStatus.Active).ToString(), L["Customers.Kpi.Series.Note"], "repeat", href: $"/Recurring?customer={Model.Customer.Id}")
     </div>
 }
 
 <form class="mat-form" method="post" novalidate>
     <input type="hidden" name="Id" value="@Model.Id" />
     <mb-summary />
-    <mb-card title="Kunde" icon="building">
+    <mb-card title="@L["Customers.Card.Customer"]" icon="building">
         <div class="mat-form__grid">
-            <mb-radios for="Input.Kind" label="Art" items="kinds" />
-            <mb-input for="Input.Name" label="@(Model.Input.Kind == CustomerKind.Person ? "Name" : "Firma oder Name")" required="true" autocomplete="off" />
-            <mb-input for="Input.ContactName" label="Ansprechpartner" show-if="Input.Kind" show-value="Company" hint="Steht unter dem Namen in der Anschrift." />
-            <mb-input for="Input.Email" label="E-Mail für Rechnungen" type="email" inputmode="email" autocomplete="off" />
-            <mb-input for="Input.Phone" label="Telefon" type="tel" autocomplete="off" />
+            <mb-radios for="Input.Kind" label="@L["Customers.Kind"]" items="kinds" />
+            <mb-input for="Input.Name" label="@(Model.Input.Kind == CustomerKind.Person ? L["Customers.Name.Person"] : L["Customers.Name.Company"])" required="true" autocomplete="off" />
+            <mb-input for="Input.ContactName" label="@L["Customers.Contact"]" show-if="Input.Kind" show-value="Company" hint="@L["Customers.Contact.Hint"]" />
+            <mb-input for="Input.Email" label="@L["Customers.Email"]" type="email" inputmode="email" autocomplete="off" />
+            <mb-input for="Input.Phone" label="@L["Common.Phone"]" type="tel" autocomplete="off" />
         </div>
     </mb-card>
-    <mb-card title="Anschrift" icon="home">
+    <mb-card title="@L["Customers.Card.Address"]" icon="home">
         <div class="mat-form__grid">
-            <mb-input for="Input.Street" label="Straße und Hausnummer" full="true" autocomplete="off" />
-            <mb-input for="Input.PostalCode" label="PLZ" inputmode="numeric" autocomplete="off" />
-            <mb-input for="Input.City" label="Ort" autocomplete="off" />
-            <mb-input for="Input.Country" label="Land" autocomplete="off" />
+            <mb-input for="Input.Street" label="@L["Customers.Street"]" full="true" autocomplete="off" />
+            <mb-input for="Input.PostalCode" label="@L["Customers.PostalCode"]" inputmode="numeric" autocomplete="off" />
+            <mb-input for="Input.City" label="@L["Customers.City"]" autocomplete="off" />
+            <mb-input for="Input.Country" label="@L["Customers.Country"]" autocomplete="off" />
         </div>
     </mb-card>
-    <mb-card title="Rechnungen" icon="file-text">
+    <mb-card title="@L["Customers.Card.Invoices"]" icon="file-text">
         <div class="mat-form__grid">
-            <mb-input for="Input.PaymentTermDays" label="Eigenes Zahlungsziel (Tage)" type="number" min="0" max="365" step="1" hint="Leer: das Zahlungsziel aus den Einstellungen." />
-            <mb-input for="Input.VatId" label="USt-IdNr. des Kunden" hint="Nötig für Rechnungen an Firmen im EU-Ausland." autocomplete="off" />
-            <mb-input for="Input.BuyerReference" label="Leitweg-ID / Käuferreferenz" hint="Für E-Rechnungen an Behörden (XRechnung) oder eine Bestellnummer, die auf jeder Rechnung stehen soll." autocomplete="off" />
-            <mb-textarea for="Input.Note" label="Notiz (intern)" rows="3" full="true" />
+            <mb-input for="Input.PaymentTermDays" label="@L["Customers.PaymentTerm"]" type="number" min="0" max="365" step="1" hint="@L["Customers.PaymentTerm.Hint"]" />
+            <mb-input for="Input.VatId" label="@L["Customers.VatId"]" hint="@L["Customers.VatId.Hint"]" autocomplete="off" />
+            <mb-input for="Input.BuyerReference" label="@L["Customers.BuyerReference"]" hint="@L["Customers.BuyerReference.Hint"]" autocomplete="off" />
+            <mb-textarea for="Input.Note" label="@L["Customers.Note"]" rows="3" full="true" />
         </div>
     </mb-card>
 
@@ -48,8 +48,8 @@
     }
     else
     {
-        <mb-buttons back-href="/Customers" delete-url="@Url.Page("/Customers/Edit", "Delete", new { id = Model.Id })" delete-confirm="Diesen Kunden löschen? Seine Rechnungen bleiben erhalten.">
-            <a class="mat-btn mat-btn--secondary" href="/Invoices/Edit?customer=@Model.Customer.Id">@Ui.Icon("file-plus")<span>Neue Rechnung</span></a>
+        <mb-buttons back-href="/Customers" delete-url="@Url.Page("/Customers/Edit", "Delete", new { id = Model.Id })" delete-confirm="@L["Customers.Delete.Confirm"]">
+            <a class="mat-btn mat-btn--secondary" href="/Invoices/Edit?customer=@Model.Customer.Id">@Ui.Icon("file-plus")<span>@L["Customers.NewInvoice"]</span></a>
         </mb-buttons>
     }
 </form>
@@ -57,32 +57,32 @@
 @if (Model.Customer is not null)
 {
     <section class="mat-card" aria-labelledby="customer-invoices">
-        <div class="mat-card__head">@Ui.Icon("file-text")<h2 class="mat-card__title" id="customer-invoices">Rechnungen</h2></div>
+        <div class="mat-card__head">@Ui.Icon("file-text")<h2 class="mat-card__title" id="customer-invoices">@L["Customers.Card.Invoices"]</h2></div>
         <div class="mat-card__body">
             @if (Model.Invoices.Count == 0)
             {
-                <p class="mat-muted">Noch keine Rechnung. <a href="/Invoices/Edit?customer=@Model.Customer.Id">Jetzt eine schreiben</a></p>
+                <p class="mat-muted">@L["Customers.Invoices.None"] <a href="/Invoices/Edit?customer=@Model.Customer.Id">@L["Customers.Invoices.WriteOne"]</a></p>
             }
             else
             {
                 <div class="mat-table-wrap">
                     <table class="mat-table">
-                        <caption class="mat-sr-only">Rechnungen des Kunden</caption>
-                        <thead><tr><th scope="col">Nummer</th><th scope="col">Datum</th><th scope="col" class="mat-num">Betrag</th><th scope="col">Status</th></tr></thead>
+                        <caption class="mat-sr-only">@L["Customers.Invoices.Caption"]</caption>
+                        <thead><tr><th scope="col">@L["Customers.Column.Number"]</th><th scope="col">@L["Common.Date"]</th><th scope="col" class="mat-num">@L["Common.Amount"]</th><th scope="col">@L["Common.Status"]</th></tr></thead>
                         <tbody>
                             @foreach (var i in Model.Invoices)
                             {
                                 <tr>
-                                    <td data-label="Nummer"><a href="/Invoices/Edit?id=@i.Id">@(i.Number ?? "Entwurf")</a></td>
-                                    <td data-label="Datum">@Fmt.Date(i.InvoiceDate)</td>
-                                    <td data-label="Betrag" class="mat-num">@Ui.Money(i.GrossTotal)</td>
-                                    <td data-label="Status">@Labels.Pill(i, Model.Today)</td>
+                                    <td data-label="@L["Customers.Column.Number"]"><a href="/Invoices/Edit?id=@i.Id">@(i.Number ?? L["Customers.Invoices.Draft"])</a></td>
+                                    <td data-label="@L["Common.Date"]">@Fmt.Date(i.InvoiceDate)</td>
+                                    <td data-label="@L["Common.Amount"]" class="mat-num">@Ui.Money(i.GrossTotal)</td>
+                                    <td data-label="@L["Common.Status"]">@Labels.Pill(i, Model.Today)</td>
                                 </tr>
                             }
                         </tbody>
                     </table>
                 </div>
-                <p class="mat-hint"><a href="/Invoices?kunde=@Model.Customer.Id">Alle Rechnungen dieses Kunden</a></p>
+                <p class="mat-hint"><a href="/Invoices?customer=@Model.Customer.Id">@L["Customers.Invoices.All"]</a></p>
             }
         </div>
     </section>

@@ -15,13 +15,16 @@ public sealed class EditModel(MbDbContext db, NumberService numbers, ActivityLog
     {
         public CustomerKind Kind { get; set; } = CustomerKind.Company;
 
-        [Required(ErrorMessage = "Bitte gib einen Namen ein."), StringLength(200)]
+        [Required(ErrorMessage = "Customers.Name.Required"), StringLength(200)]
+        [Display(Name = "Common.Name")]
         public string Name { get; set; } = "";
 
         [StringLength(200)]
+        [Display(Name = "Customers.Contact")]
         public string? ContactName { get; set; }
 
-        [EmailAddress(ErrorMessage = "Das ist keine E-Mail-Adresse."), StringLength(200)]
+        [EmailAddress(ErrorMessage = "Customers.Email.Invalid"), StringLength(200)]
+        [Display(Name = "Customers.Email")]
         public string? Email { get; set; }
 
         [StringLength(50)]
@@ -37,7 +40,7 @@ public sealed class EditModel(MbDbContext db, NumberService numbers, ActivityLog
         public string? City { get; set; }
 
         [StringLength(100)]
-        public string? Country { get; set; } = "Deutschland";
+        public string? Country { get; set; } = "Deutschland"; // part of the address on the (German) invoice
 
         [StringLength(30)]
         public string? VatId { get; set; }
@@ -45,7 +48,8 @@ public sealed class EditModel(MbDbContext db, NumberService numbers, ActivityLog
         [StringLength(100)]
         public string? BuyerReference { get; set; }
 
-        [Range(0, 365, ErrorMessage = "Zwischen 0 und 365 Tagen.")]
+        [Range(0, 365, ErrorMessage = "Customers.PaymentTerm.Range")]
+        [Display(Name = "Customers.PaymentTerm")]
         public int? PaymentTermDays { get; set; }
 
         [StringLength(4000)]
@@ -127,8 +131,8 @@ public sealed class EditModel(MbDbContext db, NumberService numbers, ActivityLog
         customer.PaymentTermDays = Input.PaymentTermDays;
         customer.Note = Clean(Input.Note);
         await db.SaveChangesAsync();
-        await log.LogAsync(Id is null ? "Kunde angelegt" : "Kunde geändert", nameof(Customer), customer.Id, customer.Name);
-        Flash(Id is null ? $"Kunde {customer.Name} angelegt ({customer.Number})." : "Kunde gespeichert.");
+        await log.LogAsync(Id is null ? L["Customers.Log.Created"] : L["Customers.Log.Changed"], nameof(Customer), customer.Id, customer.Name);
+        Flash(Id is null ? L["Customers.Created", customer.Name, customer.Number] : L["Customers.Saved"]);
         return RedirectToPage(new { id = customer.Id });
     }
 
@@ -142,22 +146,22 @@ public sealed class EditModel(MbDbContext db, NumberService numbers, ActivityLog
 
         if (await db.RecurringInvoice.AnyAsync(s => s.CustomerId == customer.Id && s.Status != RecurringStatus.Ended))
         {
-            FlashError("Für diesen Kunden läuft noch eine Serie. Beende sie zuerst.");
+            FlashError(L["Customers.SeriesRunning"]);
             return RedirectToPage(new { id = customer.Id });
         }
 
         // The customer goes from the lists; its invoices keep their address (they hold their own copy).
         db.Customer.Remove(customer);
         await db.SaveChangesAsync();
-        await log.LogAsync("Kunde gelöscht", nameof(Customer), customer.Id, customer.Name);
-        Flash("Kunde gelöscht. Seine Rechnungen bleiben erhalten.");
+        await log.LogAsync(L["Customers.Log.Deleted"], nameof(Customer), customer.Id, customer.Name);
+        Flash(L["Customers.Deleted"]);
         return RedirectToPage("/Customers/Index");
     }
 
     private async Task LoadAsync()
     {
-        var title = Customer?.Name ?? "Neuer Kunde";
-        Head(title, Customer is null ? null : $"Kundennummer {Customer.Number}", ("Kunden", "/Customers"), (title, null));
+        var title = Customer?.Name ?? L["Customers.New"];
+        Head(title, Customer is null ? null : L["Customers.NumberSub", Customer.Number], (L["Customers.Title"], "/Customers"), (title, null));
         ViewData["ActiveHref"] = "/Customers";
         if (Customer is null)
         {

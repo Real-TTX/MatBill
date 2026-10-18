@@ -1,0 +1,19 @@
+{
+  "Share.Invoice": { "en": "Invoice", "de": "Rechnung" },
+  "Share.DownloadPdf": { "en": "Download PDF", "de": "PDF herunterladen" },
+  "Share.Unknown.Title": { "en": "This link does not exist", "de": "Diesen Link gibt es nicht" },
+  "Share.Unknown.Text": { "en": "Check whether the address is complete.", "de": "Prüfe, ob die Adresse vollständig ist." },
+  "Share.Revoked": { "en": "This link has been revoked", "de": "Dieser Link ist widerrufen" },
+  "Share.Expired": { "en": "This link has expired", "de": "Dieser Link ist abgelaufen" },
+  "Share.AskSender": { "en": "Please ask the sender for a new link.", "de": "Bitte frage den Absender nach einem neuen Link." },
+  "Share.Password": { "en": "Password", "de": "Passwort" },
+  "Share.Password.Needed": { "en": "This invoice needs a password.", "de": "Für diese Rechnung brauchst du ein Passwort." },
+  "Share.Password.Open": { "en": "Open", "de": "Öffnen" },
+  "Share.Password.Wrong": { "en": "The password is not right.", "de": "Das Passwort stimmt nicht." },
+  "Share.Password.Locked": { "en": "Too many wrong attempts. Please wait a few minutes.", "de": "Zu viele falsche Versuche. Bitte warte einige Minuten." },
+  "Share.Paid": { "en": "This invoice is paid. Thank you!", "de": "Diese Rechnung ist bezahlt. Vielen Dank!" },
+  "Share.Due": { "en": "Due on {0}.", "de": "Fällig am {0}." },
+  "Share.Valid.Days": { "en": "The link is valid for {0} more days.", "de": "Der Link ist noch {0} Tage gültig." },
+  "Share.Valid.Hours": { "en": "The link is valid for {0} more hours.", "de": "Der Link ist noch {0} Stunden gültig." },
+  "Share.Valid.Soon": { "en": "The link expires soon.", "de": "Der Link läuft bald ab." }
+}

@@ -25,16 +25,16 @@ public sealed class IndexModel(MbDbContext db, TimeProvider clock) : PageModelBa
 
     public async Task OnGetAsync()
     {
-        Head("Angebote", "Angebote schreiben, versenden und in Rechnungen umwandeln.", ("Angebote", null));
+        Head(L["Quotes.Title"], L["Quotes.Sub"], (L["Quotes.Title"], null));
         var today = Fmt.Today(clock);
         var years = await db.Quote.Select(q => q.QuoteDate.Year).Distinct().OrderByDescending(y => y).ToListAsync();
         var spec = new ListSpec<Quote>
         {
             Id = "quotes",
             Action = "/Quotes",
-            Label = "Angebote",
-            Noun = "Angebote",
-            SearchPlaceholder = "Nummer, Kunde oder Leistung ...",
+            Label = L["Quotes.Title"],
+            Noun = L["Quotes.Noun"],
+            SearchPlaceholder = L["Quotes.List.Search"],
             Search = (q, text) =>
             {
                 var like = Like.Contains(text);
@@ -42,26 +42,30 @@ public sealed class IndexModel(MbDbContext db, TimeProvider clock) : PageModelBa
             },
             Filters =
             [
-                new FilterSpec<Quote>("status", "Status", [new("entwurf", "Entwurf"), new("offen", "Offen"), new("abgelaufen", "Abgelaufen"), new("angenommen", "Angenommen"), new("abgelehnt", "Abgelehnt"), new("rechnung", "In Rechnung")],
+                new FilterSpec<Quote>("status", L["Common.Status"],
+                    [
+                        new("draft", L["Quotes.Status.Draft"]), new("open", L["Quotes.Status.Open"]), new("expired", L["Quotes.Status.Expired"]),
+                        new("accepted", L["Quotes.Status.Accepted"]), new("declined", L["Quotes.Status.Declined"]), new("invoiced", L["Quotes.Status.Invoiced"]),
+                    ],
                     (q, v) => v switch
                     {
-                        "entwurf" => q.Where(x => x.Status == QuoteStatus.Draft),
-                        "offen" => q.Where(x => x.Status == QuoteStatus.Open && x.ValidUntil >= today),
-                        "abgelaufen" => q.Where(x => x.Status == QuoteStatus.Open && x.ValidUntil < today),
-                        "angenommen" => q.Where(x => x.Status == QuoteStatus.Accepted),
-                        "abgelehnt" => q.Where(x => x.Status == QuoteStatus.Declined),
+                        "draft" => q.Where(x => x.Status == QuoteStatus.Draft),
+                        "open" => q.Where(x => x.Status == QuoteStatus.Open && x.ValidUntil >= today),
+                        "expired" => q.Where(x => x.Status == QuoteStatus.Open && x.ValidUntil < today),
+                        "accepted" => q.Where(x => x.Status == QuoteStatus.Accepted),
+                        "declined" => q.Where(x => x.Status == QuoteStatus.Declined),
                         _ => q.Where(x => x.Status == QuoteStatus.Invoiced),
                     }),
-                new FilterSpec<Quote>("jahr", "Jahr", [.. years.Select(y => new FilterOption(y.ToString(), y.ToString()))], (q, v) => int.TryParse(v, out var y) ? q.Where(x => x.QuoteDate.Year == y) : q),
+                new FilterSpec<Quote>("year", L["Quotes.Filter.Year"], [.. years.Select(y => new FilterOption(y.ToString(), y.ToString()))], (q, v) => int.TryParse(v, out var y) ? q.Where(x => x.QuoteDate.Year == y) : q),
             ],
             Sorts = new Dictionary<string, (string, Func<IQueryable<Quote>, bool, IOrderedQueryable<Quote>>)>
             {
-                ["datum"] = ("Datum", (q, d) => d ? q.OrderByDescending(x => x.QuoteDate).ThenByDescending(x => x.Id) : q.OrderBy(x => x.QuoteDate).ThenBy(x => x.Id)),
-                ["nummer"] = ("Nummer", (q, d) => d ? q.OrderByDescending(x => x.Number) : q.OrderBy(x => x.Number)),
-                ["kunde"] = ("Kunde", (q, d) => d ? q.OrderByDescending(x => x.RecipientName) : q.OrderBy(x => x.RecipientName)),
-                ["betrag"] = ("Betrag", (q, d) => d ? q.OrderByDescending(x => x.GrossTotal) : q.OrderBy(x => x.GrossTotal)),
+                ["date"] = (L["Common.Date"], (q, d) => d ? q.OrderByDescending(x => x.QuoteDate).ThenByDescending(x => x.Id) : q.OrderBy(x => x.QuoteDate).ThenBy(x => x.Id)),
+                ["number"] = (L["Quotes.Column.Number"], (q, d) => d ? q.OrderByDescending(x => x.Number) : q.OrderBy(x => x.Number)),
+                ["customer"] = (L["Quotes.Column.Customer"], (q, d) => d ? q.OrderByDescending(x => x.RecipientName) : q.OrderBy(x => x.RecipientName)),
+                ["amount"] = (L["Common.Amount"], (q, d) => d ? q.OrderByDescending(x => x.GrossTotal) : q.OrderBy(x => x.GrossTotal)),
             },
-            DefaultSort = "datum",
+            DefaultSort = "date",
             DefaultDescending = true,
         };
 
@@ -75,20 +79,23 @@ public sealed class IndexModel(MbDbContext db, TimeProvider clock) : PageModelBa
         var won = await db.Quote.CountAsync(q => q.Status == QuoteStatus.Accepted || q.Status == QuoteStatus.Invoiced);
         Rate = answered == 0 ? 0 : (int)Math.Round(100.0 * won / answered);
 
-        Table = TableModel.Of("quote-table", "Angebote", result.Items,
+        var draft = L["Quotes.Draft"].Value;
+        var edit = L["Common.Edit"].Value;
+        var open = L["Quotes.Open"].Value;
+        Table = TableModel.Of("quote-table", L["Quotes.Title"], result.Items,
         [
-            (new TableColumn("Nummer"), q => Ui.NameWithSub(q.Number ?? "Entwurf", $"/Quotes/Edit?id={q.Id}", null)),
-            (new TableColumn("Kunde"), q => Ui.Text(q.RecipientName)),
-            (new TableColumn("Datum", HideOnPhone: true), q => Ui.Text(Fmt.Date(q.QuoteDate))),
-            (new TableColumn("Gültig bis", HideOnPhone: true), q => q.IsDraft ? Ui.None() : Ui.Text(Fmt.Date(q.ValidUntil))),
-            (new TableColumn("Betrag", Numeric: true), q => Ui.Money(q.GrossTotal)),
-            (new TableColumn("Status"), q => Labels.Pill(q, today)),
+            (new TableColumn(L["Quotes.Column.Number"]), q => Ui.NameWithSub(q.Number ?? draft, $"/Quotes/Edit?id={q.Id}", null)),
+            (new TableColumn(L["Quotes.Column.Customer"]), q => Ui.Text(q.RecipientName)),
+            (new TableColumn(L["Common.Date"], HideOnPhone: true), q => Ui.Text(Fmt.Date(q.QuoteDate))),
+            (new TableColumn(L["Quotes.Column.ValidUntil"], HideOnPhone: true), q => q.IsDraft ? Ui.None() : Ui.Text(Fmt.Date(q.ValidUntil))),
+            (new TableColumn(L["Common.Amount"], Numeric: true), q => Ui.Money(q.GrossTotal)),
+            (new TableColumn(L["Common.Status"]), q => Labels.Pill(q, today)),
         ],
-        q => [new RowAction(q.IsDraft ? "edit" : "eye", q.IsDraft ? "Bearbeiten" : "Öffnen", $"/Quotes/Edit?id={q.Id}"), new RowAction("download", "PDF", $"/quotes/{q.Id}/pdf?download=1")]);
+        q => [new RowAction(q.IsDraft ? "edit" : "eye", q.IsDraft ? edit : open, $"/Quotes/Edit?id={q.Id}"), new RowAction("download", "PDF", $"/quotes/{q.Id}/pdf?download=1")]);
         Table = Table with
         {
-            EmptyTitle = Toolbar.Total == 0 ? "Noch kein Angebot" : "Nichts gefunden",
-            EmptyText = Toolbar.Total == 0 ? "Schreib ein Angebot im Dokument-Editor; angenommen wird es mit einem Klick zur Rechnung." : "Ändere die Suche oder den Filter.",
+            EmptyTitle = Toolbar.Total == 0 ? L["Quotes.Empty.Title"] : L["Quotes.Empty.NothingFound"],
+            EmptyText = Toolbar.Total == 0 ? L["Quotes.Empty.Text"] : L["Quotes.Empty.ChangeSearch"],
             EmptyIcon = Toolbar.Total == 0 ? "file-document" : "search",
         };
     }

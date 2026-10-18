@@ -14,43 +14,56 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
 {
     public sealed class InputModel
     {
-        [Required(ErrorMessage = "Bitte gib den Namen des Unternehmens ein."), StringLength(200)]
+        [Required(ErrorMessage = "Branding.Name.Required"), StringLength(200)]
+        [Display(Name = "Branding.Name")]
         public string Name { get; set; } = "";
 
         [StringLength(200)]
+        [Display(Name = "Branding.Manager")]
         public string? Manager { get; set; }
 
         [StringLength(200)]
+        [Display(Name = "Branding.Street")]
         public string? Street { get; set; }
 
         [StringLength(20)]
+        [Display(Name = "Branding.PostalCode")]
         public string? PostalCode { get; set; }
 
         [StringLength(100)]
+        [Display(Name = "Branding.City")]
         public string? City { get; set; }
 
         [StringLength(100)]
+        [Display(Name = "Branding.Country")]
         public string? Country { get; set; }
 
-        [EmailAddress(ErrorMessage = "Das ist keine E-Mail-Adresse."), StringLength(200)]
+        [EmailAddress(ErrorMessage = "Branding.Email.Invalid"), StringLength(200)]
+        [Display(Name = "Common.Email")]
         public string? Email { get; set; }
 
         [StringLength(50)]
+        [Display(Name = "Common.Phone")]
         public string? Phone { get; set; }
 
         [StringLength(200)]
+        [Display(Name = "Branding.Website")]
         public string? Website { get; set; }
 
         [StringLength(50)]
+        [Display(Name = "Branding.TaxNumber")]
         public string? TaxNumber { get; set; }
 
         [StringLength(30)]
+        [Display(Name = "Branding.VatId")]
         public string? VatId { get; set; }
 
         [StringLength(200)]
+        [Display(Name = "Branding.Register")]
         public string? Register { get; set; }
 
         [StringLength(100)]
+        [Display(Name = "Branding.BankName")]
         public string? BankName { get; set; }
 
         [StringLength(40)]
@@ -59,10 +72,12 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
         [StringLength(15)]
         public string? Bic { get; set; }
 
-        [RegularExpression("^#[0-9a-fA-F]{6}$", ErrorMessage = "Eine Farbe wie #1d4ed8.")]
+        [RegularExpression("^#[0-9a-fA-F]{6}$", ErrorMessage = "Branding.Accent.Invalid")]
+        [Display(Name = "Branding.Accent")]
         public string AccentColor { get; set; } = "#1d4ed8";
 
         [StringLength(40)]
+        [Display(Name = "Branding.Signature")]
         public string? Signature { get; set; }
 
         public bool SmallBusiness { get; set; }
@@ -94,7 +109,7 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
     {
         if (string.IsNullOrWhiteSpace(Input.TaxNumber) && string.IsNullOrWhiteSpace(Input.VatId))
         {
-            ModelState.AddModelError("Input.TaxNumber", "Eine Rechnung braucht die Steuernummer oder die USt-IdNr.");
+            ModelState.AddModelError("Input.TaxNumber", L["Branding.TaxNumber.Required"]);
         }
 
         if (Logo is { Length: > 0 })
@@ -134,22 +149,22 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
             c.Company.Signature = Clean(Input.Signature);
             c.Company.SmallBusiness = Input.SmallBusiness;
         });
-        await log.LogAsync("Branding geändert", "Company");
-        Flash("Gespeichert. Neue Rechnungen sehen so aus, ausgestellte bleiben, wie sie sind.");
+        await log.LogAsync(L["Branding.Log.Changed"], "Company");
+        Flash(L["Branding.Saved"]);
         return RedirectToPage();
     }
 
     public async Task<IActionResult> OnPostRemoveLogoAsync()
     {
         branding.RemoveLogo();
-        await log.LogAsync("Logo entfernt", "Company");
-        Flash("Das Logo ist entfernt; auf neuen Rechnungen steht der Name.");
+        await log.LogAsync(L["Branding.Log.LogoRemoved"], "Company");
+        Flash(L["Branding.LogoRemoved"]);
         return RedirectToPage();
     }
 
     private void Prepare()
     {
-        Head("Branding", "So sehen deine Rechnungen aus: Absender, Logo, Farbe, Bank und Steuernummer.", ("Branding", null));
+        Head(L["Branding.Title"], L["Branding.Sub"], (L["Branding.Title"], null));
         ViewData["Width"] = "wide";
         var company = config.Current.Company;
         var today = DateOnly.FromDateTime(DateTime.Today);
@@ -166,6 +181,7 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
             DueDate = today.AddDays(14),
             PaymentTermDays = 14,
             ServiceFrom = today,
+            // The sample recipient is part of the (German) document, not of the interface.
             RecipientLines = ["Studio Nord GmbH", "z. Hd. Frau Keller", "Hafenstraße 12", "68159 Mannheim"],
             IntroText = config.Current.Invoicing.IntroText,
             PaymentTerms = Texts.Expand(config.Current.Invoicing.PaymentTerms, 14, today.AddDays(14)),
