@@ -87,7 +87,7 @@ public sealed class AppFixture : WebApplicationFactory<Program>, IAsyncLifetime
     {
         if (!await WithScopeAsync(sp => sp.GetRequiredService<MbDbContext>().User.AnyAsync(u => u.Role == UserRole.Admin)))
         {
-            await CreateUserAsync("admin@example.test", "Admin-Passwort-2026", UserRole.Admin);
+            await CreateUserAsync("admin@example.com", "Start12345", UserRole.Admin);
         }
     }
 

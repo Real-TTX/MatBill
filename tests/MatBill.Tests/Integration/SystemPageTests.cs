@@ -15,7 +15,7 @@ public sealed class SystemPageTests : IClassFixture<AppFixture>
     {
         await _app.EnsureAdminAsync();
         using var client = _app.NewClient();
-        await AppFixture.LoginAsync(client, "admin@example.test", "Admin-Passwort-2026");
+        await AppFixture.LoginAsync(client, "admin@example.com", "Start12345");
 
         var page = await AppFixture.TextAsync(client, "/Admin/System");
         Assert.Contains("PostgreSQL", page);

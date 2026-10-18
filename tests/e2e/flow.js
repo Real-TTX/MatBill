@@ -9,8 +9,8 @@ const fs = require('fs');
 
 const base = (process.argv[2] || 'http://localhost:2505').replace(/\/$/, '');
 const shots = process.env.SHOTS || '';
-const email = process.env.MB_EMAIL || 'admin@example.test';
-const password = process.env.MB_PASSWORD || 'Admin-Passwort-2026';
+const email = process.env.MB_EMAIL || 'admin@example.com';
+const password = process.env.MB_PASSWORD || 'Start12345';
 const problems = [];
 
 function check(condition, message) {
