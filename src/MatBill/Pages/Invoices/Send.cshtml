@@ -1,19 +1,23 @@
 @page
 @model MatBill.Pages.Invoices.SendModel
+@{
+    var pdfLink = $"<a href=\"/invoices/{Model.Invoice.Id}/pdf?download=1\">{System.Net.WebUtility.HtmlEncode(L["Invoices.Send.DownloadPdf"])}</a>";
+    var settingsLink = $"<a href=\"/Admin/Mail\">{System.Net.WebUtility.HtmlEncode(L["Invoices.Send.MailSettings"])}</a>";
+}
 
 @if (!Model.Configured)
 {
     <div class="mat-alert mat-alert--warning" role="status">
         @Ui.Icon("alert")
         <div class="mat-alert__body">
-            <strong>Es ist noch kein Mailserver eingerichtet.</strong>
+            <strong>@L["Invoices.Send.NoServer"]</strong>
             @if (Model.IsAdmin)
             {
-                <span>Richte ihn unter <a href="/Admin/Mail">Einstellungen &gt; E-Mail</a> ein. Bis dahin kannst du die <a href="/invoices/@Model.Invoice.Id/pdf?download=1">PDF herunterladen</a> und selbst versenden.</span>
+                <span>@Html.Raw(L["Invoices.Send.NoServer.Admin", settingsLink, pdfLink].Value)</span>
             }
             else
             {
-                <span>Ein Administrator muss ihn einrichten. Bis dahin kannst du die <a href="/invoices/@Model.Invoice.Id/pdf?download=1">PDF herunterladen</a> und selbst versenden.</span>
+                <span>@Html.Raw(L["Invoices.Send.NoServer.User", pdfLink].Value)</span>
             }
         </div>
     </div>
@@ -21,18 +25,18 @@
 
 <form class="mat-form" method="post" novalidate>
     <input type="hidden" name="Id" value="@Model.Id" />
-    <mb-summary title="Die Rechnung wurde nicht versendet." />
-    <mb-card title="E-Mail" icon="mail">
+    <mb-summary title="@L["Invoices.Send.NotSent"]" />
+    <mb-card title="@L["Common.Email"]" icon="mail">
         <div class="mat-form__grid">
-            <mb-input for="Input.To" label="An" type="text" inputmode="email" required="true" full="true" hint="Mehrere Adressen mit Komma trennen." autocomplete="off" />
-            <mb-input for="Input.Cc" label="Kopie an (CC)" type="text" inputmode="email" full="true" autocomplete="off" />
-            <mb-input for="Input.Subject" label="Betreff" required="true" full="true" />
-            <mb-textarea for="Input.Body" label="Text" rows="9" required="true" full="true" />
+            <mb-input for="Input.To" label="@L["Invoices.Send.To"]" type="text" inputmode="email" required="true" full="true" hint="@L["Invoices.Send.To.Hint"]" autocomplete="off" />
+            <mb-input for="Input.Cc" label="@L["Invoices.Send.Cc"]" type="text" inputmode="email" full="true" autocomplete="off" />
+            <mb-input for="Input.Subject" label="@L["Invoices.Send.Subject"]" required="true" full="true" />
+            <mb-textarea for="Input.Body" label="@L["Invoices.Send.Body"]" rows="9" required="true" full="true" />
         </div>
-        <p class="mat-hint">Anhang: <a href="/invoices/@Model.Invoice.Id/pdf" target="_blank" rel="noopener">@InvoiceService.PdfName(Model.Invoice)</a></p>
+        <p class="mat-hint">@L["Invoices.Send.Attachment"] <a href="/invoices/@Model.Invoice.Id/pdf" target="_blank" rel="noopener">@InvoiceService.PdfName(Model.Invoice)</a></p>
     </mb-card>
     <div class="mat-btn-row">
-        <button type="submit" class="mat-btn mat-btn--primary mb-needs-online" disabled="@(!Model.Configured)">@Ui.Icon("send")<span>Senden</span></button>
-        <a class="mat-btn mat-btn--secondary" href="/Invoices/Edit?id=@Model.Id">@Ui.Icon("back")<span>Zurück</span></a>
+        <button type="submit" class="mat-btn mat-btn--primary mb-needs-online" disabled="@(!Model.Configured)">@Ui.Icon("send")<span>@L["Invoices.Send.Send"]</span></button>
+        <a class="mat-btn mat-btn--secondary" href="/Invoices/Edit?id=@Model.Id">@Ui.Icon("back")<span>@L["Common.Back"]</span></a>
     </div>
 </form>

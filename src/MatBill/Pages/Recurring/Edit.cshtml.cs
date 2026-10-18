@@ -128,17 +128,15 @@ public sealed class EditModel(MbDbContext db, RecurringService recurring, Config
 
         await db.SaveChangesAsync();
         nav.Invalidate();
-        Flash(Id is null
-            ? $"Serie angelegt. Die erste Rechnung entsteht am {Fmt.Date(series.NextRunDate)}."
-            : "Vorlage gespeichert. Sie gilt für die nächsten Rechnungen; bereits erstellte bleiben unverändert.");
+        Flash(Id is null ? L["Recurring.Edit.Created", Fmt.Date(series.NextRunDate)] : L["Recurring.Edit.Saved"]);
         return RedirectToPage(new { id = series.Id });
     }
 
-    public async Task<IActionResult> OnPostPauseAsync() => await ChangeAsync(s => recurring.PauseAsync(s), "Serie pausiert. Bis zum Fortsetzen entstehen keine Rechnungen.");
+    public async Task<IActionResult> OnPostPauseAsync() => await ChangeAsync(s => recurring.PauseAsync(s), L["Recurring.Edit.Paused"]);
 
-    public async Task<IActionResult> OnPostResumeAsync() => await ChangeAsync(s => recurring.ResumeAsync(s), "Serie fortgesetzt.");
+    public async Task<IActionResult> OnPostResumeAsync() => await ChangeAsync(s => recurring.ResumeAsync(s), L["Recurring.Edit.Resumed"]);
 
-    public async Task<IActionResult> OnPostEndAsync() => await ChangeAsync(s => recurring.EndAsync(s), "Serie beendet. Die erstellten Rechnungen bleiben erhalten.");
+    public async Task<IActionResult> OnPostEndAsync() => await ChangeAsync(s => recurring.EndAsync(s), L["Recurring.Edit.Ended"]);
 
     /// <summary>Makes the invoice of the next date now ("Jetzt ausführen"), or tries a failed one again ("Erneut ausführen").</summary>
     public async Task<IActionResult> OnPostRunAsync()
@@ -151,7 +149,7 @@ public sealed class EditModel(MbDbContext db, RecurringService recurring, Config
 
         if (series.Status != RecurringStatus.Active || series.NextRunDate is null)
         {
-            FlashError("Nur eine aktive Serie mit einem nächsten Termin kann ausgeführt werden.");
+            FlashError(L["Recurring.Edit.RunOnlyActive"]);
             return RedirectToPage(new { id = series.Id });
         }
 
@@ -159,11 +157,11 @@ public sealed class EditModel(MbDbContext db, RecurringService recurring, Config
         nav.Invalidate();
         if (result.Invoice is { } invoice)
         {
-            Flash($"Rechnung {invoice.Number} erstellt{(series.AutoSend ? " und zum Versand vorgemerkt" : "")}.");
+            Flash(series.AutoSend ? L["Recurring.Edit.RunCreatedSend", invoice.Number!] : L["Recurring.Edit.RunCreated", invoice.Number!]);
             return RedirectToPage("/Invoices/Edit", new { id = invoice.Id });
         }
 
-        FlashError(result.Error ?? "Die Rechnung konnte nicht erstellt werden.");
+        FlashError(result.Error ?? L["Recurring.Edit.RunFailed"]);
         return RedirectToPage(new { id = series.Id });
     }
 
@@ -175,7 +173,7 @@ public sealed class EditModel(MbDbContext db, RecurringService recurring, Config
             db.RecurringInvoice.Remove(series);
             await db.SaveChangesAsync();
             nav.Invalidate();
-            Flash("Serie gelöscht. Die erstellten Rechnungen bleiben erhalten.");
+            Flash(L["Recurring.Edit.Deleted"]);
         }
 
         return RedirectToPage("/Recurring/Index");
@@ -203,7 +201,7 @@ public sealed class EditModel(MbDbContext db, RecurringService recurring, Config
         ViewData["OwnHead"] = true;
         ViewData["Width"] = "wide";
         ViewData["ActiveHref"] = "/Recurring";
-        Head(IsNew ? "Neue Serie" : Series.Name, null, ("Wiederkehrend", "/Recurring"), (IsNew ? "Neu" : Series.Name, null));
+        Head(IsNew ? L["Recurring.New"] : Series.Name, null, (L["Recurring.Crumb"], "/Recurring"), (IsNew ? L["Common.New"] : Series.Name, null));
 
         Editor = new DocumentEditorModel
         {

@@ -4,6 +4,8 @@
     The editable A4 document: every value is a field at the place where it stands on the paper. It is drawn inside the page's form; app.js adds the
     suggestions (customers, products), the positions and the sums. In the form view (data-view="form" on the editor) the same fields become an ordinary form.
     Every field has its label: hidden on the paper (the paper itself says what a value is), visible in the form.
+    The paper is the document the customer gets and stays German (captions, sums, stamp, default values, DocFmt); what only the writer sees
+    (labels of the form view, placeholders, hints, aria labels) follows the language of the interface.
 *@
 @{
     var input = Model.Input;
@@ -16,9 +18,10 @@
     var blank = new LineInput { Quantity = "1", TaxRate = Amount.Quantity(Model.Invoicing.DefaultTaxRate) };
     var senderLines = new[] { company.Street, string.Join(" ", new[] { company.PostalCode, company.City }.Where(s => !string.IsNullOrWhiteSpace(s))), company.Email, company.Website }
         .Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
+    var termDays = $"<span data-term-days>{input.PaymentTermDays ?? Model.Invoicing.PaymentTermDays}</span>";
 }
 
-<article class="mb-paper mb-doc @(Model.Stamp is null ? "" : "is-draft")" data-stamp="@Model.Stamp" aria-label="@(template ? "Vorlage der Rechnung" : quote ? "Angebot" : "Rechnung")">
+<article class="mb-paper mb-doc @(Model.Stamp is null ? "" : "is-draft")" data-stamp="@Model.Stamp" aria-label="@(template ? L["Editor.Aria.Template"] : quote ? L["Editor.Aria.Quote"] : L["Editor.Aria.Invoice"])">
     <header class="mb-doc__head">
         <div class="mb-doc__logo">
             @if (Model.LogoUrl is not null)
@@ -27,11 +30,11 @@
             }
             else
             {
-                <div class="mb-doc__company">@(string.IsNullOrWhiteSpace(company.Name) ? "Ihr Firmenname" : company.Name)</div>
+                <div class="mb-doc__company">@(string.IsNullOrWhiteSpace(company.Name) ? L["Editor.CompanyPlaceholder"] : company.Name)</div>
             }
             @if (Model.CanEditBranding && (Model.LogoUrl is null || string.IsNullOrWhiteSpace(company.Name)))
             {
-                <a class="mb-doc__brandlink" href="/Branding">Logo und Absender im Branding festlegen</a>
+                <a class="mb-doc__brandlink" href="/Branding">@L["Editor.BrandingLink"]</a>
             }
         </div>
         <address class="mb-doc__sender">
@@ -50,59 +53,59 @@
             <input type="hidden" name="Input.CustomerId" value="@input.CustomerId" />
             <div class="mb-doc__address">
                 <div class="mb-field mb-combo">
-                    <label class="mb-label" for="Input_RecipientName">Empfänger (Kunde suchen oder neuen Namen eingeben)</label>
-                    <input class="mb-in mb-in--strong" id="Input_RecipientName" name="Input.RecipientName" value="@input.RecipientName" placeholder="Kunde auswählen …" autocomplete="off" maxlength="200"
+                    <label class="mb-label" for="Input_RecipientName">@L["Editor.Recipient"]</label>
+                    <input class="mb-in mb-in--strong" id="Input_RecipientName" name="Input.RecipientName" value="@input.RecipientName" placeholder="@L["Editor.Recipient.Placeholder"]" autocomplete="off" maxlength="200"
                            aria-describedby="Input_RecipientName-error" aria-invalid="@(ViewData.ModelState["Input.RecipientName"]?.Errors.Count > 0 ? "true" : null)" />
                     <span class="mat-error" id="Input_RecipientName-error" aria-live="polite">@ViewData.ModelState["Input.RecipientName"]?.Errors.FirstOrDefault()?.ErrorMessage</span>
                 </div>
-                <p class="mat-hint" data-new-customer-hint hidden>@(template ? "Wähle einen Kunden aus der Liste." : "Neuer Empfänger: Er wird beim Speichern als Kunde angelegt.")</p>
+                <p class="mat-hint" data-new-customer-hint hidden>@(template ? L["Editor.Recipient.FromList"] : L["Editor.Recipient.New"])</p>
                 @if (!template)
                 {
-                    <div class="mb-field"><label class="mb-label" for="Input_RecipientContact">Ansprechpartner</label><input class="mb-in" id="Input_RecipientContact" name="Input.RecipientContact" value="@input.RecipientContact" placeholder="z. Hd. …" maxlength="200" /></div>
-                    <div class="mb-field"><label class="mb-label" for="Input_RecipientStreet">Straße und Hausnummer</label><input class="mb-in" id="Input_RecipientStreet" name="Input.RecipientStreet" value="@input.RecipientStreet" placeholder="Straße" maxlength="200" autocomplete="off" /></div>
+                    <div class="mb-field"><label class="mb-label" for="Input_RecipientContact">@L["Editor.Contact"]</label><input class="mb-in" id="Input_RecipientContact" name="Input.RecipientContact" value="@input.RecipientContact" placeholder="@L["Editor.Contact.Placeholder"]" maxlength="200" /></div>
+                    <div class="mb-field"><label class="mb-label" for="Input_RecipientStreet">@L["Editor.Street"]</label><input class="mb-in" id="Input_RecipientStreet" name="Input.RecipientStreet" value="@input.RecipientStreet" placeholder="@L["Editor.Street.Placeholder"]" maxlength="200" autocomplete="off" /></div>
                     <div class="mb-pair">
-                        <div class="mb-field"><label class="mb-label" for="Input_RecipientPostalCode">PLZ</label><input class="mb-in" id="Input_RecipientPostalCode" name="Input.RecipientPostalCode" value="@input.RecipientPostalCode" placeholder="PLZ" maxlength="20" inputmode="numeric" autocomplete="off" /></div>
-                        <div class="mb-field"><label class="mb-label" for="Input_RecipientCity">Ort</label><input class="mb-in" id="Input_RecipientCity" name="Input.RecipientCity" value="@input.RecipientCity" placeholder="Ort" maxlength="100" autocomplete="off" /></div>
+                        <div class="mb-field"><label class="mb-label" for="Input_RecipientPostalCode">@L["Editor.PostalCode"]</label><input class="mb-in" id="Input_RecipientPostalCode" name="Input.RecipientPostalCode" value="@input.RecipientPostalCode" placeholder="@L["Editor.PostalCode"]" maxlength="20" inputmode="numeric" autocomplete="off" /></div>
+                        <div class="mb-field"><label class="mb-label" for="Input_RecipientCity">@L["Editor.City"]</label><input class="mb-in" id="Input_RecipientCity" name="Input.RecipientCity" value="@input.RecipientCity" placeholder="@L["Editor.City"]" maxlength="100" autocomplete="off" /></div>
                     </div>
-                    <div class="mb-field"><label class="mb-label" for="Input_RecipientCountry">Land</label><input class="mb-in mb-in--small" id="Input_RecipientCountry" name="Input.RecipientCountry" value="@(input.RecipientCountry ?? "Deutschland")" maxlength="100" /></div>
-                    <div class="mb-field"><label class="mb-label" for="Input_RecipientEmail">E-Mail für den Versand</label><input class="mb-in mb-in--small" type="email" inputmode="email" id="Input_RecipientEmail" name="Input.RecipientEmail" value="@input.RecipientEmail" placeholder="E-Mail für den Versand (erscheint nicht auf der Rechnung)" maxlength="200" /></div>
+                    <div class="mb-field"><label class="mb-label" for="Input_RecipientCountry">@L["Editor.Country"]</label><input class="mb-in mb-in--small" id="Input_RecipientCountry" name="Input.RecipientCountry" value="@(input.RecipientCountry ?? "Deutschland")" maxlength="100" /></div>
+                    <div class="mb-field"><label class="mb-label" for="Input_RecipientEmail">@L["Editor.Email"]</label><input class="mb-in mb-in--small" type="email" inputmode="email" id="Input_RecipientEmail" name="Input.RecipientEmail" value="@input.RecipientEmail" placeholder="@L["Editor.Email.Placeholder"]" maxlength="200" /></div>
                 }
                 else
                 {
-                    <p class="mat-hint">Die Anschrift kommt bei jeder Rechnung aus den Kundendaten, damit Änderungen am Kunden mitgenommen werden.</p>
+                    <p class="mat-hint">@L["Editor.TemplateAddress"]</p>
                 }
             </div>
         </section>
 
-        <section class="mb-doc__part mb-doc__meta" aria-label="Rechnungsdaten">
-            <span class="mb-doc__caption mb-label">Rechnungsdaten</span>
-            <div class="mb-field"><label class="mb-label" for="Input_Title">Titel</label><input class="mb-in mb-in--title mb-doc__title" id="Input_Title" name="Input.Title" value="@(input.Title ?? (quote ? "Angebot" : "Rechnung"))" maxlength="80" /></div>
+        <section class="mb-doc__part mb-doc__meta" aria-label="@L["Editor.Meta"]">
+            <span class="mb-doc__caption mb-label">@L["Editor.Meta"]</span>
+            <div class="mb-field"><label class="mb-label" for="Input_Title">@L["Editor.Title"]</label><input class="mb-in mb-in--title mb-doc__title" id="Input_Title" name="Input.Title" value="@(input.Title ?? (quote ? "Angebot" : "Rechnung"))" maxlength="80" /></div>
             <dl class="mb-doc__facts">
                 <div>
                     <dt>@(quote ? "Angebotsnummer" : "Rechnungsnummer")</dt>
-                    <dd class="is-muted" title="Die Nummer wird beim Ausstellen vergeben.">@(template ? "fortlaufend" : Model.NumberPreview ?? "beim Ausstellen")</dd>
+                    <dd class="is-muted" title="@L["Editor.Number.Tip"]">@(template ? L["Editor.Number.Sequential"] : Model.NumberPreview ?? L["Editor.Number.OnIssue"])</dd>
                 </div>
                 @if (template)
                 {
-                    <div><dt>Rechnungsdatum</dt><dd class="is-muted">Tag der Ausführung</dd></div>
-                    <div><dt>Leistungszeitraum</dt><dd class="is-muted">@(Model.StatePeriod ? "Zeitraum des Intervalls" : "Tag der Ausführung")</dd></div>
+                    <div><dt>Rechnungsdatum</dt><dd class="is-muted">@L["Editor.RunDay"]</dd></div>
+                    <div><dt>Leistungszeitraum</dt><dd class="is-muted">@(Model.StatePeriod ? L["Editor.IntervalPeriod"] : L["Editor.RunDay"])</dd></div>
                 }
                 else
                 {
                     <div>
                         <dt><label for="Input_InvoiceDate">@(quote ? "Angebotsdatum" : "Rechnungsdatum")</label></dt>
-                        <dd><div class="mat-picker" data-picker="date"><input class="mat-picker__input" id="Input_InvoiceDate" name="Input.InvoiceDate" value="@Fmt.Iso(input.InvoiceDate)" required data-msg-required="Bitte wähle das Datum." /></div></dd>
+                        <dd><div class="mat-picker" data-picker="date"><input class="mat-picker__input" id="Input_InvoiceDate" name="Input.InvoiceDate" value="@Fmt.Iso(input.InvoiceDate)" required data-msg-required="@L["Editor.Date.Required"]" /></div></dd>
                     </div>
                 }
                 @if (Model.Mode == EditorMode.Invoice)
                 {
                     <div>
                         <dt><label for="Input_ServiceFrom">Leistungsdatum</label></dt>
-                        <dd><div class="mat-picker" data-picker="date" data-clearable data-placeholder="wie Rechnungsdatum"><input class="mat-picker__input" id="Input_ServiceFrom" name="Input.ServiceFrom" value="@Fmt.Iso(input.ServiceFrom)" /></div></dd>
+                        <dd><div class="mat-picker" data-picker="date" data-clearable data-placeholder="@L["Editor.Service.SameAsDate"]"><input class="mat-picker__input" id="Input_ServiceFrom" name="Input.ServiceFrom" value="@Fmt.Iso(input.ServiceFrom)" /></div></dd>
                     </div>
                     <div>
                         <dt><label for="Input_ServiceTo">Leistung bis</label></dt>
-                        <dd><div class="mat-picker" data-picker="date" data-clearable data-placeholder="optional"><input class="mat-picker__input" id="Input_ServiceTo" name="Input.ServiceTo" value="@Fmt.Iso(input.ServiceTo)" /></div></dd>
+                        <dd><div class="mat-picker" data-picker="date" data-clearable data-placeholder="@L["Common.Optional"]"><input class="mat-picker__input" id="Input_ServiceTo" name="Input.ServiceTo" value="@Fmt.Iso(input.ServiceTo)" /></div></dd>
                     </div>
                 }
                 <div>
@@ -118,21 +121,21 @@
     </div>
 
     <div class="mb-doc__intro">
-        <label class="mb-label" for="Input_IntroText">Einleitung</label>
-        <textarea class="mb-in" id="Input_IntroText" name="Input.IntroText" rows="2" data-autogrow maxlength="4000" placeholder="Einleitender Text, zum Beispiel ein Dank für den Auftrag">@input.IntroText</textarea>
+        <label class="mb-label" for="Input_IntroText">@L["Editor.Intro"]</label>
+        <textarea class="mb-in" id="Input_IntroText" name="Input.IntroText" rows="2" data-autogrow maxlength="4000" placeholder="@L["Editor.Intro.Placeholder"]">@input.IntroText</textarea>
     </div>
 
-    <div class="mb-lines" data-lines data-caption="Positionen">
+    <div class="mb-lines" data-lines data-caption="@L["Editor.Lines"]">
         <div class="mb-lines__head" aria-hidden="true"><span>Leistung</span><span>Menge</span><span>Einzelpreis</span><span>USt.</span><span>Gesamtpreis</span><span></span></div>
-        <div class="mb-lines__body" data-lines-body role="list" aria-label="Positionen">
+        <div class="mb-lines__body" data-lines-body role="list" aria-label="@L["Editor.Lines"]">
             @for (var i = 0; i < lines.Count; i++)
             {
                 <partial name="_DocumentLine" model="(lines[i], i, Model.TaxExempt)" />
             }
         </div>
-        <p class="mb-lines__empty" data-lines-empty hidden="@(lines.Count > 0)">Noch keine Position. Füge eine Leistung oder ein Produkt hinzu.</p>
+        <p class="mb-lines__empty" data-lines-empty hidden="@(lines.Count > 0)">@L["Editor.Lines.Empty"]</p>
         <template data-line-template><partial name="_DocumentLine" model="(blank, -1, Model.TaxExempt)" /></template>
-        <button type="button" class="mb-add" data-line-add>@Ui.Icon("plus")<span>Position hinzufügen</span></button>
+        <button type="button" class="mb-add" data-line-add>@Ui.Icon("plus")<span>@L["Editor.Lines.Add"]</span></button>
     </div>
 
     <dl class="mb-doc__totals" aria-live="polite">
@@ -152,21 +155,21 @@
 
     <div class="mb-doc__terms">
         <label class="mb-doc__caption" for="Input_PaymentTerms">@(quote ? "Bedingungen" : "Zahlungsbedingungen")</label>
-        <textarea class="mb-in" id="Input_PaymentTerms" name="Input.PaymentTerms" rows="2" data-autogrow maxlength="2000" placeholder="Zum Beispiel: Zahlbar innerhalb von {Tage} Tagen ohne Abzug." aria-describedby="terms-hint">@input.PaymentTerms</textarea>
+        <textarea class="mb-in" id="Input_PaymentTerms" name="Input.PaymentTerms" rows="2" data-autogrow maxlength="2000" placeholder="@L["Editor.Terms.Placeholder"]" aria-describedby="terms-hint">@input.PaymentTerms</textarea>
         @if (quote)
         {
-            <span class="mat-hint" id="terms-hint">{Gueltig} wird zum Datum, bis zu dem das Angebot gilt.</span>
+            <span class="mat-hint" id="terms-hint">@L["Editor.Terms.QuoteHint"]</span>
         }
         else
         {
-            <span class="mat-hint" id="terms-hint">{Tage} wird zum Zahlungsziel (<span data-term-days>@(input.PaymentTermDays ?? Model.Invoicing.PaymentTermDays)</span>), {Faellig} zum Fälligkeitsdatum.</span>
+            <span class="mat-hint" id="terms-hint">@Html.Raw(L["Editor.Terms.Hint", termDays].Value)</span>
         }
     </div>
 
     <div class="mb-doc__closing">
         <div class="mb-field">
-            <label class="mb-label" for="Input_ClosingText">Schlusstext</label>
-            <textarea class="mb-in" id="Input_ClosingText" name="Input.ClosingText" rows="1" data-autogrow maxlength="2000" placeholder="Grußformel">@input.ClosingText</textarea>
+            <label class="mb-label" for="Input_ClosingText">@L["Editor.Closing"]</label>
+            <textarea class="mb-in" id="Input_ClosingText" name="Input.ClosingText" rows="1" data-autogrow maxlength="2000" placeholder="@L["Editor.Closing.Placeholder"]">@input.ClosingText</textarea>
         </div>
         @if (!string.IsNullOrWhiteSpace(company.Signature))
         {

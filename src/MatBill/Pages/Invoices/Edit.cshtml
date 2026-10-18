@@ -14,14 +14,14 @@
             @Labels.Pill(invoice, Model.Today)
             @if (invoice.RecurringInvoiceId is not null && Model.Series is not null)
             {
-                <a class="mat-pill mat-pill--accent" href="/Recurring/Edit?id=@Model.Series.Id">aus Serie</a>
+                <a class="mat-pill mat-pill--accent" href="/Recurring/Edit?id=@Model.Series.Id">@L["Invoices.FromSeries"]</a>
             }
         </div>
         @if (draft)
         {
-            <div class="mat-seg" role="group" aria-label="Ansicht des Editors">
-                <button type="button" class="mat-seg__btn" data-view-set="document" aria-pressed="@(Model.EditorView == "document" ? "true" : "false")">@Ui.Icon("file-document")<span>Dokument</span></button>
-                <button type="button" class="mat-seg__btn" data-view-set="form" aria-pressed="@(Model.EditorView == "form" ? "true" : "false")">@Ui.Icon("list")<span>Formular</span></button>
+            <div class="mat-seg" role="group" aria-label="@L["Editor.View.Label"]">
+                <button type="button" class="mat-seg__btn" data-view-set="document" aria-pressed="@(Model.EditorView == "document" ? "true" : "false")">@Ui.Icon("file-document")<span>@L["Editor.View.Document"]</span></button>
+                <button type="button" class="mat-seg__btn" data-view-set="form" aria-pressed="@(Model.EditorView == "form" ? "true" : "false")">@Ui.Icon("list")<span>@L["Editor.View.Form"]</span></button>
             </div>
         }
     </div>
@@ -29,13 +29,13 @@
     @if (draft)
     {
         <form method="post" asp-page-handler="Save" asp-route-id="@invoice.Id" class="mb-editor__form" novalidate>
-            <mb-summary title="Bitte prüfe die Rechnung." />
+            <mb-summary title="@L["Invoices.Edit.Check"]" />
             <div class="mat-alert mat-alert--info mb-restore" data-restore hidden>
                 @Ui.Icon("history")
-                <div class="mat-alert__body">In diesem Browser gibt es ungespeicherte Eingaben vom <span data-restore-when></span>.</div>
+                <div class="mat-alert__body">@Html.Raw(L["Editor.Restore.Text", "<span data-restore-when></span>"].Value)</div>
                 <div class="mat-alert__actions">
-                    <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" data-restore-apply>@Ui.Icon("undo")<span>Wiederherstellen</span></button>
-                    <button type="button" class="mat-btn mat-btn--ghost mat-btn--sm" data-restore-discard>Verwerfen</button>
+                    <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" data-restore-apply>@Ui.Icon("undo")<span>@L["Editor.Restore.Apply"]</span></button>
+                    <button type="button" class="mat-btn mat-btn--ghost mat-btn--sm" data-restore-discard>@L["Editor.Restore.Discard"]</button>
                 </div>
             </div>
 
@@ -44,28 +44,28 @@
                     <partial name="_DocumentEditor" model="Model.Editor" />
                 </div>
 
-                <aside class="mb-editor__side" aria-label="Einstellungen der Rechnung">
+                <aside class="mb-editor__side" aria-label="@L["Invoices.Edit.Settings"]">
                     <div class="mat-card">
-                        <div class="mat-card__head">@Ui.Icon("info")<h2 class="mat-card__title">Entwurf</h2></div>
+                        <div class="mat-card__head">@Ui.Icon("info")<h2 class="mat-card__title">@L["Invoices.Draft"]</h2></div>
                         <div class="mat-card__body">
-                            <p class="mat-muted">Ein Entwurf hat noch keine Nummer und kann beliebig geändert werden. Beim Ausstellen bekommt er die nächste Nummer (@Model.Editor!.NumberPreview), danach ist er unveränderlich.</p>
+                            <p class="mat-muted">@L["Invoices.Edit.DraftText", Model.Editor!.NumberPreview ?? ""]</p>
                         </div>
                     </div>
 
                     <div class="mat-card">
-                        <div class="mat-card__head">@Ui.Icon("repeat")<h2 class="mat-card__title">Wiederholung</h2></div>
+                        <div class="mat-card__head">@Ui.Icon("repeat")<h2 class="mat-card__title">@L["Invoices.Edit.Repeat"]</h2></div>
                         <div class="mat-card__body mat-form">
                             @if (Model.Series is not null && !Model.SeriesFromThis)
                             {
-                                <p>Diese Rechnung stammt aus der Serie <a href="/Recurring/Edit?id=@Model.Series.Id">@Model.Series.Name</a>.</p>
+                                <p>@L["Invoices.Edit.FromSeriesText"] <a href="/Recurring/Edit?id=@Model.Series.Id">@Model.Series.Name</a>.</p>
                             }
                             else
                             {
-                                <label class="mat-switch"><input type="checkbox" id="Input_Repeat" name="Input.Repeat" value="true" checked="@Model.Input.Repeat" /><span class="mat-switch__track"></span><span>Wiederholung einrichten</span></label>
+                                <label class="mat-switch"><input type="checkbox" id="Input_Repeat" name="Input.Repeat" value="true" checked="@Model.Input.Repeat" /><span class="mat-switch__track"></span><span>@L["Invoices.Edit.SetUpRepeat"]</span></label>
                                 <input type="hidden" name="Input.Repeat" value="false" />
                                 <div class="mat-stack" data-show-if="Input.Repeat" data-show-value="true">
                                     <div class="mat-field">
-                                        <label class="mat-label" for="Input_Interval">Rhythmus</label>
+                                        <label class="mat-label" for="Input_Interval">@L["Recurring.Field.Interval"]</label>
                                         <select class="mat-select" id="Input_Interval" name="Input.Interval">
                                             @foreach (var o in intervals)
                                             {
@@ -74,31 +74,31 @@
                                         </select>
                                     </div>
                                     <div class="mat-field">
-                                        <label class="mat-label" for="Input_RepeatStart">Nächste Rechnung am</label>
-                                        <div class="mat-picker" data-picker="date" data-clearable data-placeholder="ein Intervall nach dieser"><input class="mat-picker__input" id="Input_RepeatStart" name="Input.RepeatStart" value="@Fmt.Iso(Model.Input.RepeatStart)" aria-describedby="Input_RepeatStart-hint" /></div>
-                                        <span class="mat-hint" id="Input_RepeatStart-hint">Diese Rechnung ist die erste. Leer: ein Intervall nach ihrem Rechnungsdatum.</span>
+                                        <label class="mat-label" for="Input_RepeatStart">@L["Invoices.Edit.NextOn"]</label>
+                                        <div class="mat-picker" data-picker="date" data-clearable data-placeholder="@L["Invoices.Edit.NextPlaceholder"]"><input class="mat-picker__input" id="Input_RepeatStart" name="Input.RepeatStart" value="@Fmt.Iso(Model.Input.RepeatStart)" aria-describedby="Input_RepeatStart-hint" /></div>
+                                        <span class="mat-hint" id="Input_RepeatStart-hint">@L["Invoices.Edit.NextHint"]</span>
                                     </div>
                                     <fieldset class="mat-field mat-fieldset">
-                                        <legend class="mat-label">Laufzeit</legend>
+                                        <legend class="mat-label">@L["Recurring.Field.Runs"]</legend>
                                         <div class="mat-checks">
-                                            <label class="mat-check"><input type="radio" id="Input_RepeatRuns_open" name="Input.RepeatRuns" value="open" checked="@(Model.Input.RepeatRuns != "until")" /><span class="mat-check__text">Unbegrenzt</span></label>
-                                            <label class="mat-check"><input type="radio" id="Input_RepeatRuns_until" name="Input.RepeatRuns" value="until" checked="@(Model.Input.RepeatRuns == "until")" /><span class="mat-check__text">Bis zu einem Datum</span></label>
+                                            <label class="mat-check"><input type="radio" id="Input_RepeatRuns_open" name="Input.RepeatRuns" value="open" checked="@(Model.Input.RepeatRuns != "until")" /><span class="mat-check__text">@L["Recurring.Field.Unlimited"]</span></label>
+                                            <label class="mat-check"><input type="radio" id="Input_RepeatRuns_until" name="Input.RepeatRuns" value="until" checked="@(Model.Input.RepeatRuns == "until")" /><span class="mat-check__text">@L["Recurring.Field.UntilDate"]</span></label>
                                         </div>
                                     </fieldset>
                                     <div class="mat-field" data-show-if="Input.RepeatRuns" data-show-value="until">
-                                        <label class="mat-label" for="Input_RepeatEnd">Letzte Rechnung spätestens am</label>
+                                        <label class="mat-label" for="Input_RepeatEnd">@L["Invoices.Edit.LastOn"]</label>
                                         <div class="mat-picker" data-picker="date"><input class="mat-picker__input" id="Input_RepeatEnd" name="Input.RepeatEnd" value="@Fmt.Iso(Model.Input.RepeatEnd)" /></div>
                                         <span class="mat-error" aria-live="polite">@ViewData.ModelState["Input.RepeatEnd"]?.Errors.FirstOrDefault()?.ErrorMessage</span>
                                     </div>
-                                    <label class="mat-switch"><input type="checkbox" id="Input_AutoSend" name="Input.AutoSend" value="true" checked="@Model.Input.AutoSend" /><span class="mat-switch__track"></span><span>Automatisch per E-Mail versenden</span></label>
+                                    <label class="mat-switch"><input type="checkbox" id="Input_AutoSend" name="Input.AutoSend" value="true" checked="@Model.Input.AutoSend" /><span class="mat-switch__track"></span><span>@L["Recurring.Field.AutoSend"]</span></label>
                                     <input type="hidden" name="Input.AutoSend" value="false" />
                                     @if (Model.SeriesFromThis)
                                     {
-                                        <p class="mat-hint">Serie <a href="/Recurring/Edit?id=@Model.Series!.Id">@Model.Series.Name</a> · nächste Rechnung am @Fmt.Date(Model.Series.NextRunDate)</p>
+                                        <p class="mat-hint">@L["Invoices.Edit.Series"] <a href="/Recurring/Edit?id=@Model.Series!.Id">@Model.Series.Name</a> · @L["Invoices.Edit.NextInvoiceOn", Fmt.Date(Model.Series.NextRunDate)]</p>
                                     }
                                     else
                                     {
-                                        <p class="mat-hint">Die Serie entsteht beim Speichern. Jede neue Rechnung bekommt eine eigene Nummer; diese Rechnung bleibt, wie sie ist.</p>
+                                        <p class="mat-hint">@L["Invoices.Edit.SeriesOnSave"]</p>
                                     }
                                 </div>
                             }
@@ -109,17 +109,17 @@
 
             <div class="mat-btn-row mat-btn-row--sticky mb-editor__foot">
                 <button type="submit" class="mat-btn mat-btn--primary" asp-page-handler="Issue" asp-route-id="@invoice.Id"
-                        data-confirm="Rechnung jetzt ausstellen? Sie bekommt die Nummer @Model.Editor.NumberPreview und kann danach nicht mehr geändert werden." data-confirm-ok="Ausstellen">@Ui.Icon("check")<span>Ausstellen</span></button>
-                <button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="Save" asp-route-id="@invoice.Id">@Ui.Icon("save")<span>Speichern</span></button>
+                        data-confirm="@L["Invoices.Edit.IssueConfirm", Model.Editor.NumberPreview ?? ""]" data-confirm-ok="@L["Invoices.Edit.Issue"]">@Ui.Icon("check")<span>@L["Invoices.Edit.Issue"]</span></button>
+                <button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="Save" asp-route-id="@invoice.Id">@Ui.Icon("save")<span>@L["Common.Save"]</span></button>
                 @if (!Model.IsNew)
                 {
-                    <a class="mat-btn mat-btn--ghost" href="/invoices/@invoice.Id/pdf" target="_blank" rel="noopener">@Ui.Icon("eye")<span>PDF-Vorschau</span></a>
+                    <a class="mat-btn mat-btn--ghost" href="/invoices/@invoice.Id/pdf" target="_blank" rel="noopener">@Ui.Icon("eye")<span>@L["Invoices.Edit.PdfPreview"]</span></a>
                 }
-                <a class="mat-btn mat-btn--ghost" href="/Invoices">@Ui.Icon("back")<span>Zurück</span></a>
+                <a class="mat-btn mat-btn--ghost" href="/Invoices">@Ui.Icon("back")<span>@L["Common.Back"]</span></a>
                 @if (!Model.IsNew)
                 {
                     <span class="mat-btn-row__spacer"></span>
-                    <button type="submit" class="mat-btn mat-btn--danger" formnovalidate asp-page-handler="Delete" asp-route-id="@invoice.Id" data-confirm="Diesen Entwurf löschen?" data-confirm-ok="Löschen">@Ui.Icon("trash")<span>Löschen</span></button>
+                    <button type="submit" class="mat-btn mat-btn--danger" formnovalidate asp-page-handler="Delete" asp-route-id="@invoice.Id" data-confirm="@L["Invoices.Edit.DeleteConfirm"]" data-confirm-ok="@L["Common.Delete"]">@Ui.Icon("trash")<span>@L["Common.Delete"]</span></button>
                 }
             </div>
         </form>
@@ -132,60 +132,60 @@
                 <partial name="_DocumentView" model="Model.View" />
             </div>
 
-            <aside class="mb-editor__side" aria-label="Status der Rechnung">
+            <aside class="mb-editor__side" aria-label="@L["Invoices.Edit.StatusAria"]">
                 <div class="mat-card">
-                    <div class="mat-card__head">@Ui.Icon("info")<h2 class="mat-card__title">Status</h2>@Labels.Pill(invoice, Model.Today)</div>
+                    <div class="mat-card__head">@Ui.Icon("info")<h2 class="mat-card__title">@L["Common.Status"]</h2>@Labels.Pill(invoice, Model.Today)</div>
                     <div class="mat-card__body">
                         <dl class="mat-kv">
-                            <dt>Betrag</dt><dd>@Fmt.Money(invoice.GrossTotal)</dd>
-                            <dt>Ausgestellt</dt><dd>@Fmt.Moment(invoice.IssuedDate)</dd>
+                            <dt>@L["Common.Amount"]</dt><dd>@Fmt.Money(invoice.GrossTotal)</dd>
+                            <dt>@L["Invoices.Edit.IssuedAt"]</dt><dd>@Fmt.Moment(invoice.IssuedDate)</dd>
                             @if (invoice.Kind == InvoiceKind.Invoice)
                             {
-                            <dt>Fällig am</dt><dd class="@(invoice.IsOverdue(Model.Today) ? "mb-warn-text" : "")">@Fmt.Date(invoice.DueDate)@(invoice.IsOverdue(Model.Today) ? $" · seit {Model.Today.DayNumber - invoice.DueDate.DayNumber} Tagen überfällig" : "")</dd>
+                            <dt>@L["Invoices.Edit.DueOn"]</dt><dd class="@(invoice.IsOverdue(Model.Today) ? "mb-warn-text" : "")">@Fmt.Date(invoice.DueDate)@(invoice.IsOverdue(Model.Today) ? " · " + L["Invoices.Edit.OverdueDays", Model.Today.DayNumber - invoice.DueDate.DayNumber] : "")</dd>
                             }
                             @if (invoice.PaidDate is not null && invoice.Kind == InvoiceKind.Invoice)
                             {
-                                <dt>Bezahlt am</dt><dd>@Fmt.Date(invoice.PaidDate)</dd>
+                                <dt>@L["Invoices.Edit.PaidOn"]</dt><dd>@Fmt.Date(invoice.PaidDate)</dd>
                             }
                             @if (invoice.Status == InvoiceStatus.Cancelled)
                             {
-                                <dt>Storniert</dt><dd>@Fmt.Moment(invoice.CancelledDate)@(invoice.CancelReason is null ? "" : $" · {invoice.CancelReason}")</dd>
+                                <dt>@L["Invoices.Edit.CancelledAt"]</dt><dd>@Fmt.Moment(invoice.CancelledDate)@(invoice.CancelReason is null ? "" : $" · {invoice.CancelReason}")</dd>
                             }
-                            <dt>Kunde</dt><dd>@if (invoice.Customer is not null) { <a href="/Customers/Edit?id=@invoice.Customer.Id">@invoice.Customer.Name</a> } else { @invoice.RecipientName }</dd>
+                            <dt>@L["Invoices.Customer"]</dt><dd>@if (invoice.Customer is not null) { <a href="/Customers/Edit?id=@invoice.Customer.Id">@invoice.Customer.Name</a> } else { @invoice.RecipientName }</dd>
                             @if (invoice.CancelsInvoiceId is { } cancelled)
                             {
-                                <dt>Storno zu</dt><dd><a href="/Invoices/Edit?id=@cancelled">Rechnung @invoice.CancelsNumber</a></dd>
+                                <dt>@L["Invoices.Edit.Cancels"]</dt><dd><a href="/Invoices/Edit?id=@cancelled">@L["Invoices.Invoice", invoice.CancelsNumber ?? ""]</a></dd>
                             }
                             @if (invoice.CancellationInvoiceId is { } storno)
                             {
-                                <dt>Storniert durch</dt><dd><a href="/Invoices/Edit?id=@storno">Stornorechnung</a></dd>
+                                <dt>@L["Invoices.Edit.CancelledBy"]</dt><dd><a href="/Invoices/Edit?id=@storno">@L["Invoices.Edit.CancellationInvoice"]</a></dd>
                             }
                             @if (invoice.QuoteId is { } quoteId)
                             {
-                                <dt>Aus Angebot</dt><dd><a href="/Quotes/Edit?id=@quoteId">Angebot öffnen</a></dd>
+                                <dt>@L["Invoices.Edit.FromQuote"]</dt><dd><a href="/Quotes/Edit?id=@quoteId">@L["Invoices.Edit.OpenQuote"]</a></dd>
                             }
-                            <dt>E-Rechnung</dt><dd><a href="/invoices/@invoice.Id/xml">ZUGFeRD-XML</a> · <a href="/invoices/@invoice.Id/xml?xrechnung=1">XRechnung</a></dd>
+                            <dt>@L["Invoices.Edit.EInvoice"]</dt><dd><a href="/invoices/@invoice.Id/xml">ZUGFeRD-XML</a> · <a href="/invoices/@invoice.Id/xml?xrechnung=1">XRechnung</a></dd>
                         </dl>
                         @if (invoice.Status == InvoiceStatus.Open && invoice.Kind == InvoiceKind.Invoice)
                         {
                             <form method="post" class="mat-form mat-stack">
                                 <div class="mat-field">
-                                    <label class="mat-label" for="paidOn">Zahlungseingang am</label>
+                                    <label class="mat-label" for="paidOn">@L["Invoices.Edit.PaymentOn"]</label>
                                     <div class="mat-picker" data-picker="date"><input class="mat-picker__input" id="paidOn" name="paidOn" value="@Fmt.Iso(Model.Today)" /></div>
                                 </div>
-                                <button type="submit" class="mat-btn mat-btn--primary" asp-page-handler="Paid" asp-route-id="@invoice.Id">@Ui.Icon("check")<span>Als bezahlt markieren</span></button>
+                                <button type="submit" class="mat-btn mat-btn--primary" asp-page-handler="Paid" asp-route-id="@invoice.Id">@Ui.Icon("check")<span>@L["Invoices.Edit.MarkPaid"]</span></button>
                             </form>
                         }
                     </div>
                 </div>
 
                 <div class="mat-card">
-                    <div class="mat-card__head">@Ui.Icon("send")<h2 class="mat-card__title">Versand</h2></div>
+                    <div class="mat-card__head">@Ui.Icon("send")<h2 class="mat-card__title">@L["Invoices.Sending"]</h2></div>
                     <div class="mat-card__body">
-                        <p>@Labels.Of(invoice.SendState)@(invoice.SentDate is null ? "" : $" am {Fmt.Moment(invoice.SentDate)}")</p>
+                        <p>@Labels.Of(invoice.SendState)@(invoice.SentDate is null ? "" : " " + L["Invoices.Edit.SentOn", Fmt.Moment(invoice.SentDate)])</p>
                         @if (invoice.SendState == SendState.Failed && invoice.SendError is not null)
                         {
-                            <div class="mat-alert mat-alert--danger">@Ui.Icon("x-circle")<div class="mat-alert__body">@invoice.SendError@(invoice.NextSendDate is null ? "" : $" Nächster Versuch: {Fmt.Moment(invoice.NextSendDate)}.")</div></div>
+                            <div class="mat-alert mat-alert--danger">@Ui.Icon("x-circle")<div class="mat-alert__body">@invoice.SendError@(invoice.NextSendDate is null ? "" : " " + L["Invoices.Edit.NextAttempt", Fmt.Moment(invoice.NextSendDate)])</div></div>
                         }
                         @if (Model.Deliveries.Count > 0)
                         {
@@ -194,7 +194,7 @@
                                 {
                                     <li class="mb-note">
                                         @Ui.Icon(m.Status == MailStatus.Sent ? "check-circle" : "x-circle", "mb-note__icon " + (m.Status == MailStatus.Sent ? "mb-note__icon--ok" : "mb-note__icon--error"))
-                                        <div class="mb-note__body"><span>@m.To</span><span class="mb-note__meta">@Fmt.Moment(m.AttemptDate)@(m.IsAutomatic ? " · automatisch" : "")@(m.Error is null ? "" : " · " + m.Error)</span></div>
+                                        <div class="mb-note__body"><span>@m.To</span><span class="mb-note__meta">@Fmt.Moment(m.AttemptDate)@(m.IsAutomatic ? " · " + L["Invoices.Edit.Automatic"] : "")@(m.Error is null ? "" : " · " + m.Error)</span></div>
                                     </li>
                                 }
                             </ul>
@@ -205,20 +205,20 @@
                 @if (Model.Series is not null)
                 {
                     <div class="mat-card">
-                        <div class="mat-card__head">@Ui.Icon("repeat")<h2 class="mat-card__title">Wiederholung</h2></div>
+                        <div class="mat-card__head">@Ui.Icon("repeat")<h2 class="mat-card__title">@L["Invoices.Edit.Repeat"]</h2></div>
                         <div class="mat-card__body">
-                            <p>@(Model.SeriesFromThis ? "Aus dieser Rechnung entstand die Serie" : "Diese Rechnung stammt aus der Serie") <a href="/Recurring/Edit?id=@Model.Series.Id">@Model.Series.Name</a>.</p>
-                            <p class="mat-muted">@Labels.Of(Model.Series.Interval) · @Labels.Of(Model.Series.Status)@(Model.Series.NextRunDate is null ? "" : $" · nächste am {Fmt.Date(Model.Series.NextRunDate)}")</p>
+                            <p>@(Model.SeriesFromThis ? L["Invoices.Edit.SeriesFromThisText"] : L["Invoices.Edit.FromSeriesText"]) <a href="/Recurring/Edit?id=@Model.Series.Id">@Model.Series.Name</a>.</p>
+                            <p class="mat-muted">@Labels.Of(Model.Series.Interval) · @Labels.Of(Model.Series.Status)@(Model.Series.NextRunDate is null ? "" : " · " + L["Invoices.Edit.NextShort", Fmt.Date(Model.Series.NextRunDate)])</p>
                         </div>
                     </div>
                 }
                 else if (invoice.Status != InvoiceStatus.Cancelled && invoice.Kind == InvoiceKind.Invoice)
                 {
                     <details class="mat-card mb-repeat">
-                        <summary class="mat-card__head">@Ui.Icon("repeat")<h2 class="mat-card__title">Wiederholung einrichten</h2></summary>
+                        <summary class="mat-card__head">@Ui.Icon("repeat")<h2 class="mat-card__title">@L["Invoices.Edit.SetUpRepeat"]</h2></summary>
                         <form method="post" class="mat-card__body mat-form mat-stack" asp-page-handler="Repeat" asp-route-id="@invoice.Id">
                             <div class="mat-field">
-                                <label class="mat-label" for="r_Interval">Rhythmus</label>
+                                <label class="mat-label" for="r_Interval">@L["Recurring.Field.Interval"]</label>
                                 <select class="mat-select" id="r_Interval" name="Input.Interval">
                                     @foreach (var o in intervals)
                                     {
@@ -227,23 +227,23 @@
                                 </select>
                             </div>
                             <div class="mat-field">
-                                <label class="mat-label" for="r_RepeatStart">Nächste Rechnung am</label>
-                                <div class="mat-picker" data-picker="date" data-clearable data-placeholder="ein Intervall nach dieser"><input class="mat-picker__input" id="r_RepeatStart" name="Input.RepeatStart" value="" /></div>
+                                <label class="mat-label" for="r_RepeatStart">@L["Invoices.Edit.NextOn"]</label>
+                                <div class="mat-picker" data-picker="date" data-clearable data-placeholder="@L["Invoices.Edit.NextPlaceholder"]"><input class="mat-picker__input" id="r_RepeatStart" name="Input.RepeatStart" value="" /></div>
                             </div>
                             <fieldset class="mat-field mat-fieldset">
-                                <legend class="mat-label">Laufzeit</legend>
+                                <legend class="mat-label">@L["Recurring.Field.Runs"]</legend>
                                 <div class="mat-checks">
-                                    <label class="mat-check"><input type="radio" id="r_open" name="Input.RepeatRuns" value="open" checked /><span class="mat-check__text">Unbegrenzt</span></label>
-                                    <label class="mat-check"><input type="radio" id="r_until" name="Input.RepeatRuns" value="until" /><span class="mat-check__text">Bis zu einem Datum</span></label>
+                                    <label class="mat-check"><input type="radio" id="r_open" name="Input.RepeatRuns" value="open" checked /><span class="mat-check__text">@L["Recurring.Field.Unlimited"]</span></label>
+                                    <label class="mat-check"><input type="radio" id="r_until" name="Input.RepeatRuns" value="until" /><span class="mat-check__text">@L["Recurring.Field.UntilDate"]</span></label>
                                 </div>
                             </fieldset>
                             <div class="mat-field" data-show-if="Input.RepeatRuns" data-show-value="until">
-                                <label class="mat-label" for="r_RepeatEnd">Letzte Rechnung spätestens am</label>
+                                <label class="mat-label" for="r_RepeatEnd">@L["Invoices.Edit.LastOn"]</label>
                                 <div class="mat-picker" data-picker="date"><input class="mat-picker__input" id="r_RepeatEnd" name="Input.RepeatEnd" value="" /></div>
                             </div>
-                            <label class="mat-switch"><input type="checkbox" id="r_AutoSend" name="Input.AutoSend" value="true" /><span class="mat-switch__track"></span><span>Automatisch per E-Mail versenden</span></label>
+                            <label class="mat-switch"><input type="checkbox" id="r_AutoSend" name="Input.AutoSend" value="true" /><span class="mat-switch__track"></span><span>@L["Recurring.Field.AutoSend"]</span></label>
                             <input type="hidden" name="Input.AutoSend" value="false" />
-                            <button type="submit" class="mat-btn mat-btn--secondary">@Ui.Icon("repeat")<span>Serie anlegen</span></button>
+                            <button type="submit" class="mat-btn mat-btn--secondary">@Ui.Icon("repeat")<span>@L["Invoices.Edit.CreateSeries"]</span></button>
                         </form>
                     </details>
                 }
@@ -252,23 +252,23 @@
 
         <form method="post" class="mat-btn-row mat-btn-row--sticky mb-editor__foot">
             <input type="hidden" name="reason" value="" />
-            <a class="mat-btn mat-btn--primary" href="/invoices/@invoice.Id/pdf?download=1">@Ui.Icon("download")<span>PDF herunterladen</span></a>
+            <a class="mat-btn mat-btn--primary" href="/invoices/@invoice.Id/pdf?download=1">@Ui.Icon("download")<span>@L["Invoices.Edit.DownloadPdf"]</span></a>
             @if (invoice.Status != InvoiceStatus.Cancelled)
             {
-                <a class="mat-btn mat-btn--secondary" href="/Invoices/Send?id=@invoice.Id">@Ui.Icon("send")<span>@(invoice.SendState is SendState.Failed ? "Erneut senden" : "Per E-Mail senden")</span></a>
-                <a class="mat-btn mat-btn--ghost" href="/Invoices/Share?id=@invoice.Id">@Ui.Icon("link")<span>Freigabelink</span></a>
+                <a class="mat-btn mat-btn--secondary" href="/Invoices/Send?id=@invoice.Id">@Ui.Icon("send")<span>@(invoice.SendState is SendState.Failed ? L["Invoices.Edit.SendAgain"] : L["Invoices.Edit.SendByEmail"])</span></a>
+                <a class="mat-btn mat-btn--ghost" href="/Invoices/Share?id=@invoice.Id">@Ui.Icon("link")<span>@L["Invoices.Edit.ShareLink"]</span></a>
             }
-            <button type="submit" class="mat-btn mat-btn--ghost" asp-page-handler="Duplicate" asp-route-id="@invoice.Id">@Ui.Icon("copy")<span>Duplizieren</span></button>
+            <button type="submit" class="mat-btn mat-btn--ghost" asp-page-handler="Duplicate" asp-route-id="@invoice.Id">@Ui.Icon("copy")<span>@L["Invoices.Edit.Duplicate"]</span></button>
             @if (invoice.Status == InvoiceStatus.Paid)
             {
-                <button type="submit" class="mat-btn mat-btn--ghost" asp-page-handler="Reopen" asp-route-id="@invoice.Id" data-confirm="Die Zahlung zurücknehmen? Die Rechnung ist danach wieder offen." data-confirm-ok="Zurücknehmen">@Ui.Icon("undo")<span>Zahlung zurücknehmen</span></button>
+                <button type="submit" class="mat-btn mat-btn--ghost" asp-page-handler="Reopen" asp-route-id="@invoice.Id" data-confirm="@L["Invoices.Edit.ReopenConfirm"]" data-confirm-ok="@L["Invoices.Edit.ReopenOk"]">@Ui.Icon("undo")<span>@L["Invoices.Edit.Reopen"]</span></button>
             }
-            <a class="mat-btn mat-btn--ghost" href="/Invoices">@Ui.Icon("back")<span>Zurück</span></a>
+            <a class="mat-btn mat-btn--ghost" href="/Invoices">@Ui.Icon("back")<span>@L["Common.Back"]</span></a>
             @if (invoice.Status is InvoiceStatus.Open or InvoiceStatus.Paid && invoice.Kind == InvoiceKind.Invoice)
             {
                 <span class="mat-btn-row__spacer"></span>
                 <button type="submit" class="mat-btn mat-btn--danger" asp-page-handler="Cancel" asp-route-id="@invoice.Id"
-                        data-prompt="Es wird eine Stornorechnung mit eigener Nummer angelegt, die diese Rechnung ausgleicht. Grund (optional):" data-prompt-title="Rechnung stornieren" data-prompt-ok="Stornorechnung anlegen" data-prompt-into="reason">@Ui.Icon("ban")<span>Stornieren</span></button>
+                        data-prompt="@L["Invoices.Edit.CancelPrompt"]" data-prompt-title="@L["Invoices.Edit.CancelTitle"]" data-prompt-ok="@L["Invoices.Edit.CancelOk"]" data-prompt-into="reason">@Ui.Icon("ban")<span>@L["Invoices.Edit.Cancel"]</span></button>
             }
         </form>
     }

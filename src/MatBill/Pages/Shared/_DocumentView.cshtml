@@ -34,7 +34,7 @@
     </header>
 
     <div class="mb-doc__top">
-        <section class="mb-doc__recipient" aria-label="Empfänger">
+        <section class="mb-doc__recipient" aria-label="@L["Editor.Aria.Recipient"]">
             <div class="mb-doc__senderline">@company.SenderLine</div>
             <div class="mb-doc__address">
                 @foreach (var line in d.RecipientLines)
@@ -43,7 +43,7 @@
                 }
             </div>
         </section>
-        <section class="mb-doc__meta" aria-label="Rechnungsdaten">
+        <section class="mb-doc__meta" aria-label="@L["Editor.Meta"]">
             <h2 class="mb-doc__title">@d.Title</h2>
             <dl class="mb-doc__facts">
                 <div><dt>@d.NumberLabel</dt><dd>@(d.Number ?? "–")</dd></div>
@@ -84,7 +84,7 @@
 
     <div class="mb-lines">
         <div class="mb-lines__head" aria-hidden="true"><span>Leistung</span><span>Menge</span><span>Einzelpreis</span>@if (showTax) { <span>USt.</span> }<span>Gesamtpreis</span></div>
-        <div class="mb-lines__body" role="list" aria-label="Positionen">
+        <div class="mb-lines__body" role="list" aria-label="@L["Editor.Lines"]">
             @foreach (var l in d.Lines)
             {
                 <div class="mb-line" role="listitem">

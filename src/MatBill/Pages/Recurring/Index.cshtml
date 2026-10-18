@@ -2,9 +2,9 @@
 @model MatBill.Pages.Recurring.IndexModel
 
 <div class="mb-stats">
-    @Ui.Kpi("Aktive Serien", Model.Active.ToString(), Model.Problems > 0 ? Ui.CountNoun(Model.Problems, "Serien") + " mit Fehler" : "alle ohne Fehler", "repeat", href: Model.Problems > 0 ? "/Recurring?status=fehler" : "/Recurring?status=aktiv", bad: Model.Problems > 0)
-    @Ui.Kpi("Nächste Rechnung", Model.Next is null ? "–" : Fmt.Date(Model.Next), Model.Next is null ? "keine geplant" : Fmt.Due(Model.Next, Model.Today), "calendar")
-    @Ui.Kpi("Pro Monat", Fmt.Money(Model.MonthlyVolume), "brutto, im Durchschnitt", "euro")
+    @Ui.Kpi(L["Recurring.Kpi.Active"], Model.Active.ToString(), Model.Problems > 0 ? Model.ProblemsText : L["Recurring.Kpi.NoProblems"], "repeat", href: Model.Problems > 0 ? "/Recurring?status=failed" : "/Recurring?status=active", bad: Model.Problems > 0)
+    @Ui.Kpi(L["Recurring.NextInvoice"], Model.Next is null ? "–" : Fmt.Date(Model.Next), Model.Next is null ? L["Recurring.Kpi.NoneScheduled"] : Fmt.Due(Model.Next, Model.Today), "calendar")
+    @Ui.Kpi(L["Recurring.Kpi.PerMonth"], Fmt.Money(Model.MonthlyVolume), L["Recurring.Kpi.PerMonth.Sub"], "euro")
 </div>
 
 <div class="mat-list">
@@ -12,6 +12,6 @@
     <partial name="_Table" model="Model.Table" />
     <partial name="_Pager" model="Model.Pager" />
     <div class="mat-actions">
-        <a class="mat-btn mat-btn--primary" href="/Recurring/Edit">@Ui.Icon("plus")<span>Neue Serie</span></a>
+        <a class="mat-btn mat-btn--primary" href="/Recurring/Edit">@Ui.Icon("plus")<span>@L["Recurring.New"]</span></a>
     </div>
 </div>

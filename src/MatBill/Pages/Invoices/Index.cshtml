@@ -2,9 +2,9 @@
 @model MatBill.Pages.Invoices.IndexModel
 
 <div class="mb-stats">
-    @Ui.Kpi("Offen", Fmt.Money(Model.OpenSum), "noch nicht bezahlt", "clock", href: "/Invoices?status=offen")
-    @Ui.Kpi("Überfällig", Fmt.Money(Model.OverdueSum), Model.OverdueCount == 0 ? "nichts überfällig" : Ui.CountNoun(Model.OverdueCount, "Rechnungen"), "alert", href: "/Invoices?status=ueberfaellig", bad: Model.OverdueCount > 0)
-    @Ui.Kpi("In dieser Auswahl", Fmt.Money(Model.ShownGross), "ausgestellt, Stornos verrechnet", "euro")
+    @Ui.Kpi(L["Invoices.Kpi.Open"], Fmt.Money(Model.OpenSum), L["Invoices.Kpi.Open.Sub"], "clock", href: "/Invoices?status=open")
+    @Ui.Kpi(L["Invoices.Kpi.Overdue"], Fmt.Money(Model.OverdueSum), Model.OverdueCount == 0 ? L["Invoices.Kpi.Overdue.None"] : Model.CountText(Model.OverdueCount), "alert", href: "/Invoices?status=overdue", bad: Model.OverdueCount > 0)
+    @Ui.Kpi(L["Invoices.Kpi.Shown"], Fmt.Money(Model.ShownGross), L["Invoices.Kpi.Shown.Sub"], "euro")
 </div>
 
 <div class="mat-list">
@@ -12,7 +12,7 @@
     <partial name="_Table" model="Model.Table" />
     <partial name="_Pager" model="Model.Pager" />
     <div class="mat-actions">
-        <a class="mat-btn mat-btn--primary" href="/Invoices/Edit">@Ui.Icon("plus")<span>Neue Rechnung</span></a>
-        <a class="mat-btn mat-btn--secondary" href="/Recurring">@Ui.Icon("repeat")<span>Wiederkehrende Rechnungen</span></a>
+        <a class="mat-btn mat-btn--primary" href="/Invoices/Edit">@Ui.Icon("plus")<span>@L["Invoices.New"]</span></a>
+        <a class="mat-btn mat-btn--secondary" href="/Recurring">@Ui.Icon("repeat")<span>@L["Invoices.Recurring"]</span></a>
     </div>
 </div>

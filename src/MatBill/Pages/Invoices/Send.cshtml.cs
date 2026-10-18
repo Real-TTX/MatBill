@@ -12,15 +12,19 @@ public sealed class SendModel(InvoiceService invoices, MailService mail, NavCoun
 {
     public sealed class MailInput
     {
-        [Required(ErrorMessage = "Bitte gib eine E-Mail-Adresse ein.")]
+        [Required(ErrorMessage = "Invoices.Send.To.Required")]
+        [Display(Name = "Invoices.Send.To")]
         public string To { get; set; } = "";
 
+        [Display(Name = "Invoices.Send.Cc")]
         public string? Cc { get; set; }
 
-        [Required(ErrorMessage = "Bitte gib einen Betreff ein.")]
+        [Required(ErrorMessage = "Invoices.Send.Subject.Required")]
+        [Display(Name = "Invoices.Send.Subject")]
         public string Subject { get; set; } = "";
 
-        [Required(ErrorMessage = "Bitte schreib einen Text.")]
+        [Required(ErrorMessage = "Invoices.Send.Body.Required")]
+        [Display(Name = "Invoices.Send.Body")]
         public string Body { get; set; } = "";
     }
 
@@ -68,7 +72,7 @@ public sealed class SendModel(InvoiceService invoices, MailService mail, NavCoun
             return Page();
         }
 
-        Flash($"Rechnung {Invoice.Number} an {Input.To} versendet.");
+        Flash(L["Invoices.Send.Sent", Invoice.Number!, Input.To]);
         return RedirectToPage("/Invoices/Edit", new { id = Invoice.Id });
     }
 
@@ -82,12 +86,12 @@ public sealed class SendModel(InvoiceService invoices, MailService mail, NavCoun
 
         if (invoice.IsDraft || invoice.Status == InvoiceStatus.Cancelled)
         {
-            FlashError(invoice.IsDraft ? "Stelle die Rechnung zuerst aus, dann kann sie versendet werden." : "Eine stornierte Rechnung wird nicht versendet.");
+            FlashError(invoice.IsDraft ? L["Invoices.Send.NotIssued"] : L["Invoices.Send.IsCancelled"]);
             return RedirectToPage("/Invoices/Edit", new { id = invoice.Id });
         }
 
         Invoice = invoice;
-        Head($"Rechnung {invoice.Number} senden", $"{invoice.RecipientName} · {Fmt.Money(invoice.GrossTotal)}", ("Rechnungen", "/Invoices"), (invoice.Number!, $"/Invoices/Edit?id={invoice.Id}"), ("Senden", null));
+        Head(L["Invoices.Send.Title", invoice.Number!], $"{invoice.RecipientName} · {Fmt.Money(invoice.GrossTotal)}", (L["Invoices.Title"], "/Invoices"), (invoice.Number!, $"/Invoices/Edit?id={invoice.Id}"), (L["Invoices.Send.Send"], null));
         ViewData["Width"] = "narrow";
         return null;
     }

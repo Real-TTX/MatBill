@@ -100,7 +100,7 @@ public sealed class EditModel(MbDbContext db, InvoiceService invoices, Recurring
         Invoice = invoice;
         if (!invoice.IsDraft)
         {
-            FlashError("Diese Rechnung ist bereits ausgestellt und kann nicht mehr geändert werden.");
+            FlashError(L["Invoices.Edit.AlreadyIssued"]);
             return RedirectToPage(new { id = invoice.Id });
         }
 
@@ -108,12 +108,12 @@ public sealed class EditModel(MbDbContext db, InvoiceService invoices, Recurring
         await invoices.LinkCustomerAsync(invoice);
         if (Input.Repeat && invoice.Customer is null)
         {
-            problems.Add(new("Input.RecipientName", "Für eine Wiederholung braucht die Rechnung einen Kunden."));
+            problems.Add(new("Input.RecipientName", L["Invoices.Edit.RepeatNeedsCustomer"]));
         }
 
         if (Input.Repeat && Input.RepeatRuns == "until" && Input.RepeatEnd is { } end && end < (Input.RepeatStart ?? invoice.InvoiceDate))
         {
-            problems.Add(new("Input.RepeatEnd", "Das Ende liegt vor der ersten Rechnung der Wiederholung."));
+            problems.Add(new("Input.RepeatEnd", L["Invoices.Edit.RepeatEndBeforeStart"]));
         }
 
         if (issue)
@@ -154,12 +154,12 @@ public sealed class EditModel(MbDbContext db, InvoiceService invoices, Recurring
             }
 
             nav.Invalidate();
-            Flash($"Rechnung {invoice.Number} ausgestellt. Sie kann jetzt versendet werden.");
+            Flash(L["Invoices.Edit.Issued", invoice.Number!]);
             return RedirectToPage(new { id = invoice.Id });
         }
 
         nav.Invalidate();
-        Flash(Id is null ? "Entwurf angelegt." : "Entwurf gespeichert.");
+        Flash(Id is null ? L["Invoices.Edit.DraftCreated"] : L["Invoices.Edit.DraftSaved"]);
         return RedirectToPage(new { id = invoice.Id });
     }
 
@@ -216,7 +216,7 @@ public sealed class EditModel(MbDbContext db, InvoiceService invoices, Recurring
 
         if (invoice.CustomerId is null)
         {
-            FlashError("Für eine Wiederholung braucht die Rechnung einen Kunden.");
+            FlashError(L["Invoices.Edit.RepeatNeedsCustomer"]);
             return RedirectToPage(new { id = invoice.Id });
         }
 
@@ -224,14 +224,14 @@ public sealed class EditModel(MbDbContext db, InvoiceService invoices, Recurring
         var end = Input.RepeatRuns == "until" ? Input.RepeatEnd : null;
         if (end is { } e && e < start)
         {
-            FlashError("Das Ende liegt vor der ersten Rechnung der Wiederholung.");
+            FlashError(L["Invoices.Edit.RepeatEndBeforeStart"]);
             return RedirectToPage(new { id = invoice.Id });
         }
 
         var series = recurring.FromInvoice(invoice, Input.Interval, start, end, Input.AutoSend);
         db.RecurringInvoice.Add(series);
         await db.SaveChangesAsync();
-        Flash($"Wiederholung eingerichtet: {Labels.Of(series.Interval).ToLowerInvariant()}, nächste Rechnung am {Fmt.Date(series.NextRunDate)}.");
+        Flash(L["Invoices.Edit.RepeatCreated", Labels.Of(series.Interval).ToLowerInvariant(), Fmt.Date(series.NextRunDate)]);
         return RedirectToPage("/Recurring/Edit", new { id = series.Id });
     }
 
@@ -260,13 +260,13 @@ public sealed class EditModel(MbDbContext db, InvoiceService invoices, Recurring
         }
 
         nav.Invalidate();
-        Flash("Entwurf gelöscht.");
+        Flash(L["Invoices.Edit.DraftDeleted"]);
         return RedirectToPage("/Invoices/Index");
     }
 
-    public async Task<IActionResult> OnPostPaidAsync(DateOnly? paidOn) => await ChangeAsync(i => invoices.MarkPaidAsync(i, paidOn ?? Today), i => $"Rechnung {i.Number} ist bezahlt.");
+    public async Task<IActionResult> OnPostPaidAsync(DateOnly? paidOn) => await ChangeAsync(i => invoices.MarkPaidAsync(i, paidOn ?? Today), i => L["Invoices.Edit.Paid", i.Number!].Value);
 
-    public async Task<IActionResult> OnPostReopenAsync() => await ChangeAsync(i => invoices.ReopenAsync(i), i => $"Rechnung {i.Number} ist wieder offen.");
+    public async Task<IActionResult> OnPostReopenAsync() => await ChangeAsync(i => invoices.ReopenAsync(i), i => L["Invoices.Edit.Reopened", i.Number!].Value);
 
     /// <summary>Cancels the invoice with a cancellation invoice of its own number; the page of the cancellation invoice opens.</summary>
     public async Task<IActionResult> OnPostCancelAsync(string? reason)
@@ -281,7 +281,7 @@ public sealed class EditModel(MbDbContext db, InvoiceService invoices, Recurring
         {
             var storno = await invoices.CancelAsync(invoice, reason);
             nav.Invalidate();
-            Flash($"Rechnung {invoice.Number} ist storniert: Stornorechnung {storno.Number} angelegt. Sende sie dem Kunden.");
+            Flash(L["Invoices.Edit.Cancelled", invoice.Number!, storno.Number!]);
             return RedirectToPage(new { id = storno.Id });
         }
         catch (InvoiceException ex)
@@ -301,7 +301,7 @@ public sealed class EditModel(MbDbContext db, InvoiceService invoices, Recurring
 
         var copy = await invoices.DuplicateAsync(invoice);
         nav.Invalidate();
-        Flash("Kopie als neuer Entwurf angelegt.");
+        Flash(L["Invoices.Edit.Duplicated"]);
         return RedirectToPage(new { id = copy.Id });
     }
 
@@ -346,8 +346,10 @@ public sealed class EditModel(MbDbContext db, InvoiceService invoices, Recurring
         ViewData["OwnHead"] = true;
         ViewData["Width"] = "wide";
         ViewData["ActiveHref"] = IsNew ? "/Invoices/Edit" : "/Invoices";
-        var title = IsNew ? "Neue Rechnung" : Invoice.Number is { } number ? $"{(Invoice.Kind == InvoiceKind.Cancellation ? "Stornorechnung" : "Rechnung")} {number}" : "Rechnungsentwurf";
-        Head(title, null, ("Rechnungen", "/Invoices"), (IsNew ? "Neu" : Invoice.Number ?? "Entwurf", null));
+        string title = IsNew ? L["Invoices.New"]
+            : Invoice.Number is { } number ? L[Invoice.Kind == InvoiceKind.Cancellation ? "Invoices.Edit.TitleCancellation" : "Invoices.Invoice", number]
+            : L["Invoices.Edit.TitleDraft"];
+        Head(title, null, (L["Invoices.Title"], "/Invoices"), (IsNew ? L["Common.New"] : Invoice.Number ?? L["Invoices.Draft"], null));
 
         if (!Invoice.IsDraft)
         {

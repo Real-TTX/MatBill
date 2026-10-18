@@ -12,7 +12,8 @@ public sealed class ShareModel(MbDbContext db, InvoiceService invoices, ShareSer
 {
     public sealed class LinkInput
     {
-        [Range(1, 365, ErrorMessage = "Zwischen 1 und 365 Tagen.")]
+        [Range(1, 365, ErrorMessage = "Invoices.Share.Days.Range")]
+        [Display(Name = "Invoices.Share.Days")]
         public int Days { get; set; } = 30;
 
         public string? Password { get; set; }
@@ -56,7 +57,7 @@ public sealed class ShareModel(MbDbContext db, InvoiceService invoices, ShareSer
 
         if (!string.IsNullOrEmpty(Input.Password) && Input.Password.Length < 6)
         {
-            ModelState.AddModelError("Input.Password", "Ein Passwort braucht mindestens 6 Zeichen.");
+            ModelState.AddModelError("Input.Password", L["Invoices.Share.Password.Short"]);
         }
 
         if (!ModelState.IsValid)
@@ -64,9 +65,10 @@ public sealed class ShareModel(MbDbContext db, InvoiceService invoices, ShareSer
             return Page();
         }
 
+        // The title is what the customer sees behind the link: German, like the invoice itself.
         var link = await shares.CreateAsync(Invoice, $"Rechnung {Invoice.Number}", Input.Message, Input.Days, Input.Password, Input.RecipientName);
-        await log.LogAsync("Freigabe-Link angelegt", nameof(ShareLink), link.Id, $"Rechnung {Invoice.Number}");
-        Flash("Der Link ist angelegt. Kopiere ihn und gib ihn weiter.");
+        await log.LogAsync(L["Invoices.Share.Log"], nameof(ShareLink), link.Id, L["Invoices.Invoice", Invoice.Number!]);
+        Flash(L["Invoices.Share.Created"]);
         return RedirectToPage(new { id = Id });
     }
 
@@ -80,14 +82,14 @@ public sealed class ShareModel(MbDbContext db, InvoiceService invoices, ShareSer
 
         if (invoice.IsDraft)
         {
-            FlashError("Ein Entwurf kann nicht freigegeben werden. Stelle die Rechnung zuerst aus.");
+            FlashError(L["Invoices.Share.Draft"]);
             return RedirectToPage("/Invoices/Edit", new { id = invoice.Id });
         }
 
         Invoice = invoice;
         Links = await db.ShareLink.AsNoTracking().Where(l => l.InvoiceId == invoice.Id).OrderByDescending(l => l.CreateDate).ToListAsync();
-        Head($"Rechnung {invoice.Number} freigeben", "Ein Link, mit dem der Kunde die Rechnung ohne Konto ansehen und herunterladen kann.",
-            ("Rechnungen", "/Invoices"), (invoice.Number!, $"/Invoices/Edit?id={invoice.Id}"), ("Freigabelink", null));
+        Head(L["Invoices.Share.Title", invoice.Number!], L["Invoices.Share.Sub"],
+            (L["Invoices.Title"], "/Invoices"), (invoice.Number!, $"/Invoices/Edit?id={invoice.Id}"), (L["Invoices.Edit.ShareLink"], null));
         ViewData["Width"] = "narrow";
         ViewData["ActiveHref"] = "/Invoices";
         return null;

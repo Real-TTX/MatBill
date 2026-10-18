@@ -4,6 +4,7 @@
 @{
     var s = Model.Series;
     var intervals = Controls.Options.Of<RecurrenceInterval>(Labels.Of);
+    var runConfirm = L["Recurring.Edit.RunConfirm", Fmt.Date(s.NextRunDate)].Value + (s.AutoSend ? " " + L["Recurring.Edit.RunConfirm.Send"] : "") + " " + L["Recurring.Edit.RunConfirm.Unsaved"];
 }
 
 <div class="mb-editor" data-editor data-view="@Model.EditorView" data-doc-accent="@Model.Editor.Company.AccentColor">
@@ -12,9 +13,9 @@
             <h1>@ViewData["Title"]</h1>
             @if (!Model.IsNew) { @Labels.Pill(s) }
         </div>
-        <div class="mat-seg" role="group" aria-label="Ansicht des Editors">
-            <button type="button" class="mat-seg__btn" data-view-set="document" aria-pressed="@(Model.EditorView == "document" ? "true" : "false")">@Ui.Icon("file-document")<span>Dokument</span></button>
-            <button type="button" class="mat-seg__btn" data-view-set="form" aria-pressed="@(Model.EditorView == "form" ? "true" : "false")">@Ui.Icon("list")<span>Formular</span></button>
+        <div class="mat-seg" role="group" aria-label="@L["Editor.View.Label"]">
+            <button type="button" class="mat-seg__btn" data-view-set="document" aria-pressed="@(Model.EditorView == "document" ? "true" : "false")">@Ui.Icon("file-document")<span>@L["Editor.View.Document"]</span></button>
+            <button type="button" class="mat-seg__btn" data-view-set="form" aria-pressed="@(Model.EditorView == "form" ? "true" : "false")">@Ui.Icon("list")<span>@L["Editor.View.Form"]</span></button>
         </div>
     </div>
 
@@ -23,23 +24,23 @@
         <div class="mat-alert mat-alert--danger" role="alert">
             @Ui.Icon("x-circle")
             <div class="mat-alert__body">
-                <strong>Die Rechnung vom @Fmt.Date(s.NextRunDate) wurde nicht erstellt.</strong> @s.LastError
-                @(s.RetryAfterDate is { } retry ? $" Nächster automatischer Versuch: {Fmt.Moment(retry)}." : " Es wird nicht mehr automatisch versucht.")
+                <strong>@L["Recurring.Edit.FailedTitle", Fmt.Date(s.NextRunDate)]</strong> @s.LastError
+                @(s.RetryAfterDate is { } retry ? L["Recurring.Edit.NextRetry", Fmt.Moment(retry)] : L["Recurring.Edit.NoRetry"])
             </div>
             <form method="post" class="mat-alert__actions">
-                <button type="submit" class="mat-btn mat-btn--secondary mat-btn--sm" asp-page-handler="Run" asp-route-id="@s.Id">@Ui.Icon("refresh")<span>Erneut ausführen</span></button>
+                <button type="submit" class="mat-btn mat-btn--secondary mat-btn--sm" asp-page-handler="Run" asp-route-id="@s.Id">@Ui.Icon("refresh")<span>@L["Recurring.Edit.RunAgain"]</span></button>
             </form>
         </div>
     }
 
     <form method="post" asp-page-handler="Save" asp-route-id="@s.Id" novalidate>
-        <mb-summary title="Bitte prüfe die Serie." />
+        <mb-summary title="@L["Recurring.Edit.Check"]" />
         <div class="mat-alert mat-alert--info mb-restore" data-restore hidden>
             @Ui.Icon("history")
-            <div class="mat-alert__body">In diesem Browser gibt es ungespeicherte Eingaben vom <span data-restore-when></span>.</div>
+            <div class="mat-alert__body">@Html.Raw(L["Editor.Restore.Text", "<span data-restore-when></span>"].Value)</div>
             <div class="mat-alert__actions">
-                <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" data-restore-apply>@Ui.Icon("undo")<span>Wiederherstellen</span></button>
-                <button type="button" class="mat-btn mat-btn--ghost mat-btn--sm" data-restore-discard>Verwerfen</button>
+                <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" data-restore-apply>@Ui.Icon("undo")<span>@L["Editor.Restore.Apply"]</span></button>
+                <button type="button" class="mat-btn mat-btn--ghost mat-btn--sm" data-restore-discard>@L["Editor.Restore.Discard"]</button>
             </div>
         </div>
 
@@ -48,16 +49,16 @@
                 <partial name="_DocumentEditor" model="Model.Editor" />
             </div>
 
-            <aside class="mb-editor__side" aria-label="Zeitplan der Serie">
+            <aside class="mb-editor__side" aria-label="@L["Recurring.Edit.ScheduleAria"]">
                 <div class="mat-card">
-                    <div class="mat-card__head">@Ui.Icon("calendar")<h2 class="mat-card__title">Zeitplan</h2></div>
+                    <div class="mat-card__head">@Ui.Icon("calendar")<h2 class="mat-card__title">@L["Recurring.Edit.Schedule"]</h2></div>
                     <div class="mat-card__body mat-form mat-stack">
                         <div class="mat-field">
-                            <label class="mat-label" for="Name">Name der Serie</label>
-                            <input class="mat-input" id="Name" name="Name" value="@Model.Name" maxlength="120" placeholder="Kunde: Leistung" />
+                            <label class="mat-label" for="Name">@L["Recurring.Edit.Name"]</label>
+                            <input class="mat-input" id="Name" name="Name" value="@Model.Name" maxlength="120" placeholder="@L["Recurring.Edit.Name.Placeholder"]" />
                         </div>
                         <div class="mat-field">
-                            <label class="mat-label" for="Input_Interval">Rhythmus</label>
+                            <label class="mat-label" for="Input_Interval">@L["Recurring.Field.Interval"]</label>
                             <select class="mat-select" id="Input_Interval" name="Input.Interval">
                                 @foreach (var o in intervals)
                                 {
@@ -66,38 +67,38 @@
                             </select>
                         </div>
                         <div class="mat-field">
-                            <label class="mat-label" for="Input_RepeatStart">Start (erste Rechnung)</label>
+                            <label class="mat-label" for="Input_RepeatStart">@L["Recurring.Edit.Start"]</label>
                             <div class="mat-picker" data-picker="date"><input class="mat-picker__input" id="Input_RepeatStart" name="Input.RepeatStart" value="@Fmt.Iso(Model.Input.RepeatStart ?? Model.Today)" aria-describedby="start-hint" /></div>
-                            <span class="mat-hint" id="start-hint">Alle Termine zählen ab diesem Tag (ein Start am 31. läuft am Monatsletzten).</span>
+                            <span class="mat-hint" id="start-hint">@L["Recurring.Edit.Start.Hint"]</span>
                         </div>
                         <fieldset class="mat-field mat-fieldset">
-                            <legend class="mat-label">Laufzeit</legend>
+                            <legend class="mat-label">@L["Recurring.Field.Runs"]</legend>
                             <div class="mat-checks">
-                                <label class="mat-check"><input type="radio" id="Input_RepeatRuns_open" name="Input.RepeatRuns" value="open" checked="@(Model.Input.RepeatRuns != "until")" /><span class="mat-check__text">Unbegrenzt</span></label>
-                                <label class="mat-check"><input type="radio" id="Input_RepeatRuns_until" name="Input.RepeatRuns" value="until" checked="@(Model.Input.RepeatRuns == "until")" /><span class="mat-check__text">Bis zu einem Datum</span></label>
+                                <label class="mat-check"><input type="radio" id="Input_RepeatRuns_open" name="Input.RepeatRuns" value="open" checked="@(Model.Input.RepeatRuns != "until")" /><span class="mat-check__text">@L["Recurring.Field.Unlimited"]</span></label>
+                                <label class="mat-check"><input type="radio" id="Input_RepeatRuns_until" name="Input.RepeatRuns" value="until" checked="@(Model.Input.RepeatRuns == "until")" /><span class="mat-check__text">@L["Recurring.Field.UntilDate"]</span></label>
                             </div>
                         </fieldset>
                         <div class="mat-field" data-show-if="Input.RepeatRuns" data-show-value="until">
-                            <label class="mat-label" for="Input_RepeatEnd">Ende (letzte Rechnung spätestens)</label>
+                            <label class="mat-label" for="Input_RepeatEnd">@L["Recurring.Edit.End"]</label>
                             <div class="mat-picker" data-picker="date"><input class="mat-picker__input" id="Input_RepeatEnd" name="Input.RepeatEnd" value="@Fmt.Iso(Model.Input.RepeatEnd)" /></div>
                             <span class="mat-error" aria-live="polite">@ViewData.ModelState["Input.RepeatEnd"]?.Errors.FirstOrDefault()?.ErrorMessage</span>
                         </div>
-                        <label class="mat-switch"><input type="checkbox" id="StatePeriod" name="StatePeriod" value="true" checked="@Model.StatePeriod" /><span class="mat-switch__track"></span><span>Leistungszeitraum angeben</span></label>
+                        <label class="mat-switch"><input type="checkbox" id="StatePeriod" name="StatePeriod" value="true" checked="@Model.StatePeriod" /><span class="mat-switch__track"></span><span>@L["Recurring.Edit.StatePeriod"]</span></label>
                         <input type="hidden" name="StatePeriod" value="false" />
-                        <label class="mat-switch"><input type="checkbox" id="Input_AutoSend" name="Input.AutoSend" value="true" checked="@Model.Input.AutoSend" /><span class="mat-switch__track"></span><span>Automatisch per E-Mail versenden</span></label>
+                        <label class="mat-switch"><input type="checkbox" id="Input_AutoSend" name="Input.AutoSend" value="true" checked="@Model.Input.AutoSend" /><span class="mat-switch__track"></span><span>@L["Recurring.Field.AutoSend"]</span></label>
                         <input type="hidden" name="Input.AutoSend" value="false" />
-                        <p class="mat-hint" data-show-if="Input.AutoSend" data-show-value="true">Jede neue Rechnung geht als PDF an die E-Mail-Adresse des Kunden@(s.Customer?.Email is { Length: > 0 } mail ? $" ({mail})" : "")@(".")</p>
+                        <p class="mat-hint" data-show-if="Input.AutoSend" data-show-value="true">@L["Recurring.Edit.AutoSend.Hint", s.Customer?.Email is { Length: > 0 } mail ? $" ({mail})" : ""]</p>
                     </div>
                 </div>
 
                 @if (!Model.IsNew)
                 {
                     <div class="mat-card">
-                        <div class="mat-card__head">@Ui.Icon("clock")<h2 class="mat-card__title">Nächste Termine</h2></div>
+                        <div class="mat-card__head">@Ui.Icon("clock")<h2 class="mat-card__title">@L["Recurring.Edit.Upcoming"]</h2></div>
                         <div class="mat-card__body">
                             @if (Model.Upcoming.Count == 0)
                             {
-                                <p class="mat-muted">@(s.Status == RecurringStatus.Paused ? "Die Serie ist pausiert." : "Es sind keine Termine mehr geplant.")</p>
+                                <p class="mat-muted">@(s.Status == RecurringStatus.Paused ? L["Recurring.Edit.IsPaused"] : L["Recurring.Edit.NoDates"])</p>
                             }
                             else
                             {
@@ -107,11 +108,11 @@
                                         <li>@Fmt.Date(d)</li>
                                     }
                                 </ul>
-                                <p class="mat-hint"><a href="/recurring/@s.Id/preview" target="_blank" rel="noopener">Vorschau der nächsten Rechnung (PDF)</a></p>
+                                <p class="mat-hint"><a href="/recurring/@s.Id/preview" target="_blank" rel="noopener">@L["Recurring.Edit.Preview"]</a></p>
                             }
                             <dl class="mat-kv">
-                                <dt>Erstellte Rechnungen</dt><dd>@s.CreatedCount</dd>
-                                <dt>Zuletzt ausgeführt</dt><dd>@(s.LastRunDate is null ? "noch nie" : Fmt.Moment(s.LastRunDate))</dd>
+                                <dt>@L["Recurring.CreatedInvoices"]</dt><dd>@s.CreatedCount</dd>
+                                <dt>@L["Recurring.Edit.LastRun"]</dt><dd>@(s.LastRunDate is null ? L["Recurring.Edit.Never"] : Fmt.Moment(s.LastRunDate))</dd>
                             </dl>
                         </div>
                     </div>
@@ -120,28 +121,28 @@
         </div>
 
         <div class="mat-btn-row mat-btn-row--sticky mb-editor__foot">
-            <button type="submit" class="mat-btn mat-btn--primary" asp-page-handler="Save" asp-route-id="@s.Id">@Ui.Icon("save")<span>Speichern</span></button>
+            <button type="submit" class="mat-btn mat-btn--primary" asp-page-handler="Save" asp-route-id="@s.Id">@Ui.Icon("save")<span>@L["Common.Save"]</span></button>
             @if (!Model.IsNew && s.Status == RecurringStatus.Active)
             {
                 <button type="submit" class="mat-btn mat-btn--secondary" formnovalidate asp-page-handler="Run" asp-route-id="@s.Id"
-                        data-confirm="Die Rechnung vom @Fmt.Date(s.NextRunDate) jetzt erstellen?@(s.AutoSend ? " Sie wird anschließend per E-Mail versendet." : "") Ungespeicherte Änderungen der Vorlage gehen dabei verloren." data-confirm-ok="Jetzt erstellen">@Ui.Icon("play")<span>Jetzt ausführen</span></button>
-                <button type="submit" class="mat-btn mat-btn--ghost" formnovalidate asp-page-handler="Pause" asp-route-id="@s.Id">@Ui.Icon("pause")<span>Pausieren</span></button>
+                        data-confirm="@runConfirm" data-confirm-ok="@L["Recurring.Edit.RunOk"]">@Ui.Icon("play")<span>@L["Recurring.Edit.RunNow"]</span></button>
+                <button type="submit" class="mat-btn mat-btn--ghost" formnovalidate asp-page-handler="Pause" asp-route-id="@s.Id">@Ui.Icon("pause")<span>@L["Recurring.Edit.Pause"]</span></button>
             }
             @if (!Model.IsNew && s.Status != RecurringStatus.Active)
             {
-                <button type="submit" class="mat-btn mat-btn--secondary" formnovalidate asp-page-handler="Resume" asp-route-id="@s.Id">@Ui.Icon("play")<span>Fortsetzen</span></button>
+                <button type="submit" class="mat-btn mat-btn--secondary" formnovalidate asp-page-handler="Resume" asp-route-id="@s.Id">@Ui.Icon("play")<span>@L["Recurring.Edit.Resume"]</span></button>
             }
-            <a class="mat-btn mat-btn--ghost" href="/Recurring">@Ui.Icon("back")<span>Zurück</span></a>
+            <a class="mat-btn mat-btn--ghost" href="/Recurring">@Ui.Icon("back")<span>@L["Common.Back"]</span></a>
             @if (!Model.IsNew)
             {
                 <span class="mat-btn-row__spacer"></span>
                 @if (s.Status != RecurringStatus.Ended)
                 {
-                    <button type="submit" class="mat-btn mat-btn--danger" formnovalidate asp-page-handler="End" asp-route-id="@s.Id" data-confirm="Diese Serie beenden? Es entstehen keine weiteren Rechnungen; die erstellten bleiben." data-confirm-ok="Beenden">@Ui.Icon("stop")<span>Beenden</span></button>
+                    <button type="submit" class="mat-btn mat-btn--danger" formnovalidate asp-page-handler="End" asp-route-id="@s.Id" data-confirm="@L["Recurring.Edit.EndConfirm"]" data-confirm-ok="@L["Recurring.Edit.End.Button"]">@Ui.Icon("stop")<span>@L["Recurring.Edit.End.Button"]</span></button>
                 }
                 else
                 {
-                    <button type="submit" class="mat-btn mat-btn--danger" formnovalidate asp-page-handler="Delete" asp-route-id="@s.Id" data-confirm="Diese Serie löschen? Die erstellten Rechnungen bleiben erhalten." data-confirm-ok="Löschen">@Ui.Icon("trash")<span>Löschen</span></button>
+                    <button type="submit" class="mat-btn mat-btn--danger" formnovalidate asp-page-handler="Delete" asp-route-id="@s.Id" data-confirm="@L["Recurring.Edit.DeleteConfirm"]" data-confirm-ok="@L["Common.Delete"]">@Ui.Icon("trash")<span>@L["Common.Delete"]</span></button>
                 }
             }
         </div>
@@ -152,26 +153,26 @@
     {
         <div class="mb-split">
             <section class="mat-card" aria-labelledby="invoices-title">
-                <div class="mat-card__head">@Ui.Icon("file-text")<h2 class="mat-card__title" id="invoices-title">Erstellte Rechnungen</h2></div>
+                <div class="mat-card__head">@Ui.Icon("file-text")<h2 class="mat-card__title" id="invoices-title">@L["Recurring.CreatedInvoices"]</h2></div>
                 <div class="mat-card__body">
                     @if (Model.Invoices.Count == 0)
                     {
-                        <p class="mat-muted">Noch keine. Die erste entsteht am @Fmt.Date(s.NextRunDate).</p>
+                        <p class="mat-muted">@L["Recurring.Edit.NoInvoices", Fmt.Date(s.NextRunDate)]</p>
                     }
                     else
                     {
                         <div class="mat-table-wrap">
                             <table class="mat-table">
-                                <caption class="mat-sr-only">Erstellte Rechnungen</caption>
-                                <thead><tr><th scope="col">Nummer</th><th scope="col">Datum</th><th scope="col" class="mat-num">Betrag</th><th scope="col">Status</th></tr></thead>
+                                <caption class="mat-sr-only">@L["Recurring.CreatedInvoices"]</caption>
+                                <thead><tr><th scope="col">@L["Invoices.Number"]</th><th scope="col">@L["Common.Date"]</th><th scope="col" class="mat-num">@L["Common.Amount"]</th><th scope="col">@L["Common.Status"]</th></tr></thead>
                                 <tbody>
                                     @foreach (var i in Model.Invoices)
                                     {
                                         <tr>
-                                            <td data-label="Nummer"><a href="/Invoices/Edit?id=@i.Id">@i.Number</a></td>
-                                            <td data-label="Datum">@Fmt.Date(i.InvoiceDate)</td>
-                                            <td data-label="Betrag" class="mat-num">@Ui.Money(i.GrossTotal)</td>
-                                            <td data-label="Status">@Labels.Pill(i, Model.Today)</td>
+                                            <td data-label="@L["Invoices.Number"]"><a href="/Invoices/Edit?id=@i.Id">@i.Number</a></td>
+                                            <td data-label="@L["Common.Date"]">@Fmt.Date(i.InvoiceDate)</td>
+                                            <td data-label="@L["Common.Amount"]" class="mat-num">@Ui.Money(i.GrossTotal)</td>
+                                            <td data-label="@L["Common.Status"]">@Labels.Pill(i, Model.Today)</td>
                                         </tr>
                                     }
                                 </tbody>
@@ -181,11 +182,11 @@
                 </div>
             </section>
             <aside class="mat-card" aria-labelledby="runs-title">
-                <div class="mat-card__head">@Ui.Icon("history")<h2 class="mat-card__title" id="runs-title">Protokoll</h2></div>
+                <div class="mat-card__head">@Ui.Icon("history")<h2 class="mat-card__title" id="runs-title">@L["Recurring.Edit.Log"]</h2></div>
                 <div class="mat-card__body">
                     @if (Model.Runs.Count == 0)
                     {
-                        <p class="mat-muted">Noch keine Ausführung.</p>
+                        <p class="mat-muted">@L["Recurring.Edit.NoRuns"]</p>
                     }
                     else
                     {
@@ -195,8 +196,8 @@
                                 <li class="mb-note">
                                     @Ui.Icon(r.Status == RecurringRunStatus.Created ? "check-circle" : "x-circle", "mb-note__icon " + (r.Status == RecurringRunStatus.Created ? "mb-note__icon--ok" : "mb-note__icon--error"))
                                     <div class="mb-note__body">
-                                        <span>@(r.Status == RecurringRunStatus.Created ? $"Rechnung {r.Invoice?.Number} für den {Fmt.Date(r.ScheduledDate)}" : $"Fehlgeschlagen für den {Fmt.Date(r.ScheduledDate)}")</span>
-                                        <span class="mb-note__meta">@Fmt.Moment(r.RunDate)@(r.IsManual ? " · von Hand" : " · automatisch")@(r.Message is null ? "" : " · " + r.Message)</span>
+                                        <span>@(r.Status == RecurringRunStatus.Created ? L["Recurring.Edit.RunFor", r.Invoice?.Number ?? "", Fmt.Date(r.ScheduledDate)] : L["Recurring.Edit.FailedFor", Fmt.Date(r.ScheduledDate)])</span>
+                                        <span class="mb-note__meta">@Fmt.Moment(r.RunDate) · @(r.IsManual ? L["Recurring.Manual"] : L["Recurring.Automatic"])@(r.Message is null ? "" : " · " + r.Message)</span>
                                     </div>
                                 </li>
                             }

@@ -25,9 +25,12 @@ public sealed class IndexModel(MbDbContext db, TimeProvider clock) : PageModelBa
 
     public bool HasAny { get; private set; }
 
+    /// <summary>"1 invoice", "3 invoices" in the language of the interface.</summary>
+    public string CountText(long count) => count == 1 ? L["Invoices.Kpi.Count.One", Fmt.Integer(count)] : L["Invoices.Kpi.Count.Many", Fmt.Integer(count)];
+
     public async Task OnGetAsync()
     {
-        Head("Rechnungen", "Alle Rechnungen und Entwürfe.", ("Rechnungen", null));
+        Head(L["Invoices.Title"], L["Invoices.Sub"], (L["Invoices.Title"], null));
         var today = Fmt.Today(clock);
         var years = await db.Invoice.Select(i => i.InvoiceDate.Year).Distinct().OrderByDescending(y => y).ToListAsync();
         var customers = await db.Customer.AsNoTracking().OrderBy(c => c.Name).Select(c => new { c.Id, c.Name }).Take(500).ToListAsync();
@@ -36,9 +39,9 @@ public sealed class IndexModel(MbDbContext db, TimeProvider clock) : PageModelBa
         {
             Id = "invoices",
             Action = "/Invoices",
-            Label = "Rechnungen",
-            Noun = "Rechnungen",
-            SearchPlaceholder = "Nummer, Kunde oder Leistung ...",
+            Label = L["Invoices.Title"],
+            Noun = L["Invoices.Noun"],
+            SearchPlaceholder = L["Invoices.Search"],
             Search = (q, text) =>
             {
                 var like = Like.Contains(text);
@@ -47,33 +50,33 @@ public sealed class IndexModel(MbDbContext db, TimeProvider clock) : PageModelBa
             },
             Filters =
             [
-                new FilterSpec<Invoice>("status", "Status",
+                new FilterSpec<Invoice>("status", L["Common.Status"],
                 [
-                    new("entwurf", "Entwurf"), new("offen", "Offen"), new("ueberfaellig", "Überfällig"), new("bezahlt", "Bezahlt"), new("storniert", "Storniert"),
-                    new("versand", "Versand fehlgeschlagen"),
+                    new("draft", L["Invoices.Status.Draft"]), new("open", L["Invoices.Status.Open"]), new("overdue", L["Invoices.Status.Overdue"]),
+                    new("paid", L["Invoices.Status.Paid"]), new("cancelled", L["Invoices.Status.Cancelled"]), new("sendfailed", L["Invoices.Status.SendFailed"]),
                 ], (q, v) => v switch
                 {
-                    "entwurf" => q.Where(i => i.Status == InvoiceStatus.Draft),
-                    "offen" => q.Where(i => i.Status == InvoiceStatus.Open),
-                    "ueberfaellig" => q.Where(i => i.Status == InvoiceStatus.Open && i.DueDate < today),
-                    "bezahlt" => q.Where(i => i.Status == InvoiceStatus.Paid),
-                    "versand" => q.Where(i => i.SendState == SendState.Failed && i.Status != InvoiceStatus.Cancelled),
+                    "draft" => q.Where(i => i.Status == InvoiceStatus.Draft),
+                    "open" => q.Where(i => i.Status == InvoiceStatus.Open),
+                    "overdue" => q.Where(i => i.Status == InvoiceStatus.Open && i.DueDate < today),
+                    "paid" => q.Where(i => i.Status == InvoiceStatus.Paid),
+                    "sendfailed" => q.Where(i => i.SendState == SendState.Failed && i.Status != InvoiceStatus.Cancelled),
                     _ => q.Where(i => i.Status == InvoiceStatus.Cancelled),
                 }),
-                new FilterSpec<Invoice>("jahr", "Jahr", [.. years.Select(y => new FilterOption(y.ToString(), y.ToString()))], (q, v) => int.TryParse(v, out var y) ? q.Where(i => i.InvoiceDate.Year == y) : q),
-                new FilterSpec<Invoice>("kunde", "Kunde", [.. customers.Select(c => new FilterOption(c.Id.ToString(), c.Name))], (q, v) => long.TryParse(v, out var id) ? q.Where(i => i.CustomerId == id) : q),
-                new FilterSpec<Invoice>("herkunft", "Herkunft", [new("serie", "Aus einer Serie"), new("einzeln", "Einzeln geschrieben")],
-                    (q, v) => v == "serie" ? q.Where(i => i.RecurringInvoiceId != null) : q.Where(i => i.RecurringInvoiceId == null)),
+                new FilterSpec<Invoice>("year", L["Invoices.Filter.Year"], [.. years.Select(y => new FilterOption(y.ToString(), y.ToString()))], (q, v) => int.TryParse(v, out var y) ? q.Where(i => i.InvoiceDate.Year == y) : q),
+                new FilterSpec<Invoice>("customer", L["Invoices.Customer"], [.. customers.Select(c => new FilterOption(c.Id.ToString(), c.Name))], (q, v) => long.TryParse(v, out var id) ? q.Where(i => i.CustomerId == id) : q),
+                new FilterSpec<Invoice>("origin", L["Invoices.Filter.Origin"], [new("series", L["Invoices.Origin.Series"]), new("single", L["Invoices.Origin.Single"])],
+                    (q, v) => v == "series" ? q.Where(i => i.RecurringInvoiceId != null) : q.Where(i => i.RecurringInvoiceId == null)),
             ],
             Sorts = new Dictionary<string, (string, Func<IQueryable<Invoice>, bool, IOrderedQueryable<Invoice>>)>
             {
-                ["datum"] = ("Rechnungsdatum", (q, d) => d ? q.OrderByDescending(i => i.InvoiceDate).ThenByDescending(i => i.Id) : q.OrderBy(i => i.InvoiceDate).ThenBy(i => i.Id)),
-                ["nummer"] = ("Nummer", (q, d) => d ? q.OrderByDescending(i => i.Number) : q.OrderBy(i => i.Number)),
-                ["kunde"] = ("Kunde", (q, d) => d ? q.OrderByDescending(i => i.RecipientName) : q.OrderBy(i => i.RecipientName)),
-                ["faellig"] = ("Fälligkeit", (q, d) => d ? q.OrderByDescending(i => i.DueDate) : q.OrderBy(i => i.DueDate)),
-                ["betrag"] = ("Betrag", (q, d) => d ? q.OrderByDescending(i => i.GrossTotal) : q.OrderBy(i => i.GrossTotal)),
+                ["date"] = (L["Invoices.Sort.Date"], (q, d) => d ? q.OrderByDescending(i => i.InvoiceDate).ThenByDescending(i => i.Id) : q.OrderBy(i => i.InvoiceDate).ThenBy(i => i.Id)),
+                ["number"] = (L["Invoices.Number"], (q, d) => d ? q.OrderByDescending(i => i.Number) : q.OrderBy(i => i.Number)),
+                ["customer"] = (L["Invoices.Customer"], (q, d) => d ? q.OrderByDescending(i => i.RecipientName) : q.OrderBy(i => i.RecipientName)),
+                ["due"] = (L["Invoices.Sort.Due"], (q, d) => d ? q.OrderByDescending(i => i.DueDate) : q.OrderBy(i => i.DueDate)),
+                ["amount"] = (L["Common.Amount"], (q, d) => d ? q.OrderByDescending(i => i.GrossTotal) : q.OrderBy(i => i.GrossTotal)),
             },
-            DefaultSort = "datum",
+            DefaultSort = "date",
             DefaultDescending = true,
         };
 
@@ -86,27 +89,29 @@ public sealed class IndexModel(MbDbContext db, TimeProvider clock) : PageModelBa
         OverdueSum = await db.Invoice.Where(i => i.Status == InvoiceStatus.Open && i.DueDate < today).SumAsync(i => i.GrossTotal);
         OverdueCount = await db.Invoice.CountAsync(i => i.Status == InvoiceStatus.Open && i.DueDate < today);
 
-        Table = TableModel.Of("invoice-table", "Rechnungen", result.Items,
+        string draft = L["Invoices.Draft"], fromSeries = L["Invoices.FromSeries"], failed = L["Invoices.Send.State.Failed"], pending = L["Invoices.Send.State.Pending"];
+        string edit = L["Common.Edit"], open = L["Invoices.Open"];
+        Table = TableModel.Of("invoice-table", L["Invoices.Title"], result.Items,
         [
-            (new TableColumn("Nummer"), i => Ui.NameWithSub(i.Number ?? "Entwurf", $"/Invoices/Edit?id={i.Id}", i.RecurringInvoiceId is null ? null : "aus Serie")),
-            (new TableColumn("Kunde"), i => Ui.Text(i.RecipientName)),
-            (new TableColumn("Datum", HideOnPhone: true), i => Ui.Text(Fmt.Date(i.InvoiceDate))),
-            (new TableColumn("Fällig", HideOnPhone: true), i => i.Status == InvoiceStatus.Open ? Ui.Text(Fmt.Due(i.DueDate, today)) : Ui.None()),
-            (new TableColumn("Betrag", Numeric: true), i => Ui.Money(i.GrossTotal)),
-            (new TableColumn("Status"), i => Labels.Pill(i, today)),
-            (new TableColumn("Versand", HideOnPhone: true), i => i.SendState switch
+            (new TableColumn(L["Invoices.Number"]), i => Ui.NameWithSub(i.Number ?? draft, $"/Invoices/Edit?id={i.Id}", i.RecurringInvoiceId is null ? null : fromSeries)),
+            (new TableColumn(L["Invoices.Customer"]), i => Ui.Text(i.RecipientName)),
+            (new TableColumn(L["Common.Date"], HideOnPhone: true), i => Ui.Text(Fmt.Date(i.InvoiceDate))),
+            (new TableColumn(L["Invoices.Col.Due"], HideOnPhone: true), i => i.Status == InvoiceStatus.Open ? Ui.Text(Fmt.Due(i.DueDate, today)) : Ui.None()),
+            (new TableColumn(L["Common.Amount"], Numeric: true), i => Ui.Money(i.GrossTotal)),
+            (new TableColumn(L["Common.Status"]), i => Labels.Pill(i, today)),
+            (new TableColumn(L["Invoices.Sending"], HideOnPhone: true), i => i.SendState switch
             {
                 SendState.Sent => Ui.Concat(Ui.Icon("check"), Ui.Text(" " + Fmt.Date(i.SentDate))),
-                SendState.Failed => Ui.Pill("fehlgeschlagen", "error"),
-                SendState.Pending => Ui.Pill("wartet", "info"),
+                SendState.Failed => Ui.Pill(failed, "error"),
+                SendState.Pending => Ui.Pill(pending, "info"),
                 _ => Ui.None(),
             }),
         ],
-        i => [new RowAction(i.IsDraft ? "edit" : "eye", i.IsDraft ? "Bearbeiten" : "Öffnen", $"/Invoices/Edit?id={i.Id}"), new RowAction("download", "PDF", $"/invoices/{i.Id}/pdf?download=1")]);
+        i => [new RowAction(i.IsDraft ? "edit" : "eye", i.IsDraft ? edit : open, $"/Invoices/Edit?id={i.Id}"), new RowAction("download", "PDF", $"/invoices/{i.Id}/pdf?download=1")]);
         Table = Table with
         {
-            EmptyTitle = HasAny ? "Nichts gefunden" : "Noch keine Rechnung",
-            EmptyText = HasAny ? "Ändere die Suche oder den Filter." : "Schreib deine erste Rechnung: direkt auf dem Dokument, mit Kunde und Positionen.",
+            EmptyTitle = HasAny ? L["Invoices.Empty.NothingFound"] : L["Invoices.Empty.Title"],
+            EmptyText = HasAny ? L["Invoices.Empty.ChangeSearch"] : L["Invoices.Empty.Text"],
             EmptyIcon = HasAny ? "search" : "file-text",
         };
     }

@@ -3,31 +3,31 @@
 
 @foreach (var link in Model.Links.Where(l => l.IsActive(Model.Now)))
 {
-    <mb-card title="Gültiger Link" icon="link" sub="@($"bis {Fmt.Date(link.ExpiresDate)} · {link.ViewCount} Aufrufe")">
+    <mb-card title="@L["Invoices.Share.Active"]" icon="link" sub="@L["Invoices.Share.Active.Sub", Fmt.Date(link.ExpiresDate), link.ViewCount]">
         <div class="mat-field">
-            <label class="mat-label" for="share-url-@link.Id">Adresse@(link.PasswordHash is null ? "" : " (mit Passwort)")</label>
+            <label class="mat-label" for="share-url-@link.Id">@(link.PasswordHash is null ? L["Invoices.Share.Address"] : L["Invoices.Share.Address.Password"])</label>
             <div class="mat-input-group">
                 <input class="mat-input mat-mono" id="share-url-@link.Id" value="@Model.UrlOf(link)" readonly />
-                <button type="button" class="mat-btn mat-btn--secondary" data-copy="#share-url-@link.Id">@Ui.Icon("copy")<span>Kopieren</span></button>
+                <button type="button" class="mat-btn mat-btn--secondary" data-copy="#share-url-@link.Id">@Ui.Icon("copy")<span>@L["Invoices.Share.Copy"]</span></button>
             </div>
         </div>
-        <p class="mat-hint"><a href="/Admin/Shares/Edit?id=@link.Id">Link verwalten oder widerrufen</a></p>
+        <p class="mat-hint"><a href="/Admin/Shares/Edit?id=@link.Id">@L["Invoices.Share.Manage"]</a></p>
     </mb-card>
 }
 
 <form class="mat-form" method="post" novalidate>
     <input type="hidden" name="Id" value="@Model.Id" />
     <mb-summary />
-    <mb-card title="Neuer Link" icon="share">
+    <mb-card title="@L["Invoices.Share.New"]" icon="share">
         <div class="mat-form__grid">
-            <mb-input for="Input.RecipientName" label="Für" hint="Nur für dich, damit du Links auseinanderhältst." />
-            <mb-input for="Input.Days" label="Gültig (Tage)" type="number" min="1" max="365" step="1" required="true" />
-            <mb-input for="Input.Password" label="Passwort (optional)" type="password" autocomplete="new-password" hint="Wer den Link öffnet, muss es eingeben." />
-            <mb-textarea for="Input.Message" label="Nachricht an den Kunden (optional)" rows="3" full="true" />
+            <mb-input for="Input.RecipientName" label="@L["Invoices.Share.For"]" hint="@L["Invoices.Share.For.Hint"]" />
+            <mb-input for="Input.Days" label="@L["Invoices.Share.Days"]" type="number" min="1" max="365" step="1" required="true" />
+            <mb-input for="Input.Password" label="@L["Invoices.Share.Password"]" type="password" autocomplete="new-password" hint="@L["Invoices.Share.Password.Hint"]" />
+            <mb-textarea for="Input.Message" label="@L["Invoices.Share.Message"]" rows="3" full="true" />
         </div>
     </mb-card>
     <div class="mat-btn-row">
-        <button type="submit" class="mat-btn mat-btn--primary">@Ui.Icon("link")<span>Link anlegen</span></button>
-        <a class="mat-btn mat-btn--secondary" href="/Invoices/Edit?id=@Model.Id">@Ui.Icon("back")<span>Zurück</span></a>
+        <button type="submit" class="mat-btn mat-btn--primary">@Ui.Icon("link")<span>@L["Invoices.Share.Create"]</span></button>
+        <a class="mat-btn mat-btn--secondary" href="/Invoices/Edit?id=@Model.Id">@Ui.Icon("back")<span>@L["Common.Back"]</span></a>
     </div>
 </form>
