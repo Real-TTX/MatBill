@@ -1,0 +1,28 @@
+{
+  "Notify.SeriesCreated.Title": { "en": "Invoice {0} created", "de": "Rechnung {0} erstellt" },
+  "Notify.SeriesCreated.Text": { "en": "{0}: {1}, invoice date {2}.", "de": "{0}: {1}, Rechnungsdatum {2}." },
+  "Notify.SeriesCreated.TextMailed": { "en": "{0}: {1}, invoice date {2}. It will be sent by email.", "de": "{0}: {1}, Rechnungsdatum {2}. Sie wird per E-Mail versendet." },
+
+  "Notify.SeriesFailed.Title": { "en": "Series “{0}”: invoice not created", "de": "Serie „{0}“: Rechnung nicht erstellt" },
+  "Notify.SeriesFailed.GiveUp": { "en": "{0} There will be no more automatic attempts: please check and run it again.", "de": "{0} Es wird nicht mehr automatisch versucht: bitte prüfen und erneut ausführen." },
+  "Notify.SeriesFailed.Retry": { "en": "{0} Another attempt follows automatically.", "de": "{0} Ein neuer Versuch folgt automatisch." },
+
+  "Notify.Upcoming.Title": { "en": "Invoice on {0}: {1}", "de": "Rechnung am {0}: {1}" },
+  "Notify.Upcoming.Text": { "en": "{0}, {1}.", "de": "{0}, {1}." },
+  "Notify.Upcoming.TextAutoSend": { "en": "{0}, {1}, will be sent automatically.", "de": "{0}, {1}, wird automatisch versendet." },
+
+  "Notify.Sent.Title": { "en": "Invoice {0} sent", "de": "Rechnung {0} versendet" },
+  "Notify.Sent.Text": { "en": "To {0}, {1}.", "de": "An {0}, {1}." },
+  "Notify.NotSent.Title": { "en": "Invoice {0} not sent", "de": "Rechnung {0} nicht versendet" },
+  "Notify.NotSent.GiveUp": { "en": "{0} There will be no more automatic attempts.", "de": "{0} Es wird nicht mehr automatisch versucht." },
+
+  "Notify.Matched.TitleOne": { "en": "{0} payment matched automatically", "de": "{0} Zahlung automatisch zugeordnet" },
+  "Notify.Matched.TitleMany": { "en": "{0} payments matched automatically", "de": "{0} Zahlungen automatisch zugeordnet" },
+  "Notify.Matched.Text": { "en": "The invoices and expenses are marked as paid.", "de": "Die Rechnungen und Ausgaben sind als bezahlt markiert." },
+
+  "Notify.SyncFailed.Title": { "en": "Account “{0}” not fetched", "de": "Konto „{0}“ nicht abgerufen" },
+  "Notify.ConsentExpired.Title": { "en": "Bank access {0} expired", "de": "Bankzugang {0} abgelaufen" },
+  "Notify.ConsentExpired.Text": { "en": "Reconnect the account so that the transactions come in again.", "de": "Verbinde das Konto neu, damit die Umsätze wieder kommen." },
+  "Notify.ConsentSoon.Title": { "en": "Bank access {0} expires soon", "de": "Bankzugang {0} läuft bald ab" },
+  "Notify.ConsentSoon.Text": { "en": "Valid until {0}. Reconnect the account in time.", "de": "Gültig bis {0}. Verbinde das Konto rechtzeitig neu." }
+}

@@ -1,4 +1,5 @@
 using MatBill.Data;
+using MatBill.Localization;
 using Microsoft.EntityFrameworkCore;
 
 namespace MatBill.Services;
@@ -31,13 +32,13 @@ public sealed class SystemService(MbDbContext db, TimeProvider clock)
     /// <summary>How many rows the main tables hold, in the order the page lists them.</summary>
     public async Task<Dictionary<string, int>> CountRowsAsync(CancellationToken ct) => new()
     {
-        ["Benutzer"] = await db.User.CountAsync(ct),
-        ["Kunden"] = await db.Customer.CountAsync(ct),
-        ["Produkte"] = await db.Product.CountAsync(ct),
-        ["Rechnungen"] = await db.Invoice.CountAsync(ct),
-        ["Serien"] = await db.RecurringInvoice.CountAsync(ct),
-        ["Dateien"] = await db.StoredFile.CountAsync(ct),
-        ["Freigabe-Links"] = await db.ShareLink.CountAsync(ct),
+        [Text.T("System.Rows.Users")] = await db.User.CountAsync(ct),
+        [Text.T("System.Rows.Customers")] = await db.Customer.CountAsync(ct),
+        [Text.T("System.Rows.Products")] = await db.Product.CountAsync(ct),
+        [Text.T("System.Rows.Invoices")] = await db.Invoice.CountAsync(ct),
+        [Text.T("System.Rows.Series")] = await db.RecurringInvoice.CountAsync(ct),
+        [Text.T("System.Rows.Files")] = await db.StoredFile.CountAsync(ct),
+        [Text.T("System.Rows.ShareLinks")] = await db.ShareLink.CountAsync(ct),
     };
 
     /// <summary>Removes old sessions, run-out links and old logs now (the daily maintenance does the same).</summary>

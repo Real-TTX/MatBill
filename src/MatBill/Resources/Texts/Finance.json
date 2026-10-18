@@ -1,0 +1,24 @@
+{
+  "Finance.Receipt.TooLarge": { "en": "A receipt may be at most 20 MB.", "de": "Ein Beleg darf höchstens 20 MB groß sein." },
+  "Finance.Receipt.WrongType": { "en": "Allowed are PDF, images (PNG, JPEG, HEIC, WebP) and e-invoices (XML).", "de": "Erlaubt sind PDF, Bilder (PNG, JPEG, HEIC, WebP) und E-Rechnungen (XML)." },
+  "Finance.Expense.FromEInvoice": { "en": "taken from an e-invoice", "de": "aus E-Rechnung übernommen" },
+  "Finance.Expense.UnknownSupplier": { "en": "Unknown", "de": "Unbekannt" },
+
+  "Finance.Import.NoTable": { "en": "The file contains no readable table.", "de": "Die Datei enthält keine lesbare Tabelle." },
+
+  "Finance.Match.InvoiceGone": { "en": "The invoice no longer exists.", "de": "Die Rechnung gibt es nicht mehr." },
+  "Finance.Match.ExpenseGone": { "en": "The expense no longer exists.", "de": "Die Ausgabe gibt es nicht mehr." },
+
+  "Finance.EnableBanking.NotConfigured": { "en": "Enable Banking is not set up (Settings › Banking).", "de": "Enable Banking ist nicht eingerichtet (Einstellungen › Banking)." },
+  "Finance.EnableBanking.InvalidKey": { "en": "The private key is not a valid RSA key in PEM format.", "de": "Der private Schlüssel ist kein gültiger RSA-Schlüssel im PEM-Format." },
+  "Finance.EnableBanking.Error": { "en": "Enable Banking answers {0}: {1}", "de": "Enable Banking antwortet {0}: {1}" },
+  "Finance.EnableBanking.NoUrl": { "en": "Enable Banking did not return an address for the sign-in.", "de": "Enable Banking hat keine Adresse für die Anmeldung geliefert." },
+  "Finance.Sync.Unreachable": { "en": "The bank could not be reached: {0}", "de": "Die Bank war nicht erreichbar: {0}" },
+
+  "Finance.Activity.ReceiptsUploaded": { "en": "Receipts uploaded", "de": "Belege hochgeladen" },
+  "Finance.Activity.ReceiptCount": { "en": "{0} receipts", "de": "{0} Belege" },
+  "Finance.Activity.TransactionsImported": { "en": "Bank transactions imported", "de": "Kontoumsätze importiert" },
+  "Finance.Activity.ImportSummary": { "en": "{0}: {1} new, {2} already there, {3} matched", "de": "{0}: {1} neu, {2} schon vorhanden, {3} zugeordnet" },
+  "Finance.Activity.PaymentMatchedAutomatically": { "en": "Payment matched automatically", "de": "Zahlung automatisch zugeordnet" },
+  "Finance.Activity.PaymentMatched": { "en": "Payment matched", "de": "Zahlung zugeordnet" }
+}

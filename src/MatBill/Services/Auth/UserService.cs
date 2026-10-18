@@ -1,6 +1,7 @@
 using MatBill.Core.Security;
 using MatBill.Data;
 using MatBill.Data.Entities;
+using MatBill.Localization;
 using Microsoft.EntityFrameworkCore;
 
 namespace MatBill.Services.Auth;
@@ -15,12 +16,12 @@ public sealed class UserService(MbDbContext db, SignInService signIn, SessionCac
     {
         if (string.IsNullOrEmpty(password) || password.Length < MinPasswordLength)
         {
-            return $"Das Passwort braucht mindestens {MinPasswordLength} Zeichen.";
+            return Text.T("Auth.Password.TooShort", MinPasswordLength);
         }
 
         if (email is not null && password.Equals(email, StringComparison.OrdinalIgnoreCase))
         {
-            return "Das Passwort darf nicht die E-Mail-Adresse sein.";
+            return Text.T("Auth.Password.IsEmail");
         }
 
         return null;
@@ -38,13 +39,13 @@ public sealed class UserService(MbDbContext db, SignInService signIn, SessionCac
         var normalized = SignInService.NormalizeEmail(email);
         if (await EmailTakenAsync(normalized, null, ct))
         {
-            throw new InvalidOperationException("Diese E-Mail-Adresse gehört schon zu einem Konto.");
+            throw new InvalidOperationException(Text.T("Auth.Email.Taken"));
         }
 
         var user = new User
         {
             Email = normalized,
-            Language = Localization.Languages.Current,
+            Language = Languages.Current,
             DisplayName = displayName.Trim(),
             Role = role,
             PasswordHash = PasswordHasher.Hash(password),

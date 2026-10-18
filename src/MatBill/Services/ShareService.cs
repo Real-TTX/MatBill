@@ -3,6 +3,7 @@ using MatBill.Configuration;
 using MatBill.Core.Security;
 using MatBill.Data;
 using MatBill.Data.Entities;
+using MatBill.Localization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -44,7 +45,7 @@ public sealed class ShareService(MbDbContext db, ConfigStore config, TimeProvide
     {
         if (invoice.IsDraft)
         {
-            throw new InvoiceException("Ein Entwurf kann nicht freigegeben werden. Stelle die Rechnung zuerst aus.");
+            throw new InvoiceException(Text.T("System.Share.DraftCannotShare"));
         }
 
         var link = new ShareLink
@@ -138,6 +139,6 @@ public sealed class ShareService(MbDbContext db, ConfigStore config, TimeProvide
     public static string Remaining(ShareLink link, DateTime now)
     {
         var span = link.ExpiresDate - now;
-        return span.TotalDays >= 2 ? $"noch {(int)span.TotalDays} Tage" : span.TotalHours >= 1 ? $"noch {(int)span.TotalHours} Stunden" : "läuft bald ab";
+        return span.TotalDays >= 2 ? Text.T("System.Share.DaysLeft", (int)span.TotalDays) : span.TotalHours >= 1 ? Text.T("System.Share.HoursLeft", (int)span.TotalHours) : Text.T("System.Share.ExpiresSoon");
     }
 }

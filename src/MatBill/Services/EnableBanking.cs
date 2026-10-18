@@ -9,6 +9,7 @@ using MatBill.Configuration;
 using MatBill.Core.Banking;
 using MatBill.Data;
 using MatBill.Data.Entities;
+using MatBill.Localization;
 using Microsoft.EntityFrameworkCore;
 
 namespace MatBill.Services;
@@ -36,7 +37,7 @@ public sealed class EnableBankingClient(HttpClient http, ConfigStore config, Sec
         var pem = secrets.Unprotect(b.EnableBankingKeyProtected);
         if (string.IsNullOrWhiteSpace(pem) || string.IsNullOrWhiteSpace(b.EnableBankingAppId))
         {
-            throw new BankingException("Enable Banking ist nicht eingerichtet (Einstellungen › Banking).");
+            throw new BankingException(Text.T("Finance.EnableBanking.NotConfigured"));
         }
 
         using var rsa = RSA.Create();
@@ -46,7 +47,7 @@ public sealed class EnableBankingClient(HttpClient http, ConfigStore config, Sec
         }
         catch (ArgumentException)
         {
-            throw new BankingException("Der private Schlüssel ist kein gültiger RSA-Schlüssel im PEM-Format.");
+            throw new BankingException(Text.T("Finance.EnableBanking.InvalidKey"));
         }
 
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -82,7 +83,7 @@ public sealed class EnableBankingClient(HttpClient http, ConfigStore config, Sec
                 // not JSON: the text as it is
             }
 
-            throw new BankingException($"Enable Banking antwortet {(int)response.StatusCode}: {(message.Length > 300 ? message[..300] : message)}");
+            throw new BankingException(Text.T("Finance.EnableBanking.Error", (int)response.StatusCode, message.Length > 300 ? message[..300] : message));
         }
 
         using var result = JsonDocument.Parse(string.IsNullOrWhiteSpace(text) ? "{}" : text);
@@ -114,9 +115,9 @@ public sealed class EnableBankingClient(HttpClient http, ConfigStore config, Sec
             state = state.ToString(),
             redirect_url = redirectUrl,
             psu_type = "business",
-            language = "de",
+            language = Languages.Current,
         }, ct);
-        return root.GetProperty("url").GetString() ?? throw new BankingException("Enable Banking hat keine Adresse für die Anmeldung geliefert.");
+        return root.GetProperty("url").GetString() ?? throw new BankingException(Text.T("Finance.EnableBanking.NoUrl"));
     }
 
     public async Task<(string SessionId, DateTime? ValidUntil, List<ConnectedAccount> Accounts)> CreateSessionAsync(string code, CancellationToken ct = default)
@@ -218,9 +219,11 @@ public sealed class BankSyncService(MbDbContext db, EnableBankingClient client, 
         catch (Exception ex) when (ex is BankingException or HttpRequestException or TaskCanceledException or JsonException or KeyNotFoundException or InvalidOperationException)
         {
             logger.LogWarning(ex, "Bank account {Id} could not be fetched.", account.Id);
-            account.LastSyncError = ex is BankingException ? ex.Message : "Die Bank war nicht erreichbar: " + ex.Message;
+            var error = ex is BankingException ? ex.Message : Text.T("Finance.Sync.Unreachable", ex.Message);
+            account.LastSyncError = error;
             await db.SaveChangesAsync(ct);
-            await notifications.NotifyAllAsync(NotificationTone.Error, $"Konto „{account.Name}“ nicht abgerufen", account.LastSyncError, $"/Banking/Accounts/Edit?id={account.Id}", $"sync-{account.Id}-{now:yyyyMMddHH}", ct);
+            await notifications.NotifyAllAsync(NotificationTone.Error, () => (Text.T("Notify.SyncFailed.Title", account.Name), error),
+                $"/Banking/Accounts/Edit?id={account.Id}", $"sync-{account.Id}-{now:yyyyMMddHH}", ct);
             return null;
         }
     }
@@ -249,11 +252,13 @@ public sealed class BankSyncService(MbDbContext db, EnableBankingClient client, 
             if (c.ValidUntil <= now)
             {
                 c.Status = BankConnectionStatus.Expired;
-                await notifications.NotifyAllAsync(NotificationTone.Warning, $"Bankzugang {c.BankName} abgelaufen", "Verbinde das Konto neu, damit die Umsätze wieder kommen.", "/Banking", $"consent-expired-{c.Id}", ct);
+                await notifications.NotifyAllAsync(NotificationTone.Warning, () => (Text.T("Notify.ConsentExpired.Title", c.BankName), Text.T("Notify.ConsentExpired.Text")),
+                    "/Banking", $"consent-expired-{c.Id}", ct);
             }
             else if (c.ValidUntil <= now.AddDays(7))
             {
-                await notifications.NotifyAllAsync(NotificationTone.Warning, $"Bankzugang {c.BankName} läuft bald ab", $"Gültig bis {Fmt.Date(c.ValidUntil)}. Verbinde das Konto rechtzeitig neu.", "/Banking", $"consent-soon-{c.Id}", ct);
+                await notifications.NotifyAllAsync(NotificationTone.Warning, () => (Text.T("Notify.ConsentSoon.Title", c.BankName), Text.T("Notify.ConsentSoon.Text", Fmt.Date(c.ValidUntil))),
+                    "/Banking", $"consent-soon-{c.Id}", ct);
             }
         }
 
@@ -276,7 +281,7 @@ public sealed class BankingScheduler(IServiceScopeFactory scopes, ConfigStore co
                     try
                     {
                         using var scope = scopes.CreateScope();
-                        using (scope.ServiceProvider.GetRequiredService<ICurrentUser>().RunAs(null, "Automatik"))
+                        using (scope.ServiceProvider.GetRequiredService<ICurrentUser>().RunAs(null, Text.T("System.Automatic")))
                         {
                             var sync = scope.ServiceProvider.GetRequiredService<BankSyncService>();
                             await sync.CheckConsentsAsync(stoppingToken);

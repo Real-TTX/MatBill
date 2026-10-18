@@ -2,6 +2,7 @@ using MatBill.Configuration;
 using MatBill.Core.Billing;
 using MatBill.Data;
 using MatBill.Data.Entities;
+using MatBill.Localization;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -25,7 +26,7 @@ public sealed class RecurringService(MbDbContext db, ConfigStore config, Invoice
     {
         var series = new RecurringInvoice
         {
-            CustomerId = source.CustomerId ?? throw new InvoiceException("Für eine Wiederholung braucht die Rechnung einen Kunden aus der Kundenliste."),
+            CustomerId = source.CustomerId ?? throw new InvoiceException(Text.T("Billing.Series.NeedsCustomer")),
             Name = NameFor(source),
             Interval = interval,
             StartDate = start,
@@ -56,7 +57,7 @@ public sealed class RecurringService(MbDbContext db, ConfigStore config, Invoice
 
         if (customer is null)
         {
-            problems.Add(new("Input.RecipientName", "Wähle den Kunden der Serie aus der Liste (oder lege ihn dort an)."));
+            problems.Add(new("Input.RecipientName", Text.T("Billing.Series.ChooseCustomer")));
         }
         else
         {
@@ -76,16 +77,16 @@ public sealed class RecurringService(MbDbContext db, ConfigStore config, Invoice
         series.AutoSend = input.AutoSend;
         if (series.EndDate is { } end && end < series.StartDate)
         {
-            problems.Add(new("Input.RepeatEnd", "Das Ende liegt vor dem Start der Serie."));
+            problems.Add(new("Input.RepeatEnd", Text.T("Billing.Series.EndBeforeStart")));
         }
 
         InvoiceService.ApplyLines(series.Lines, input.Lines, () => new RecurringInvoiceLine(), problems);
         if (series.Lines.Count == 0)
         {
-            problems.Add(new("", "Die Vorlage braucht mindestens eine Position."));
+            problems.Add(new("", Text.T("Billing.Series.NoLines")));
         }
 
-        var fallback = series.Lines.FirstOrDefault()?.Name is { Length: > 0 } first && customer is not null ? $"{customer.Name}: {first}" : customer?.Name ?? "Serie";
+        var fallback = series.Lines.FirstOrDefault()?.Name is { Length: > 0 } first && customer is not null ? $"{customer.Name}: {first}" : customer?.Name ?? Text.T("Billing.Series.DefaultName");
         series.Name = InvoiceService.Clean(name) ?? fallback;
         if (series.Name.Length > 120)
         {
@@ -98,7 +99,7 @@ public sealed class RecurringService(MbDbContext db, ConfigStore config, Invoice
     private static string NameFor(Invoice source)
     {
         var first = source.Lines.OrderBy(l => l.Position).FirstOrDefault()?.Name;
-        var name = string.IsNullOrWhiteSpace(first) ? source.RecipientName ?? "Serie" : $"{source.RecipientName}: {first}";
+        var name = string.IsNullOrWhiteSpace(first) ? source.RecipientName ?? Text.T("Billing.Series.DefaultName") : $"{source.RecipientName}: {first}";
         return name.Length > 120 ? name[..120] : name;
     }
 
@@ -141,7 +142,7 @@ public sealed class RecurringService(MbDbContext db, ConfigStore config, Invoice
     {
         series.Status = RecurringStatus.Paused;
         await db.SaveChangesAsync(ct);
-        await activity.LogAsync("Serie pausiert", nameof(RecurringInvoice), series.Id, series.Name);
+        await activity.LogAsync(Text.T("Billing.Activity.SeriesPaused"), nameof(RecurringInvoice), series.Id, series.Name);
     }
 
     /// <summary>Goes on with the next date from today: the dates that passed during the pause are not invoiced afterwards.</summary>
@@ -152,7 +153,7 @@ public sealed class RecurringService(MbDbContext db, ConfigStore config, Invoice
         series.RetryAfterDate = null;
         await RescheduleAsync(series, ct, fromToday: true);
         await db.SaveChangesAsync(ct);
-        await activity.LogAsync("Serie fortgesetzt", nameof(RecurringInvoice), series.Id, series.Name);
+        await activity.LogAsync(Text.T("Billing.Activity.SeriesResumed"), nameof(RecurringInvoice), series.Id, series.Name);
     }
 
     public async Task EndAsync(RecurringInvoice series, CancellationToken ct = default)
@@ -160,7 +161,7 @@ public sealed class RecurringService(MbDbContext db, ConfigStore config, Invoice
         series.Status = RecurringStatus.Ended;
         series.NextRunDate = null;
         await db.SaveChangesAsync(ct);
-        await activity.LogAsync("Serie beendet", nameof(RecurringInvoice), series.Id, series.Name);
+        await activity.LogAsync(Text.T("Billing.Activity.SeriesEnded"), nameof(RecurringInvoice), series.Id, series.Name);
     }
 
     /// <summary>Every active series whose date has come (and whose waiting time after a failure is over) makes its invoices, one per date that is due.</summary>
@@ -246,8 +247,8 @@ public sealed class RecurringService(MbDbContext db, ConfigStore config, Invoice
             {
                 await transaction.RollbackAsync(ct);
                 error = ex is DbUpdateException { InnerException: PostgresException { SqlState: PostgresErrorCodes.UniqueViolation } }
-                    ? "Für diesen Termin gibt es schon eine Rechnung."
-                    : ex is InvoiceException ? ex.Message : "Die Rechnung konnte nicht erstellt werden: " + ex.Message;
+                    ? Text.T("Billing.Series.AlreadyInvoiced")
+                    : ex is InvoiceException ? ex.Message : Text.T("Billing.Series.NotCreated", ex.Message);
                 logger.LogWarning(ex, "Series {Id} failed for {Date}.", series.Id, date);
                 invoice = null;
             }
@@ -255,10 +256,15 @@ public sealed class RecurringService(MbDbContext db, ConfigStore config, Invoice
 
         if (error is null)
         {
-            await notifications.NotifyAllAsync(NotificationTone.Success, $"Rechnung {invoice!.Number} erstellt",
-                $"{series.Name}: {Fmt.Money(invoice.GrossTotal)}, Rechnungsdatum {Fmt.Date(date)}.{(series.AutoSend ? " Sie wird per E-Mail versendet." : "")}",
+            var number = invoice!.Number ?? "";
+            var gross = invoice.GrossTotal;
+            var name = series.Name;
+            var mailed = series.AutoSend;
+            await notifications.NotifyAllAsync(NotificationTone.Success,
+                () => (Text.T("Notify.SeriesCreated.Title", number),
+                    mailed ? Text.T("Notify.SeriesCreated.TextMailed", name, Fmt.Money(gross), Fmt.Date(date)) : Text.T("Notify.SeriesCreated.Text", name, Fmt.Money(gross), Fmt.Date(date))),
                 $"/Invoices/Edit?id={invoice.Id}", $"created-{invoice.Id}", ct);
-            await activity.LogAsync("Serienrechnung erstellt", nameof(RecurringInvoice), series.Id, $"{series.Name} · {invoice.Number}");
+            await activity.LogAsync(Text.T("Billing.Activity.SeriesInvoiceCreated"), nameof(RecurringInvoice), series.Id, $"{series.Name} · {invoice.Number}");
             return new RunResult(invoice, null);
         }
 
@@ -279,24 +285,26 @@ public sealed class RecurringService(MbDbContext db, ConfigStore config, Invoice
         await db.SaveChangesAsync(ct);
 
         var giveUp = series.FailedAttempts >= MaxAutomaticAttempts;
-        await notifications.NotifyAllAsync(NotificationTone.Error, $"Serie „{series.Name}“: Rechnung nicht erstellt",
-            error + (giveUp ? " Es wird nicht mehr automatisch versucht: bitte prüfen und erneut ausführen." : manual ? "" : " Ein neuer Versuch folgt automatisch."),
+        var name = series.Name;
+        await notifications.NotifyAllAsync(NotificationTone.Error,
+            () => (Text.T("Notify.SeriesFailed.Title", name),
+                giveUp ? Text.T("Notify.SeriesFailed.GiveUp", error) : manual ? error : Text.T("Notify.SeriesFailed.Retry", error)),
             $"/Recurring/Edit?id={series.Id}", $"failed-{series.Id}-{date:yyyyMMdd}-{series.FailedAttempts}", ct);
-        await activity.LogAsync("Serienrechnung fehlgeschlagen", nameof(RecurringInvoice), series.Id, $"{series.Name}: {error}");
+        await activity.LogAsync(Text.T("Billing.Activity.SeriesInvoiceFailed"), nameof(RecurringInvoice), series.Id, $"{series.Name}: {error}");
     }
 
     private async Task<Invoice> BuildInvoiceAsync(RecurringInvoice series, DateOnly date, CancellationToken ct)
     {
         var customer = await db.Customer.FirstOrDefaultAsync(c => c.Id == series.CustomerId, ct)
-            ?? throw new InvoiceException("Der Kunde der Serie wurde gelöscht. Wähle einen anderen Kunden oder beende die Serie.");
+            ?? throw new InvoiceException(Text.T("Billing.Series.CustomerDeleted"));
         if (series.Lines.Count == 0)
         {
-            throw new InvoiceException("Die Vorlage hat keine Positionen.");
+            throw new InvoiceException(Text.T("Billing.Series.TemplateEmpty"));
         }
 
         if (series.AutoSend && string.IsNullOrWhiteSpace(customer.Email))
         {
-            throw new InvoiceException($"Der Kunde „{customer.Name}“ hat keine E-Mail-Adresse, die Serie soll aber per E-Mail versenden.");
+            throw new InvoiceException(Text.T("Billing.Series.CustomerNoEmail", customer.Name));
         }
 
         // The invoice is the preview of this date, made real: the same code draws what the series page shows and what the series makes.
@@ -326,8 +334,11 @@ public sealed class RecurringService(MbDbContext db, ConfigStore config, Invoice
         {
             var net = s.Lines.Count == 0 ? await db.RecurringInvoiceLine.Where(l => l.RecurringInvoiceId == s.Id).ToListAsync(ct) : s.Lines;
             var totals = InvoiceMath.Totals(net.Select(l => l.Amounts), config.Current.Company.SmallBusiness);
-            await notifications.NotifyAllAsync(NotificationTone.Info, $"Rechnung am {Fmt.Date(s.NextRunDate)}: {s.Name}",
-                $"{s.Customer?.Name}, {Fmt.Money(totals.Gross)}{(s.AutoSend ? ", wird automatisch versendet" : "")}.", $"/Recurring/Edit?id={s.Id}", $"upcoming-{s.Id}-{s.NextRunDate:yyyyMMdd}", ct);
+            var customer = s.Customer?.Name ?? "";
+            await notifications.NotifyAllAsync(NotificationTone.Info,
+                () => (Text.T("Notify.Upcoming.Title", Fmt.Date(s.NextRunDate), s.Name),
+                    s.AutoSend ? Text.T("Notify.Upcoming.TextAutoSend", customer, Fmt.Money(totals.Gross)) : Text.T("Notify.Upcoming.Text", customer, Fmt.Money(totals.Gross))),
+                $"/Recurring/Edit?id={s.Id}", $"upcoming-{s.Id}-{s.NextRunDate:yyyyMMdd}", ct);
         }
     }
 
@@ -352,7 +363,7 @@ public sealed class BillingScheduler(IServiceScopeFactory scopes, ILogger<Billin
                 {
                     using var scope = scopes.CreateScope();
                     var user = scope.ServiceProvider.GetRequiredService<ICurrentUser>();
-                    using (user.RunAs(null, "Automatik"))
+                    using (user.RunAs(null, Text.T("System.Automatic")))
                     {
                         var recurring = scope.ServiceProvider.GetRequiredService<RecurringService>();
                         await recurring.RunDueAsync(stoppingToken);

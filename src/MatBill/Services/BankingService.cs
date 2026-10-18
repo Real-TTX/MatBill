@@ -3,6 +3,7 @@ using MatBill.Configuration;
 using MatBill.Core.Banking;
 using MatBill.Data;
 using MatBill.Data.Entities;
+using MatBill.Localization;
 using Microsoft.EntityFrameworkCore;
 
 namespace MatBill.Services;
@@ -37,7 +38,7 @@ public sealed class BankingService(MbDbContext db, MatchingService matching, Con
                 var table = CsvStatement.Read(text);
                 if (table.Headers.Count == 0)
                 {
-                    problems.Add("Die Datei enthält keine lesbare Tabelle.");
+                    problems.Add(Text.T("Finance.Import.NoTable"));
                     return new ImportPreview(StatementFormat.Csv, table, null, [], new StatementInfo(null, null, null), problems);
                 }
 
@@ -126,7 +127,8 @@ public sealed class BankingService(MbDbContext db, MatchingService matching, Con
             await db.SaveChangesAsync(ct);
         }
 
-        await activity.LogAsync("Kontoumsätze importiert", nameof(BankAccount), account.Id, $"{account.Name}: {import.Added} neu, {import.Duplicates} schon vorhanden, {import.Matched} zugeordnet");
+        await activity.LogAsync(Text.T("Finance.Activity.TransactionsImported"), nameof(BankAccount), account.Id,
+            Text.T("Finance.Activity.ImportSummary", account.Name, import.Added, import.Duplicates, import.Matched));
         return import;
     }
 
@@ -189,8 +191,9 @@ public sealed class MatchingService(MbDbContext db, NumberService numbers, Expen
 
         if (matched > 0)
         {
-            await notifications.NotifyAllAsync(NotificationTone.Success, $"{matched} Zahlung{(matched == 1 ? "" : "en")} automatisch zugeordnet",
-                "Die Rechnungen und Ausgaben sind als bezahlt markiert.", "/Banking?status=zugeordnet", null, ct);
+            await notifications.NotifyAllAsync(NotificationTone.Success,
+                () => (matched == 1 ? Text.T("Notify.Matched.TitleOne", matched) : Text.T("Notify.Matched.TitleMany", matched), Text.T("Notify.Matched.Text")),
+                "/Banking?status=matched", null, ct);
         }
 
         return matched;
@@ -205,7 +208,7 @@ public sealed class MatchingService(MbDbContext db, NumberService numbers, Expen
 
         if (kind == "invoice")
         {
-            var invoice = await db.Invoice.FirstOrDefaultAsync(i => i.Id == id, ct) ?? throw new InvoiceException("Die Rechnung gibt es nicht mehr.");
+            var invoice = await db.Invoice.FirstOrDefaultAsync(i => i.Id == id, ct) ?? throw new InvoiceException(Text.T("Finance.Match.InvoiceGone"));
             if (invoice.Status == InvoiceStatus.Open)
             {
                 invoice.Status = InvoiceStatus.Paid;
@@ -217,7 +220,7 @@ public sealed class MatchingService(MbDbContext db, NumberService numbers, Expen
         }
         else
         {
-            var expense = await db.Expense.FirstOrDefaultAsync(e => e.Id == id, ct) ?? throw new InvoiceException("Die Ausgabe gibt es nicht mehr.");
+            var expense = await db.Expense.FirstOrDefaultAsync(e => e.Id == id, ct) ?? throw new InvoiceException(Text.T("Finance.Match.ExpenseGone"));
             expense.Status = ExpenseStatus.Paid;
             expense.PaidDate = t.BookingDate;
             if (string.IsNullOrWhiteSpace(expense.SupplierIban) && !string.IsNullOrWhiteSpace(t.CounterpartyIban))
@@ -233,7 +236,7 @@ public sealed class MatchingService(MbDbContext db, NumberService numbers, Expen
         t.MatchedAutomatically = automatic;
         t.MatchScore = score;
         await db.SaveChangesAsync(ct);
-        await activity.LogAsync(automatic ? "Zahlung automatisch zugeordnet" : "Zahlung zugeordnet", nameof(BankTransaction), t.Id, $"{Fmt.Money(t.Amount)} {t.CounterpartyName} → {kind} {id}");
+        await activity.LogAsync(automatic ? Text.T("Finance.Activity.PaymentMatchedAutomatically") : Text.T("Finance.Activity.PaymentMatched"), nameof(BankTransaction), t.Id, $"{Fmt.Money(t.Amount)} {t.CounterpartyName} → {kind} {id}");
     }
 
     /// <summary>Takes an assignment back: the invoice or the expense is open again (if no other booking pays it).</summary>
@@ -284,7 +287,7 @@ public sealed class MatchingService(MbDbContext db, NumberService numbers, Expen
     {
         var expense = expenses.New();
         expense.ExpenseDate = t.BookingDate;
-        expense.Supplier = string.IsNullOrWhiteSpace(t.CounterpartyName) ? "Unbekannt" : t.CounterpartyName;
+        expense.Supplier = string.IsNullOrWhiteSpace(t.CounterpartyName) ? Text.T("Finance.Expense.UnknownSupplier") : t.CounterpartyName;
         expense.SupplierIban = t.CounterpartyIban;
         expense.Description = t.Purpose is { Length: > 200 } p ? p[..200] : t.Purpose;
         expense.Category = category;

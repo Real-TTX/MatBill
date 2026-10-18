@@ -37,20 +37,6 @@ public sealed class NotificationService(MbDbContext db, TimeProvider clock, IMem
         await db.SaveChangesAsync(ct);
     }
 
-    public async Task NotifyAllAsync(NotificationTone tone, string title, string? text, string? url, string? key = null, CancellationToken ct = default)
-    {
-        var users = await db.User.AsNoTracking().Where(u => u.IsActive).Select(u => u.Id).ToListAsync(ct);
-        var already = key is null ? [] : await db.Notification.AsNoTracking().Where(n => n.Key == key).Select(n => n.UserId).ToListAsync(ct);
-        var now = clock.GetUtcNow().UtcDateTime;
-        foreach (var userId in users.Except(already))
-        {
-            db.Notification.Add(new Notification { UserId = userId, Tone = tone, Title = Cut(title, 200), Text = text is null ? null : Cut(text, 1000), Url = url, Key = key, OccurredDate = now });
-            cache.Remove(CountKey(userId));
-        }
-
-        await db.SaveChangesAsync(ct);
-    }
-
     public async Task<int> UnreadCountAsync(long userId, CancellationToken ct = default)
         => await cache.GetOrCreateAsync(CountKey(userId), async entry =>
         {

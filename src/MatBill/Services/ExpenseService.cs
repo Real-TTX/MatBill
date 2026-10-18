@@ -2,6 +2,7 @@ using MatBill.Configuration;
 using MatBill.Core.Billing;
 using MatBill.Data;
 using MatBill.Data.Entities;
+using MatBill.Localization;
 using MatBill.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -100,7 +101,7 @@ public sealed class ExpenseService(MbDbContext db, ConfigStore config, NumberSer
                 expense.TaxAmount = data.Tax ?? gross - expense.NetAmount;
             }
 
-            expense.Description = data?.FromEInvoice == true ? "aus E-Rechnung übernommen" : null;
+            expense.Description = data?.FromEInvoice == true ? Text.T("Finance.Expense.FromEInvoice") : null;
             expense.Number = await numbers.NextExpenseNumberAsync(expense.ExpenseDate, ct);
             expense.ReceiptFile = await files.SaveAsync(bytes, upload.FileName, ContentType(upload.FileName), ct);
             db.Expense.Add(expense);
@@ -110,7 +111,7 @@ public sealed class ExpenseService(MbDbContext db, ConfigStore config, NumberSer
 
         if (ids.Count > 0)
         {
-            await activity.LogAsync("Belege hochgeladen", nameof(Expense), null, $"{ids.Count} Belege");
+            await activity.LogAsync(Text.T("Finance.Activity.ReceiptsUploaded"), nameof(Expense), null, Text.T("Finance.Activity.ReceiptCount", ids.Count));
         }
 
         return new UploadResult(ids.Count, problems, ids);
@@ -120,12 +121,12 @@ public sealed class ExpenseService(MbDbContext db, ConfigStore config, NumberSer
     {
         if (upload.Length == 0 || upload.Length > MaxReceiptBytes)
         {
-            return (null, "Ein Beleg darf höchstens 20 MB groß sein.");
+            return (null, Text.T("Finance.Receipt.TooLarge"));
         }
 
         if (!Allowed.Contains(Path.GetExtension(upload.FileName).ToLowerInvariant()))
         {
-            return (null, "Erlaubt sind PDF, Bilder (PNG, JPEG, HEIC, WebP) und E-Rechnungen (XML).");
+            return (null, Text.T("Finance.Receipt.WrongType"));
         }
 
         using var buffer = new MemoryStream();

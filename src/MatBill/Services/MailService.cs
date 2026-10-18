@@ -3,6 +3,7 @@ using MailKit.Security;
 using MatBill.Configuration;
 using MatBill.Data;
 using MatBill.Data.Entities;
+using MatBill.Localization;
 using Microsoft.EntityFrameworkCore;
 using MimeKit;
 
@@ -38,7 +39,7 @@ public sealed class MailService(MbDbContext db, ConfigStore config, SecretProtec
     {
         if (invoice.IsDraft)
         {
-            return "Ein Entwurf kann nicht versendet werden. Stelle die Rechnung zuerst aus.";
+            return Text.T("Billing.Mail.DraftCannotSend");
         }
 
         var now = clock.GetUtcNow().UtcDateTime;
@@ -82,7 +83,8 @@ public sealed class MailService(MbDbContext db, ConfigStore config, SecretProtec
         }
 
         await db.SaveChangesAsync(ct);
-        await activity.LogAsync(error is null ? "Rechnung versendet" : "Versand fehlgeschlagen", nameof(Invoice), invoice.Id, $"{invoice.Number} an {mail.To}{(error is null ? "" : ": " + error)}");
+        await activity.LogAsync(error is null ? Text.T("Billing.Activity.InvoiceSent") : Text.T("Billing.Activity.InvoiceSendFailed"), nameof(Invoice), invoice.Id,
+            Text.T("Billing.Activity.SentTo", invoice.Number ?? "", mail.To) + (error is null ? "" : ": " + error));
         return error;
     }
 
@@ -107,24 +109,28 @@ public sealed class MailService(MbDbContext db, ConfigStore config, SecretProtec
             }
 
             var mail = DefaultMail(invoice);
+            var number = invoice.Number ?? "";
             if (string.IsNullOrWhiteSpace(mail.To))
             {
                 invoice.SendState = SendState.Failed;
-                invoice.SendError = "Der Kunde hat keine E-Mail-Adresse.";
+                invoice.SendError = Text.T("Billing.Mail.NoAddress");
                 invoice.NextSendDate = null;
                 await db.SaveChangesAsync(ct);
-                await notifications.NotifyAllAsync(NotificationTone.Error, $"Rechnung {invoice.Number} nicht versendet", invoice.SendError, $"/Invoices/Edit?id={invoice.Id}", $"send-{invoice.Id}-noaddress", ct);
+                await notifications.NotifyAllAsync(NotificationTone.Error, () => (Text.T("Notify.NotSent.Title", number), Text.T("Billing.Mail.NoAddress")),
+                    $"/Invoices/Edit?id={invoice.Id}", $"send-{invoice.Id}-noaddress", ct);
                 continue;
             }
 
             var error = await SendAsync(invoice, mail, automatic: true, ct);
             if (error is null)
             {
-                await notifications.NotifyAllAsync(NotificationTone.Success, $"Rechnung {invoice.Number} versendet", $"An {mail.To}, {Fmt.Money(invoice.GrossTotal)}.", $"/Invoices/Edit?id={invoice.Id}", $"sent-{invoice.Id}", ct);
+                await notifications.NotifyAllAsync(NotificationTone.Success, () => (Text.T("Notify.Sent.Title", number), Text.T("Notify.Sent.Text", mail.To, Fmt.Money(invoice.GrossTotal))),
+                    $"/Invoices/Edit?id={invoice.Id}", $"sent-{invoice.Id}", ct);
             }
             else if (invoice.NextSendDate is null)
             {
-                await notifications.NotifyAllAsync(NotificationTone.Error, $"Rechnung {invoice.Number} nicht versendet", $"{error} Es wird nicht mehr automatisch versucht.", $"/Invoices/Edit?id={invoice.Id}", $"send-{invoice.Id}-{invoice.SendAttempts}", ct);
+                await notifications.NotifyAllAsync(NotificationTone.Error, () => (Text.T("Notify.NotSent.Title", number), Text.T("Notify.NotSent.GiveUp", error)),
+                    $"/Invoices/Edit?id={invoice.Id}", $"send-{invoice.Id}-{invoice.SendAttempts}", ct);
             }
         }
 
@@ -168,7 +174,8 @@ public sealed class MailService(MbDbContext db, ConfigStore config, SecretProtec
         }
 
         await db.SaveChangesAsync(ct);
-        await activity.LogAsync(error is null ? "Angebot versendet" : "Versand des Angebots fehlgeschlagen", nameof(Quote), quote.Id, $"{quote.Number} an {mail.To}{(error is null ? "" : ": " + error)}");
+        await activity.LogAsync(error is null ? Text.T("Billing.Activity.QuoteSent") : Text.T("Billing.Activity.QuoteSendFailed"), nameof(Quote), quote.Id,
+            Text.T("Billing.Activity.SentTo", quote.Number ?? "", mail.To) + (error is null ? "" : ": " + error));
         return error;
     }
 
@@ -177,7 +184,7 @@ public sealed class MailService(MbDbContext db, ConfigStore config, SecretProtec
     {
         try
         {
-            var message = NewMessage(to, null, "Testnachricht von MatBill", "Diese Nachricht bestätigt, dass MatBill über diesen Server Rechnungen versenden kann.");
+            var message = NewMessage(to, null, Text.T("Billing.Mail.TestSubject"), Text.T("Billing.Mail.TestBody"));
             await DeliverAsync(message, ct);
             return null;
         }
@@ -239,7 +246,7 @@ public sealed class MailService(MbDbContext db, ConfigStore config, SecretProtec
         var settings = config.Current.Mail;
         if (!settings.IsConfigured)
         {
-            throw new InvalidOperationException("Es ist kein Mailserver eingerichtet (Einstellungen > E-Mail).");
+            throw new InvalidOperationException(Text.T("Billing.Mail.NotConfigured"));
         }
 
         using var client = new SmtpClient { Timeout = 30_000 };
@@ -266,13 +273,13 @@ public sealed class MailService(MbDbContext db, ConfigStore config, SecretProtec
     /// <summary>The reason in words a person can act on, not a stack trace.</summary>
     public static string Describe(Exception ex) => ex switch
     {
-        AuthenticationException => "Der Mailserver hat die Anmeldung abgelehnt. Prüfe Benutzername und Passwort.",
-        SmtpCommandException smtp => $"Der Mailserver hat abgelehnt: {smtp.Message}",
-        SmtpProtocolException => "Der Mailserver hat unerwartet geantwortet.",
-        System.Net.Sockets.SocketException => "Der Mailserver ist nicht erreichbar. Prüfe Server und Port.",
-        SslHandshakeException => "Die verschlüsselte Verbindung zum Mailserver ist fehlgeschlagen. Prüfe die Verschlüsselung.",
-        ParseException => "Eine E-Mail-Adresse ist ungültig.",
-        TimeoutException or OperationCanceledException => "Der Mailserver hat nicht rechtzeitig geantwortet.",
+        AuthenticationException => Text.T("Billing.Mail.AuthFailed"),
+        SmtpCommandException smtp => Text.T("Billing.Mail.Refused", smtp.Message),
+        SmtpProtocolException => Text.T("Billing.Mail.Unexpected"),
+        System.Net.Sockets.SocketException => Text.T("Billing.Mail.Unreachable"),
+        SslHandshakeException => Text.T("Billing.Mail.TlsFailed"),
+        ParseException => Text.T("Billing.Mail.InvalidAddress"),
+        TimeoutException or OperationCanceledException => Text.T("Billing.Mail.Timeout"),
         InvalidOperationException => ex.Message,
         _ => ex.Message,
     };

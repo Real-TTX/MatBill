@@ -2,6 +2,7 @@ using MatBill.Configuration;
 using MatBill.Core.Billing;
 using MatBill.Data;
 using MatBill.Data.Entities;
+using MatBill.Localization;
 using Microsoft.EntityFrameworkCore;
 
 namespace MatBill.Services;
@@ -157,7 +158,7 @@ public sealed class InvoiceService(MbDbContext db, ConfigStore config, NumberSer
 
             if (line.Name.Length == 0)
             {
-                problems.Add(new($"Input.Lines[{index}].Name", $"Position {i + 1}: Bitte beschreibe die Leistung."));
+                problems.Add(new($"Input.Lines[{index}].Name", Text.T("Billing.Line.NameMissing", i + 1)));
             }
 
             if (string.IsNullOrWhiteSpace(input.Quantity))
@@ -170,7 +171,7 @@ public sealed class InvoiceService(MbDbContext db, ConfigStore config, NumberSer
             }
             else
             {
-                problems.Add(new($"Input.Lines[{index}].Quantity", $"Position {i + 1}: Die Menge ist keine Zahl."));
+                problems.Add(new($"Input.Lines[{index}].Quantity", Text.T("Billing.Line.QuantityInvalid", i + 1)));
             }
 
             if (string.IsNullOrWhiteSpace(input.UnitPrice))
@@ -183,7 +184,7 @@ public sealed class InvoiceService(MbDbContext db, ConfigStore config, NumberSer
             }
             else
             {
-                problems.Add(new($"Input.Lines[{index}].UnitPrice", $"Position {i + 1}: Der Preis ist kein Betrag."));
+                problems.Add(new($"Input.Lines[{index}].UnitPrice", Text.T("Billing.Line.PriceInvalid", i + 1)));
             }
 
             line.TaxRate = Amount.TryParse(input.TaxRate, out var rate) && rate is >= 0 and <= 100 ? rate : 19m;
@@ -204,17 +205,17 @@ public sealed class InvoiceService(MbDbContext db, ConfigStore config, NumberSer
         var problems = new List<FieldProblem>();
         if (string.IsNullOrWhiteSpace(invoice.RecipientName))
         {
-            problems.Add(new("Input.RecipientName", "Wähle einen Kunden oder trage den Empfänger ein."));
+            problems.Add(new("Input.RecipientName", Text.T("Billing.Invoice.RecipientMissing")));
         }
 
         if (invoice.Lines.Count == 0)
         {
-            problems.Add(new("", "Eine Rechnung braucht mindestens eine Position."));
+            problems.Add(new("", Text.T("Billing.Invoice.NoLines")));
         }
 
         if (invoice.Lines.Any(l => string.IsNullOrWhiteSpace(l.Name)))
         {
-            problems.Add(new("", "Jede Position braucht eine Bezeichnung."));
+            problems.Add(new("", Text.T("Billing.Invoice.LineNameMissing")));
         }
 
         return problems;
@@ -259,7 +260,7 @@ public sealed class InvoiceService(MbDbContext db, ConfigStore config, NumberSer
         {
             // Inside a caller's transaction (a series) the caller logs, once its transaction stands.
             await transaction.CommitAsync(ct);
-            await activity.LogAsync("Rechnung ausgestellt", nameof(Invoice), invoice.Id, $"{invoice.Number} · {invoice.RecipientName} · {Fmt.Money(invoice.GrossTotal)}");
+            await activity.LogAsync(Text.T("Billing.Activity.InvoiceIssued"), nameof(Invoice), invoice.Id, $"{invoice.Number} · {invoice.RecipientName} · {Fmt.Money(invoice.GrossTotal)}");
         }
     }
 
@@ -319,26 +320,26 @@ public sealed class InvoiceService(MbDbContext db, ConfigStore config, NumberSer
     {
         if (invoice.Status != InvoiceStatus.Open)
         {
-            throw new InvoiceException("Nur eine offene Rechnung kann als bezahlt markiert werden.");
+            throw new InvoiceException(Text.T("Billing.Invoice.OnlyOpenCanBePaid"));
         }
 
         invoice.Status = InvoiceStatus.Paid;
         invoice.PaidDate = paidOn;
         await db.SaveChangesAsync(ct);
-        await activity.LogAsync("Rechnung bezahlt", nameof(Invoice), invoice.Id, $"{invoice.Number} am {Fmt.Date(paidOn)}");
+        await activity.LogAsync(Text.T("Billing.Activity.InvoicePaid"), nameof(Invoice), invoice.Id, Text.T("Billing.Activity.PaidOn", invoice.Number ?? "", Fmt.Date(paidOn)));
     }
 
     public async Task ReopenAsync(Invoice invoice, CancellationToken ct = default)
     {
         if (invoice.Status != InvoiceStatus.Paid)
         {
-            throw new InvoiceException("Nur eine bezahlte Rechnung kann wieder geöffnet werden.");
+            throw new InvoiceException(Text.T("Billing.Invoice.OnlyPaidCanReopen"));
         }
 
         invoice.Status = InvoiceStatus.Open;
         invoice.PaidDate = null;
         await db.SaveChangesAsync(ct);
-        await activity.LogAsync("Zahlung zurückgenommen", nameof(Invoice), invoice.Id, invoice.Number);
+        await activity.LogAsync(Text.T("Billing.Activity.PaymentUndone"), nameof(Invoice), invoice.Id, invoice.Number);
     }
 
     /// <summary>
@@ -350,47 +351,47 @@ public sealed class InvoiceService(MbDbContext db, ConfigStore config, NumberSer
     {
         if (invoice.Status is not (InvoiceStatus.Open or InvoiceStatus.Paid) || invoice.Kind != InvoiceKind.Invoice)
         {
-            throw new InvoiceException("Nur eine ausgestellte Rechnung kann storniert werden.");
+            throw new InvoiceException(Text.T("Billing.Invoice.OnlyIssuedCanCancel"));
         }
 
         var wasPaid = invoice.Status == InvoiceStatus.Paid;
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
-        var storno = NewDraft();
-        storno.Kind = InvoiceKind.Cancellation;
-        storno.Title = "Stornorechnung";
-        storno.CancelsInvoiceId = invoice.Id;
-        storno.CancelsNumber = invoice.Number;
-        storno.CustomerId = invoice.CustomerId;
-        storno.Customer = invoice.Customer;
-        storno.RecipientName = invoice.RecipientName;
-        storno.RecipientContact = invoice.RecipientContact;
-        storno.RecipientStreet = invoice.RecipientStreet;
-        storno.RecipientPostalCode = invoice.RecipientPostalCode;
-        storno.RecipientCity = invoice.RecipientCity;
-        storno.RecipientCountry = invoice.RecipientCountry;
-        storno.RecipientEmail = invoice.RecipientEmail;
-        storno.BuyerReference = invoice.BuyerReference;
-        storno.ServiceFrom = invoice.ServiceFrom;
-        storno.ServiceTo = invoice.ServiceTo;
-        storno.PaymentTermDays = 0;
-        storno.IntroText = $"Hiermit stornieren wir unsere Rechnung {invoice.Number} vom {Fmt.Date(invoice.InvoiceDate)}."
+        var cancellation = NewDraft();
+        cancellation.Kind = InvoiceKind.Cancellation;
+        cancellation.Title = "Stornorechnung";
+        cancellation.CancelsInvoiceId = invoice.Id;
+        cancellation.CancelsNumber = invoice.Number;
+        cancellation.CustomerId = invoice.CustomerId;
+        cancellation.Customer = invoice.Customer;
+        cancellation.RecipientName = invoice.RecipientName;
+        cancellation.RecipientContact = invoice.RecipientContact;
+        cancellation.RecipientStreet = invoice.RecipientStreet;
+        cancellation.RecipientPostalCode = invoice.RecipientPostalCode;
+        cancellation.RecipientCity = invoice.RecipientCity;
+        cancellation.RecipientCountry = invoice.RecipientCountry;
+        cancellation.RecipientEmail = invoice.RecipientEmail;
+        cancellation.BuyerReference = invoice.BuyerReference;
+        cancellation.ServiceFrom = invoice.ServiceFrom;
+        cancellation.ServiceTo = invoice.ServiceTo;
+        cancellation.PaymentTermDays = 0;
+        cancellation.IntroText = $"Hiermit stornieren wir unsere Rechnung {invoice.Number} vom {DocFmt.Date(invoice.InvoiceDate)}."
             + (string.IsNullOrWhiteSpace(reason) ? "" : $"\nGrund: {reason.Trim()}");
-        storno.PaymentTerms = wasPaid ? "Den bereits gezahlten Betrag erstatten wir Ihnen auf Ihr Konto." : $"Die Rechnung {invoice.Number} ist damit ausgeglichen. Es ist nichts mehr zu zahlen.";
-        storno.ClosingText = invoice.ClosingText;
-        storno.TaxExempt = invoice.TaxExempt;
-        storno.Lines = [.. invoice.Lines.OrderBy(l => l.Position).Select(l => { var copy = CopyLine(l, new InvoiceLine()); copy.Quantity = -l.Quantity; return copy; })];
-        Recalculate(storno);
-        db.Invoice.Add(storno);
+        cancellation.PaymentTerms = wasPaid ? "Den bereits gezahlten Betrag erstatten wir Ihnen auf Ihr Konto." : $"Die Rechnung {invoice.Number} ist damit ausgeglichen. Es ist nichts mehr zu zahlen.";
+        cancellation.ClosingText = invoice.ClosingText;
+        cancellation.TaxExempt = invoice.TaxExempt;
+        cancellation.Lines = [.. invoice.Lines.OrderBy(l => l.Position).Select(l => { var copy = CopyLine(l, new InvoiceLine()); copy.Quantity = -l.Quantity; return copy; })];
+        Recalculate(cancellation);
+        db.Invoice.Add(cancellation);
         await db.SaveChangesAsync(ct);
-        await IssueAsync(storno, ct);
+        await IssueAsync(cancellation, ct);
 
         // The pair settles itself: the cancellation is closed at once, the invoice is cancelled and points to it.
-        storno.Status = InvoiceStatus.Paid;
-        storno.PaidDate = storno.InvoiceDate;
+        cancellation.Status = InvoiceStatus.Paid;
+        cancellation.PaidDate = cancellation.InvoiceDate;
         invoice.Status = InvoiceStatus.Cancelled;
         invoice.CancelledDate = clock.GetUtcNow().UtcDateTime;
         invoice.CancelReason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
-        invoice.CancellationInvoiceId = storno.Id;
+        invoice.CancellationInvoiceId = cancellation.Id;
         if (invoice.SendState is SendState.Pending or SendState.Failed)
         {
             invoice.SendState = SendState.None;
@@ -398,8 +399,9 @@ public sealed class InvoiceService(MbDbContext db, ConfigStore config, NumberSer
 
         await db.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
-        await activity.LogAsync("Rechnung storniert", nameof(Invoice), invoice.Id, $"{invoice.Number} durch {storno.Number}{(invoice.CancelReason is null ? "" : ": " + invoice.CancelReason)}");
-        return storno;
+        await activity.LogAsync(Text.T("Billing.Activity.InvoiceCancelled"), nameof(Invoice), invoice.Id,
+            Text.T("Billing.Activity.CancelledBy", invoice.Number ?? "", cancellation.Number ?? "") + (invoice.CancelReason is null ? "" : ": " + invoice.CancelReason));
+        return cancellation;
     }
 
     /// <summary>A new draft with the recipient, the texts and the positions of <paramref name="source"/>, dated today.</summary>
@@ -444,7 +446,7 @@ public sealed class InvoiceService(MbDbContext db, ConfigStore config, NumberSer
     {
         if (!invoice.IsDraft)
         {
-            throw new InvoiceException("Eine ausgestellte Rechnung kann nicht gelöscht werden. Storniere sie stattdessen.");
+            throw new InvoiceException(Text.T("Billing.Invoice.IssuedCannotDelete"));
         }
 
         db.Invoice.Remove(invoice);

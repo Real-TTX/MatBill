@@ -1,6 +1,7 @@
 using System.Text;
 using MatBill.Configuration;
 using MatBill.Data;
+using MatBill.Localization;
 using MatBill.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -46,7 +47,7 @@ public sealed class BrandingService(ConfigStore config, MbDbContext db, FileStor
     {
         if (upload.Length == 0 || upload.Length > MaxLogoBytes)
         {
-            return "Das Logo darf höchstens 2 MB groß sein.";
+            return Text.T("System.Logo.TooLarge");
         }
 
         using var buffer = new MemoryStream();
@@ -55,7 +56,7 @@ public sealed class BrandingService(ConfigStore config, MbDbContext db, FileStor
         var type = Sniff(bytes);
         if (type is null)
         {
-            return "Das ist kein Bild in einem der Formate PNG, JPEG oder SVG.";
+            return Text.T("System.Logo.NotImage");
         }
 
         var file = await files.SaveAsync(bytes, "logo" + (type == "image/svg+xml" ? ".svg" : type == "image/png" ? ".png" : ".jpg"), type, ct);

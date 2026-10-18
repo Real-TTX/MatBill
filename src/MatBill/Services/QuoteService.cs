@@ -2,6 +2,7 @@ using MatBill.Configuration;
 using MatBill.Core.Billing;
 using MatBill.Data;
 using MatBill.Data.Entities;
+using MatBill.Localization;
 using Microsoft.EntityFrameworkCore;
 
 namespace MatBill.Services;
@@ -109,7 +110,7 @@ public sealed class QuoteService(MbDbContext db, ConfigStore config, NumberServi
     {
         if (string.IsNullOrWhiteSpace(quote.RecipientName) || quote.Lines.Count == 0 || quote.Lines.Any(l => string.IsNullOrWhiteSpace(l.Name)))
         {
-            throw new InvoiceException("Ein Angebot braucht einen Empfänger und Positionen mit Bezeichnung.");
+            throw new InvoiceException(Text.T("Billing.Quote.Incomplete"));
         }
 
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
@@ -121,7 +122,7 @@ public sealed class QuoteService(MbDbContext db, ConfigStore config, NumberServi
         quote.PdfFile = await files.SaveAsync(await RenderAsync(quote, ct), PdfName(quote), "application/pdf", ct);
         await db.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
-        await activity.LogAsync("Angebot ausgestellt", nameof(Quote), quote.Id, $"{quote.Number} · {quote.RecipientName} · {Fmt.Money(quote.GrossTotal)}");
+        await activity.LogAsync(Text.T("Billing.Activity.QuoteIssued"), nameof(Quote), quote.Id, $"{quote.Number} · {quote.RecipientName} · {Fmt.Money(quote.GrossTotal)}");
     }
 
     public async Task<byte[]> RenderAsync(Quote quote, CancellationToken ct = default)
@@ -151,13 +152,13 @@ public sealed class QuoteService(MbDbContext db, ConfigStore config, NumberServi
     {
         if (quote.Status is not (QuoteStatus.Open or QuoteStatus.Accepted or QuoteStatus.Declined))
         {
-            throw new InvoiceException("Nur ein ausgestelltes Angebot kann angenommen oder abgelehnt werden.");
+            throw new InvoiceException(Text.T("Billing.Quote.OnlyIssuedCanAnswer"));
         }
 
         quote.Status = accepted ? QuoteStatus.Accepted : QuoteStatus.Declined;
         quote.AnsweredDate = clock.GetUtcNow().UtcDateTime;
         await db.SaveChangesAsync(ct);
-        await activity.LogAsync(accepted ? "Angebot angenommen" : "Angebot abgelehnt", nameof(Quote), quote.Id, quote.Number);
+        await activity.LogAsync(accepted ? Text.T("Billing.Activity.QuoteAccepted") : Text.T("Billing.Activity.QuoteDeclined"), nameof(Quote), quote.Id, quote.Number);
     }
 
     /// <summary>An invoice draft from the quote: recipient, positions and closing text; the quote is marked as invoiced.</summary>
@@ -165,12 +166,12 @@ public sealed class QuoteService(MbDbContext db, ConfigStore config, NumberServi
     {
         if (quote.IsDraft)
         {
-            throw new InvoiceException("Stelle das Angebot zuerst aus.");
+            throw new InvoiceException(Text.T("Billing.Quote.IssueFirst"));
         }
 
         if (quote.InvoiceId is { } existing && await db.Invoice.AnyAsync(i => i.Id == existing, ct))
         {
-            throw new InvoiceException("Aus diesem Angebot wurde schon eine Rechnung erstellt.");
+            throw new InvoiceException(Text.T("Billing.Quote.AlreadyInvoiced"));
         }
 
         var invoice = invoices.NewDraft(quote.Customer);
@@ -183,7 +184,7 @@ public sealed class QuoteService(MbDbContext db, ConfigStore config, NumberServi
         invoice.RecipientCountry = quote.RecipientCountry;
         invoice.RecipientEmail = quote.RecipientEmail;
         invoice.QuoteId = quote.Id;
-        invoice.IntroText = $"{config.Current.Invoicing.IntroText}\n(zu unserem Angebot {quote.Number} vom {Fmt.Date(quote.QuoteDate)})".Trim();
+        invoice.IntroText = $"{config.Current.Invoicing.IntroText}\n(zu unserem Angebot {quote.Number} vom {DocFmt.Date(quote.QuoteDate)})".Trim();
         invoice.Lines = [.. quote.Lines.OrderBy(l => l.Position).Select(l => InvoiceService.CopyLine(l, new InvoiceLine()))];
         InvoiceService.Recalculate(invoice);
         db.Invoice.Add(invoice);
@@ -191,7 +192,7 @@ public sealed class QuoteService(MbDbContext db, ConfigStore config, NumberServi
         quote.InvoiceId = invoice.Id;
         quote.Status = QuoteStatus.Invoiced;
         await db.SaveChangesAsync(ct);
-        await activity.LogAsync("Angebot in Rechnung übernommen", nameof(Quote), quote.Id, quote.Number);
+        await activity.LogAsync(Text.T("Billing.Activity.QuoteInvoiced"), nameof(Quote), quote.Id, quote.Number);
         return invoice;
     }
 
@@ -223,7 +224,7 @@ public sealed class QuoteService(MbDbContext db, ConfigStore config, NumberServi
     {
         if (!quote.IsDraft)
         {
-            throw new InvoiceException("Ein ausgestelltes Angebot wird nicht gelöscht; lehne es ab oder lass es ablaufen.");
+            throw new InvoiceException(Text.T("Billing.Quote.IssuedCannotDelete"));
         }
 
         db.Quote.Remove(quote);

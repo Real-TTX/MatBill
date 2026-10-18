@@ -1,0 +1,19 @@
+{
+  "System.Automatic": { "en": "Automatic", "de": "Automatik" },
+
+  "System.Rows.Users": { "en": "Users", "de": "Benutzer" },
+  "System.Rows.Customers": { "en": "Customers", "de": "Kunden" },
+  "System.Rows.Products": { "en": "Products", "de": "Produkte" },
+  "System.Rows.Invoices": { "en": "Invoices", "de": "Rechnungen" },
+  "System.Rows.Series": { "en": "Series", "de": "Serien" },
+  "System.Rows.Files": { "en": "Files", "de": "Dateien" },
+  "System.Rows.ShareLinks": { "en": "Share links", "de": "Freigabe-Links" },
+
+  "System.Logo.TooLarge": { "en": "The logo may be at most 2 MB.", "de": "Das Logo darf höchstens 2 MB groß sein." },
+  "System.Logo.NotImage": { "en": "This is not an image in one of the formats PNG, JPEG or SVG.", "de": "Das ist kein Bild in einem der Formate PNG, JPEG oder SVG." },
+
+  "System.Share.DraftCannotShare": { "en": "A draft cannot be shared. Issue the invoice first.", "de": "Ein Entwurf kann nicht freigegeben werden. Stelle die Rechnung zuerst aus." },
+  "System.Share.DaysLeft": { "en": "{0} days left", "de": "noch {0} Tage" },
+  "System.Share.HoursLeft": { "en": "{0} hours left", "de": "noch {0} Stunden" },
+  "System.Share.ExpiresSoon": { "en": "expires soon", "de": "läuft bald ab" }
+}
