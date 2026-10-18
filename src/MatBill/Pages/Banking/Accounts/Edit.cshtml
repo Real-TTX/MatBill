@@ -4,13 +4,13 @@
 <form class="mat-form" method="post" novalidate>
     <input type="hidden" name="Id" value="@Model.Id" />
     <mb-summary />
-    <mb-card title="Konto" icon="credit-card">
+    <mb-card title="@L["Banking.Account"]" icon="credit-card">
         <div class="mat-form__grid">
-            <mb-input for="Input.Name" label="Name" required="true" hint="Zum Beispiel „Geschäftskonto Sparkasse“." autocomplete="off" />
-            <mb-input for="Input.BankName" label="Bank" autocomplete="off" />
-            <mb-input for="Input.Iban" label="IBAN" autocomplete="off" hint="Optional; ein CAMT-Auszug trägt sie selbst ein." />
+            <mb-input for="Input.Name" label="@L["Common.Name"]" required="true" hint="@L["Banking.AccountEdit.Name.Hint"]" autocomplete="off" />
+            <mb-input for="Input.BankName" label="@L["Banking.AccountEdit.Bank"]" autocomplete="off" />
+            <mb-input for="Input.Iban" label="IBAN" autocomplete="off" hint="@L["Banking.AccountEdit.Iban.Hint"]" />
             <mb-input for="Input.Bic" label="BIC" autocomplete="off" />
-            <mb-switch for="Input.IsActive" label="Aktiv (in der Übersicht zeigen)" full="true" />
+            <mb-switch for="Input.IsActive" label="@L["Banking.AccountEdit.Active"]" full="true" />
         </div>
     </mb-card>
 
@@ -20,39 +20,39 @@
     }
     else
     {
-        <mb-buttons back-href="/Banking" delete-url="@Url.Page("/Banking/Accounts/Edit", "Delete", new { id = Model.Id })" delete-confirm="Dieses Konto entfernen? Seine Umsätze und Zuordnungen bleiben erhalten.">
-            <a class="mat-btn mat-btn--secondary" href="/Banking/Import?account=@Model.Id">@Ui.Icon("upload")<span>Import</span></a>
+        <mb-buttons back-href="/Banking" delete-url="@Url.Page("/Banking/Accounts/Edit", "Delete", new { id = Model.Id })" delete-confirm="@L["Banking.AccountEdit.DeleteConfirm"]">
+            <a class="mat-btn mat-btn--secondary" href="/Banking/Import?account=@Model.Id">@Ui.Icon("upload")<span>@L["Banking.Import"]</span></a>
         </mb-buttons>
     }
 </form>
 
 @if (Model.Account is { } a)
 {
-    <mb-card title="Abruf" icon="refresh" sub="@($"{Model.Transactions} Umsätze")">
+    <mb-card title="@L["Banking.AccountEdit.Fetch"]" icon="refresh" sub="@L["Banking.AccountEdit.TransactionCount", Model.Transactions]">
         <dl class="mat-kv">
-            <dt>Art</dt><dd>@(a.Provider == BankProvider.EnableBanking ? $"online über Enable Banking ({a.BankConnection?.BankName})" : "Kontoauszüge als Datei")</dd>
+            <dt>@L["Banking.AccountEdit.Kind"]</dt><dd>@(a.Provider == BankProvider.EnableBanking ? L["Banking.AccountEdit.Kind.Online", a.BankConnection?.BankName ?? ""] : L["Banking.AccountEdit.Kind.Files"])</dd>
             @if (a.BankConnection is { } c)
             {
-                <dt>Zugang</dt><dd>@(c.Status == BankConnectionStatus.Active ? $"gültig bis {Fmt.Date(c.ValidUntil)}" : "abgelaufen: bitte neu verbinden")</dd>
+                <dt>@L["Banking.AccountEdit.Access"]</dt><dd>@(c.Status == BankConnectionStatus.Active ? L["Banking.AccountEdit.Access.ValidUntil", Fmt.Date(c.ValidUntil)] : L["Banking.AccountEdit.Access.Expired"])</dd>
             }
-            <dt>Saldo</dt><dd>@(a.Balance is null ? "–" : $"{Fmt.Money(a.Balance.Value)} am {Fmt.Date(a.BalanceDate)}")</dd>
-            <dt>Zuletzt abgerufen</dt><dd>@(a.LastSyncDate is null ? "–" : Fmt.Moment(a.LastSyncDate))</dd>
+            <dt>@L["Banking.AccountEdit.Balance"]</dt><dd>@(a.Balance is null ? "–" : L["Banking.AccountEdit.Balance.On", Fmt.Money(a.Balance.Value), Fmt.Date(a.BalanceDate)])</dd>
+            <dt>@L["Banking.AccountEdit.LastFetched"]</dt><dd>@(a.LastSyncDate is null ? "–" : Fmt.Moment(a.LastSyncDate))</dd>
         </dl>
         @if (a.Provider == BankProvider.EnableBanking && a.BankConnection?.Status != BankConnectionStatus.Active)
         {
-            <a class="mat-btn mat-btn--secondary" href="/Banking/Connect">@Ui.Icon("link")<span>Neu verbinden</span></a>
+            <a class="mat-btn mat-btn--secondary" href="/Banking/Connect">@Ui.Icon("link")<span>@L["Banking.AccountEdit.Reconnect"]</span></a>
         }
     </mb-card>
 
     @if (Model.Imports.Count > 0)
     {
-        <mb-card title="Importe" icon="history">
+        <mb-card title="@L["Banking.AccountEdit.Imports"]" icon="history">
             <ul class="mb-notes">
                 @foreach (var i in Model.Imports)
                 {
                     <li class="mb-note">
                         @Ui.Icon("upload", "mb-note__icon mb-note__icon--info")
-                        <div class="mb-note__body"><span>@(i.FileName ?? i.Source): @i.Added neu, @i.Duplicates schon vorhanden, @i.Matched zugeordnet</span><span class="mb-note__meta">@Fmt.Moment(i.ImportDate) · @i.Source</span></div>
+                        <div class="mb-note__body"><span>@L["Banking.AccountEdit.ImportLine", i.FileName ?? i.Source, i.Added, i.Duplicates, i.Matched]</span><span class="mb-note__meta">@Fmt.Moment(i.ImportDate) · @i.Source</span></div>
                     </li>
                 }
             </ul>

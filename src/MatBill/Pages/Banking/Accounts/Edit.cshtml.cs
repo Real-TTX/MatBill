@@ -12,7 +12,8 @@ public sealed class EditModel(MbDbContext db, ActivityLogger log) : PageModelBas
 {
     public sealed class InputModel
     {
-        [Required(ErrorMessage = "Bitte gib dem Konto einen Namen."), StringLength(100)]
+        [Required(ErrorMessage = "Banking.AccountEdit.Name.Required"), StringLength(100)]
+        [Display(Name = "Common.Name")]
         public string Name { get; set; } = "";
 
         [StringLength(40)]
@@ -70,7 +71,7 @@ public sealed class EditModel(MbDbContext db, ActivityLogger log) : PageModelBas
         var iban = Input.Iban?.Replace(" ", "", StringComparison.Ordinal).ToUpperInvariant();
         if (!string.IsNullOrEmpty(iban) && !IbanCheck.IsValid(iban))
         {
-            ModelState.AddModelError("Input.Iban", "Die IBAN stimmt nicht (Prüfziffer).");
+            ModelState.AddModelError("Input.Iban", L["Banking.AccountEdit.Iban.Invalid"]);
         }
 
         if (!ModelState.IsValid)
@@ -91,8 +92,8 @@ public sealed class EditModel(MbDbContext db, ActivityLogger log) : PageModelBas
         }
 
         await db.SaveChangesAsync();
-        await log.LogAsync(Id is null ? "Bankkonto angelegt" : "Bankkonto geändert", nameof(BankAccount), account.Id, account.Name);
-        Flash(Id is null ? "Konto angelegt. Importiere jetzt einen Kontoauszug." : "Konto gespeichert.");
+        await log.LogAsync(Id is null ? L["Banking.Log.AccountCreated"] : L["Banking.Log.AccountChanged"], nameof(BankAccount), account.Id, account.Name);
+        Flash(Id is null ? L["Banking.AccountEdit.Created"] : L["Banking.AccountEdit.Saved"]);
         return Id is null ? RedirectToPage("/Banking/Import", new { account = account.Id }) : RedirectToPage("/Banking/Index");
     }
 
@@ -103,8 +104,8 @@ public sealed class EditModel(MbDbContext db, ActivityLogger log) : PageModelBas
         {
             db.BankAccount.Remove(account);
             await db.SaveChangesAsync();
-            await log.LogAsync("Bankkonto gelöscht", nameof(BankAccount), account.Id, account.Name);
-            Flash("Konto entfernt. Seine Umsätze bleiben gespeichert, das Konto erscheint nicht mehr.");
+            await log.LogAsync(L["Banking.Log.AccountDeleted"], nameof(BankAccount), account.Id, account.Name);
+            Flash(L["Banking.AccountEdit.Deleted"]);
         }
 
         return RedirectToPage("/Banking/Index");
@@ -112,8 +113,8 @@ public sealed class EditModel(MbDbContext db, ActivityLogger log) : PageModelBas
 
     private async Task LoadAsync()
     {
-        var title = Account?.Name ?? "Neues Bankkonto";
-        Head(title, Account?.Iban, ("Banking", "/Banking"), (title, null));
+        var title = Account?.Name ?? L["Banking.AccountEdit.NewTitle"].Value;
+        Head(title, Account?.Iban, (L["Banking.Title"], "/Banking"), (title, null));
         ViewData["ActiveHref"] = "/Banking";
         ViewData["Width"] = "narrow";
         if (Account is not null)

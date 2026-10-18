@@ -3,56 +3,57 @@
 @{
     var m = Model.Months;
     var years = Enumerable.Range(DateTime.Today.Year - 6, 7).Reverse();
+    var cash = Model.Basis == "cash";
 }
 
-<form method="get" class="mat-toolbar" role="toolbar" aria-label="Auswertung: Werkzeuge">
+<form method="get" class="mat-toolbar" role="toolbar" aria-label="@L["Export.Toolbar"]">
     <div class="mat-field">
-        <label class="mat-label" for="year">Jahr</label>
+        <label class="mat-label" for="year">@L["Export.Year"]</label>
         <select class="mat-select" id="year" name="year" data-submit-on-change>@foreach (var y in years) { <option value="@y" selected="@(y == Model.Year)">@y</option> }</select>
     </div>
-    <div class="mat-seg" role="group" aria-label="Grundlage">
-        <a class="mat-seg__btn" href="/Export?year=@Model.Year&basis=soll" aria-pressed="@(Model.Basis != "ist" ? "true" : "false")">nach Belegdatum (Soll)</a>
-        <a class="mat-seg__btn" href="/Export?year=@Model.Year&basis=ist" aria-pressed="@(Model.Basis == "ist" ? "true" : "false")">nach Zahlung (Ist)</a>
+    <div class="mat-seg" role="group" aria-label="@L["Export.Basis"]">
+        <a class="mat-seg__btn" href="/Export?year=@Model.Year&basis=accrual" aria-pressed="@(!cash ? "true" : "false")">@L["Export.Basis.Accrual"]</a>
+        <a class="mat-seg__btn" href="/Export?year=@Model.Year&basis=cash" aria-pressed="@(cash ? "true" : "false")">@L["Export.Basis.Cash"]</a>
     </div>
 </form>
 
 <div class="mb-stats">
-    @Ui.Kpi("Einnahmen netto", Fmt.Money(m.Sum(x => x.IncomeNet)), $"Umsatzsteuer {Fmt.Money(m.Sum(x => x.OutputTax))}", "trending-up")
-    @Ui.Kpi("Ausgaben netto", Fmt.Money(m.Sum(x => x.ExpenseNet)), $"Vorsteuer {Fmt.Money(m.Sum(x => x.InputTax))}", "euro")
-    @Ui.Kpi("Ergebnis", Fmt.Money(m.Sum(x => x.Result)), "Einnahmen minus Ausgaben (netto)", "bar-chart", bad: m.Sum(x => x.Result) < 0)
-    @Ui.Kpi("USt-Zahllast", Fmt.Money(m.Sum(x => x.TaxDue)), m.Sum(x => x.TaxDue) < 0 ? "Erstattung" : "an das Finanzamt", "file-text")
+    @Ui.Kpi(L["Export.Kpi.Income"], Fmt.Money(m.Sum(x => x.IncomeNet)), L["Export.Kpi.Income.Note", Fmt.Money(m.Sum(x => x.OutputTax))], "trending-up")
+    @Ui.Kpi(L["Export.Kpi.Expenses"], Fmt.Money(m.Sum(x => x.ExpenseNet)), L["Export.Kpi.Expenses.Note", Fmt.Money(m.Sum(x => x.InputTax))], "euro")
+    @Ui.Kpi(L["Export.Kpi.Result"], Fmt.Money(m.Sum(x => x.Result)), L["Export.Kpi.Result.Note"], "bar-chart", bad: m.Sum(x => x.Result) < 0)
+    @Ui.Kpi(L["Export.Kpi.TaxDue"], Fmt.Money(m.Sum(x => x.TaxDue)), m.Sum(x => x.TaxDue) < 0 ? L["Export.Kpi.TaxDue.Refund"] : L["Export.Kpi.TaxDue.Note"], "file-text")
 </div>
 
 <div class="mat-table-wrap">
     <table class="mat-table">
-        <caption class="mat-sr-only">Einnahmen und Ausgaben je Monat</caption>
-        <thead><tr><th scope="col">Monat</th><th scope="col" class="mat-num">Einnahmen</th><th scope="col" class="mat-num mat-hide-sm">USt.</th><th scope="col" class="mat-num">Ausgaben</th><th scope="col" class="mat-num mat-hide-sm">Vorsteuer</th><th scope="col" class="mat-num">Ergebnis</th><th scope="col" class="mat-num mat-hide-sm">Zahllast</th></tr></thead>
+        <caption class="mat-sr-only">@L["Export.Table.Caption"]</caption>
+        <thead><tr><th scope="col">@L["Export.Column.Month"]</th><th scope="col" class="mat-num">@L["Export.Column.Income"]</th><th scope="col" class="mat-num mat-hide-sm">@L["Export.Column.OutputTax"]</th><th scope="col" class="mat-num">@L["Export.Column.Expenses"]</th><th scope="col" class="mat-num mat-hide-sm">@L["Export.Column.InputTax"]</th><th scope="col" class="mat-num">@L["Export.Column.Result"]</th><th scope="col" class="mat-num mat-hide-sm">@L["Export.Column.TaxDue"]</th></tr></thead>
         <tbody>
             @foreach (var x in m)
             {
                 <tr>
-                    <td data-label="Monat">@(new DateOnly(x.Year, x.Month, 1).ToString("MMMM", Fmt.Culture))</td>
-                    <td data-label="Einnahmen" class="mat-num">@Ui.Money(x.IncomeNet)</td>
-                    <td data-label="USt." class="mat-num mat-hide-sm">@Ui.Money(x.OutputTax)</td>
-                    <td data-label="Ausgaben" class="mat-num">@Ui.Money(x.ExpenseNet)</td>
-                    <td data-label="Vorsteuer" class="mat-num mat-hide-sm">@Ui.Money(x.InputTax)</td>
-                    <td data-label="Ergebnis" class="mat-num @(x.Result < 0 ? "mb-warn-text" : "")">@Ui.Money(x.Result)</td>
-                    <td data-label="Zahllast" class="mat-num mat-hide-sm">@Ui.Money(x.TaxDue)</td>
+                    <td data-label="@L["Export.Column.Month"]">@(new DateOnly(x.Year, x.Month, 1).ToString("MMMM", Fmt.Culture))</td>
+                    <td data-label="@L["Export.Column.Income"]" class="mat-num">@Ui.Money(x.IncomeNet)</td>
+                    <td data-label="@L["Export.Column.OutputTax"]" class="mat-num mat-hide-sm">@Ui.Money(x.OutputTax)</td>
+                    <td data-label="@L["Export.Column.Expenses"]" class="mat-num">@Ui.Money(x.ExpenseNet)</td>
+                    <td data-label="@L["Export.Column.InputTax"]" class="mat-num mat-hide-sm">@Ui.Money(x.InputTax)</td>
+                    <td data-label="@L["Export.Column.Result"]" class="mat-num @(x.Result < 0 ? "mb-warn-text" : "")">@Ui.Money(x.Result)</td>
+                    <td data-label="@L["Export.Column.TaxDue"]" class="mat-num mat-hide-sm">@Ui.Money(x.TaxDue)</td>
                 </tr>
             }
         </tbody>
     </table>
 </div>
-<p class="mat-hint">Netto-Beträge; Stornorechnungen gleichen ihre Rechnung aus. Die Auswertung ersetzt keine Buchhaltung, sie ist eine Grundlage für die Umsatzsteuer-Voranmeldung und den Steuerberater.</p>
+<p class="mat-hint">@L["Export.Hint"]</p>
 
 <form method="post" class="mat-form" novalidate>
-    <mb-card title="Export für Finanzamt und Steuerberater" icon="download">
-        <p class="mat-muted">Ein ZIP mit allen Rechnungen (PDF, ZUGFeRD) und Belegen des Zeitraums, benannt nach Datum, Nummer und Partner, dazu Rechnungen.csv, Ausgaben.csv, Uebersicht.csv und auf Wunsch die Kontoumsätze.</p>
+    <mb-card title="@L["Export.Zip.Title"]" icon="download">
+        <p class="mat-muted">@L["Export.Zip.Text"]</p>
         <div class="mat-form__grid">
-            <mb-input for="From" label="Von" type="date" required="true" />
-            <mb-input for="To" label="Bis" type="date" required="true" />
-            <mb-switch for="WithBank" label="Kontoumsätze mit Zuordnung beilegen" full="true" />
+            <mb-input for="From" label="@L["Export.From"]" type="date" required="true" />
+            <mb-input for="To" label="@L["Export.To"]" type="date" required="true" />
+            <mb-switch for="WithBank" label="@L["Export.Zip.WithBank"]" full="true" />
         </div>
-        <div class="mat-actions"><button type="submit" class="mat-btn mat-btn--primary">@Ui.Icon("download")<span>ZIP herunterladen</span></button></div>
+        <div class="mat-actions"><button type="submit" class="mat-btn mat-btn--primary">@Ui.Icon("download")<span>@L["Export.Zip.Download"]</span></button></div>
     </mb-card>
 </form>

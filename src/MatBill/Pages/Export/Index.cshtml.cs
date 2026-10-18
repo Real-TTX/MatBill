@@ -10,7 +10,7 @@ public sealed class IndexModel(ExportService export, ActivityLogger log, TimePro
     public int? Year { get; set; }
 
     [BindProperty(SupportsGet = true)]
-    public string Basis { get; set; } = "soll";
+    public string Basis { get; set; } = "accrual";
 
     [BindProperty]
     public DateOnly? From { get; set; }
@@ -27,11 +27,11 @@ public sealed class IndexModel(ExportService export, ActivityLogger log, TimePro
     {
         var today = Fmt.Today(clock);
         Year ??= today.Year;
-        Head("Auswertung und Export", "Einnahmen, Ausgaben und Umsatzsteuer je Monat; alle Belege eines Zeitraums als ZIP für Finanzamt oder Steuerberater.", ("Auswertung", null));
+        Head(L["Export.Title"], L["Export.Sub"], (L["Export.Crumb"], null));
         ViewData["Width"] = "wide";
         From ??= new DateOnly(Year.Value, 1, 1);
         To ??= new DateOnly(Year.Value, 12, 31);
-        Months = await export.MonthsAsync(new DateOnly(Year.Value, 1, 1), new DateOnly(Year.Value, 12, 31), Basis == "ist", HttpContext.RequestAborted);
+        Months = await export.MonthsAsync(new DateOnly(Year.Value, 1, 1), new DateOnly(Year.Value, 12, 31), Basis == "cash", HttpContext.RequestAborted);
     }
 
     public async Task<IActionResult> OnPostAsync()
@@ -40,12 +40,12 @@ public sealed class IndexModel(ExportService export, ActivityLogger log, TimePro
         var to = To ?? new DateOnly(from.Year, 12, 31);
         if (to < from)
         {
-            FlashError("Das Ende liegt vor dem Anfang.");
+            FlashError(L["Export.EndBeforeStart"]);
             return RedirectToPage();
         }
 
         var result = await export.ExportAsync(from, to, WithBank, HttpContext.RequestAborted);
-        await log.LogAsync("Export erstellt", "Export", null, $"{Fmt.Date(from)} bis {Fmt.Date(to)}: {result.Invoices} Rechnungen, {result.Expenses} Ausgaben");
+        await log.LogAsync(L["Export.Log.Created"], "Export", null, L["Export.Log.Summary", Fmt.Date(from), Fmt.Date(to), result.Invoices, result.Expenses]);
         return File(result.Zip, "application/zip", result.FileName);
     }
 }

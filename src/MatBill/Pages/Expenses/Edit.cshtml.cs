@@ -14,7 +14,8 @@ public sealed class EditModel(MbDbContext db, ExpenseService expenses, MatchingS
 {
     public sealed class InputModel
     {
-        [Required(ErrorMessage = "Bitte gib den Lieferanten ein."), StringLength(200)]
+        [Required(ErrorMessage = "Expenses.Edit.Supplier.Required"), StringLength(200)]
+        [Display(Name = "Expenses.Supplier")]
         public string Supplier { get; set; } = "";
 
         public DateOnly? ExpenseDate { get; set; }
@@ -27,8 +28,8 @@ public sealed class EditModel(MbDbContext db, ExpenseService expenses, MatchingS
         [StringLength(500)]
         public string? Description { get; set; }
 
-        /// <summary>"brutto" or "netto": which amount was typed.</summary>
-        public string Entry { get; set; } = "brutto";
+        /// <summary>"gross" or "net": which amount was typed.</summary>
+        public string Entry { get; set; } = "gross";
 
         public string? Amount { get; set; }
 
@@ -77,7 +78,7 @@ public sealed class EditModel(MbDbContext db, ExpenseService expenses, MatchingS
             Input = new InputModel
             {
                 Supplier = e.Supplier, ExpenseDate = e.ExpenseDate, SupplierInvoiceNumber = e.SupplierInvoiceNumber, Category = e.Category, Description = e.Description,
-                Entry = "brutto", Amount = e.GrossAmount == 0 ? null : Amount.Edit(e.GrossAmount), TaxRate = Amount.Quantity(e.TaxRate),
+                Entry = "gross", Amount = e.GrossAmount == 0 ? null : Amount.Edit(e.GrossAmount), TaxRate = Amount.Quantity(e.TaxRate),
                 Paid = e.Status == ExpenseStatus.Paid, PaidDate = e.PaidDate, DueDate = e.DueDate, Note = e.Note,
             };
         }
@@ -102,12 +103,12 @@ public sealed class EditModel(MbDbContext db, ExpenseService expenses, MatchingS
         Expense = expense.Id == 0 ? null : expense;
         if (!Amount.TryParse(Input.Amount, out var amount))
         {
-            ModelState.AddModelError("Input.Amount", "Bitte gib den Betrag ein.");
+            ModelState.AddModelError("Input.Amount", L["Expenses.Edit.Amount.Required"]);
         }
 
         if (!Amount.TryParse(Input.TaxRate, out var rate) || rate is < 0 or > 100)
         {
-            ModelState.AddModelError("Input.TaxRate", "Der Steuersatz liegt zwischen 0 und 100 %.");
+            ModelState.AddModelError("Input.TaxRate", L["Expenses.Edit.TaxRate.Range"]);
         }
 
         if (Receipt is { Length: > 0 })
@@ -125,7 +126,7 @@ public sealed class EditModel(MbDbContext db, ExpenseService expenses, MatchingS
             return Page();
         }
 
-        var (net, tax, gross) = ExpenseService.Amounts(Input.Entry == "netto" ? amount : null, Input.Entry == "netto" ? null : amount, rate);
+        var (net, tax, gross) = ExpenseService.Amounts(Input.Entry == "net" ? amount : null, Input.Entry == "net" ? null : amount, rate);
         expense.Supplier = Input.Supplier.Trim();
         expense.ExpenseDate = Input.ExpenseDate ?? expenses.Today;
         expense.SupplierInvoiceNumber = string.IsNullOrWhiteSpace(Input.SupplierInvoiceNumber) ? null : Input.SupplierInvoiceNumber.Trim();
@@ -142,8 +143,8 @@ public sealed class EditModel(MbDbContext db, ExpenseService expenses, MatchingS
         var isNew = expense.Id == 0;
         await expenses.SaveAsync(expense);
         nav.Invalidate();
-        await log.LogAsync(isNew ? "Ausgabe erfasst" : "Ausgabe geändert", nameof(Expense), expense.Id, $"{expense.Number} · {expense.Supplier} · {Fmt.Money(expense.GrossAmount)}");
-        Flash(isNew ? $"Ausgabe {expense.Number} erfasst." : "Ausgabe gespeichert.");
+        await log.LogAsync(isNew ? L["Expenses.Log.Created"] : L["Expenses.Log.Changed"], nameof(Expense), expense.Id, $"{expense.Number} · {expense.Supplier} · {Fmt.Money(expense.GrossAmount)}");
+        Flash(isNew ? L["Expenses.Edit.Created", expense.Number] : L["Expenses.Edit.Saved"]);
         var next = await db.Expense.Where(e => e.NeedsReview && e.Id != expense.Id).OrderBy(e => e.Id).Select(e => (long?)e.Id).FirstOrDefaultAsync();
         return next is { } nextId ? RedirectToPage(new { id = nextId }) : RedirectToPage("/Expenses/Index");
     }
@@ -161,8 +162,8 @@ public sealed class EditModel(MbDbContext db, ExpenseService expenses, MatchingS
             db.Expense.Remove(expense);
             await db.SaveChangesAsync();
             nav.Invalidate();
-            await log.LogAsync("Ausgabe gelöscht", nameof(Expense), expense.Id, expense.Number);
-            Flash("Ausgabe gelöscht.");
+            await log.LogAsync(L["Expenses.Log.Deleted"], nameof(Expense), expense.Id, expense.Number);
+            Flash(L["Expenses.Edit.Deleted"]);
         }
 
         return RedirectToPage("/Expenses/Index");
@@ -170,8 +171,8 @@ public sealed class EditModel(MbDbContext db, ExpenseService expenses, MatchingS
 
     private async Task LoadAsync()
     {
-        var title = Expense is null ? "Neue Ausgabe" : $"{Expense.Supplier}";
-        Head(title, Expense is null ? null : $"Beleg {Expense.Number}{(Expense.FromEInvoice ? " · aus E-Rechnung" : "")}", ("Ausgaben", "/Expenses"), (Expense?.Number ?? "Neu", null));
+        var title = Expense is null ? L["Expenses.Edit.NewTitle"].Value : Expense.Supplier;
+        Head(title, Expense is null ? null : Expense.FromEInvoice ? L["Expenses.Edit.Sub.EInvoice", Expense.Number] : L["Expenses.Edit.Sub", Expense.Number], (L["Expenses.Title"], "/Expenses"), (Expense?.Number ?? L["Common.New"].Value, null));
         ViewData["ActiveHref"] = "/Expenses";
         ViewData["Width"] = "wide";
         Suppliers = await expenses.SuppliersAsync();

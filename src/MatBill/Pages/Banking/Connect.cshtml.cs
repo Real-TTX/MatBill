@@ -47,7 +47,7 @@ public sealed class ConnectModel(MbDbContext db, EnableBankingClient client, Con
         Prepare();
         if (string.IsNullOrWhiteSpace(Bank))
         {
-            FlashError("Bitte wähle deine Bank.");
+            FlashError(L["Banking.Connect.BankRequired"]);
             return RedirectToPage(new { country = Country });
         }
 
@@ -57,7 +57,7 @@ public sealed class ConnectModel(MbDbContext db, EnableBankingClient client, Con
         try
         {
             var url = await client.StartAsync(Bank, Country!, connection.Token, CallbackUrl, DateTime.UtcNow.AddDays(90), HttpContext.RequestAborted);
-            await log.LogAsync("Bankverbindung gestartet", nameof(BankConnection), connection.Id, Bank);
+            await log.LogAsync(L["Banking.Log.ConnectionStarted"], nameof(BankConnection), connection.Id, Bank);
             return Redirect(url);
         }
         catch (Exception ex) when (ex is BankingException or HttpRequestException or TaskCanceledException)
@@ -73,7 +73,7 @@ public sealed class ConnectModel(MbDbContext db, EnableBankingClient client, Con
     private void Prepare()
     {
         Country = string.IsNullOrWhiteSpace(Country) ? config.Current.Banking.Country : Country.Trim().ToUpperInvariant()[..Math.Min(2, Country.Trim().Length)];
-        Head("Bank online verbinden", "Über Enable Banking (PSD2): Umsätze aller Konten kommen automatisch, ohne Datei-Export.", ("Banking", "/Banking"), ("Verbinden", null));
+        Head(L["Banking.Connect"], L["Banking.Connect.Sub"], (L["Banking.Title"], "/Banking"), (L["Banking.Connect.Crumb"], null));
         ViewData["ActiveHref"] = "/Banking";
         ViewData["Width"] = "narrow";
     }

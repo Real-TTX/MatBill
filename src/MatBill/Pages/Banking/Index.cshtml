@@ -5,21 +5,22 @@
     @foreach (var a in Model.Accounts)
     {
         var balance = a.Balance ?? Model.Sums.GetValueOrDefault(a.Id);
+        var active = a.BankConnection?.Status == BankConnectionStatus.Active;
         <div class="mat-card mb-account">
             <div class="mat-card__body">
                 <div class="mb-account__head">
                     <a class="mb-account__name" href="/Banking/Accounts/Edit?id=@a.Id">@a.Name</a>
-                    @if (a.Provider == BankProvider.EnableBanking) { @Ui.Pill(a.BankConnection?.Status == BankConnectionStatus.Active ? "online" : "neu verbinden", a.BankConnection?.Status == BankConnectionStatus.Active ? "ok" : "warn") } else { @Ui.Pill("Datei-Import", "") }
+                    @if (a.Provider == BankProvider.EnableBanking) { @Ui.Pill(active ? L["Banking.Account.Online"] : L["Banking.Account.Reconnect"], active ? "ok" : "warn") } else { @Ui.Pill(L["Banking.Account.FileImport"], "") }
                 </div>
-                <div class="mb-account__iban mat-mono">@(a.Iban ?? "keine IBAN")</div>
+                <div class="mb-account__iban mat-mono">@(a.Iban ?? L["Banking.Account.NoIban"])</div>
                 <div class="mb-account__balance mb-money">@Fmt.Money(balance)</div>
-                <div class="mat-muted mb-account__meta">@(a.Balance is null ? "Summe der importierten Umsätze" : $"Saldo vom {Fmt.Date(a.BalanceDate)}")@(a.LastSyncDate is null ? "" : $" · abgerufen {Fmt.Moment(a.LastSyncDate)}")</div>
+                <div class="mat-muted mb-account__meta">@(a.Balance is null ? L["Banking.Account.SumOfImports"] : L["Banking.Account.BalanceOf", Fmt.Date(a.BalanceDate)])@(a.LastSyncDate is null ? "" : " · " + L["Banking.Account.Fetched", Fmt.Moment(a.LastSyncDate)])</div>
                 @if (a.LastSyncError is not null) { <p class="mb-warn-text mb-account__meta">@a.LastSyncError</p> }
                 <form method="post" class="mb-account__actions">
-                    <a class="mat-btn mat-btn--secondary mat-btn--sm" href="/Banking/Import?account=@a.Id">@Ui.Icon("upload")<span>Import</span></a>
-                    @if (a.Provider == BankProvider.EnableBanking && a.BankConnection?.Status == BankConnectionStatus.Active)
+                    <a class="mat-btn mat-btn--secondary mat-btn--sm" href="/Banking/Import?account=@a.Id">@Ui.Icon("upload")<span>@L["Banking.Import"]</span></a>
+                    @if (a.Provider == BankProvider.EnableBanking && active)
                     {
-                        <button type="submit" class="mat-btn mat-btn--ghost mat-btn--sm mb-needs-online" asp-page-handler="Sync" asp-route-accountId="@a.Id">@Ui.Icon("refresh")<span>Abrufen</span></button>
+                        <button type="submit" class="mat-btn mat-btn--ghost mat-btn--sm mb-needs-online" asp-page-handler="Sync" asp-route-accountId="@a.Id">@Ui.Icon("refresh")<span>@L["Banking.Fetch"]</span></button>
                     }
                 </form>
             </div>
@@ -29,8 +30,8 @@
     {
         <div class="mat-empty mat-empty--framed">
             <span class="mat-empty__icon">@Ui.Icon("credit-card")</span>
-            <div class="mat-empty__title">Noch kein Bankkonto</div>
-            <p>Lege ein Konto an und importiere seine Kontoauszüge (CSV jeder Bank, CAMT.053, MT940)@(Model.OnlineConfigured ? ", oder verbinde es online mit deiner Bank" : "")</p>
+            <div class="mat-empty__title">@L["Banking.NoAccount.Title"]</div>
+            <p>@(Model.OnlineConfigured ? L["Banking.NoAccount.TextOnline"] : L["Banking.NoAccount.Text"])</p>
         </div>
     }
 </div>
@@ -40,15 +41,15 @@
     <partial name="_Table" model="Model.Table" />
     <partial name="_Pager" model="Model.Pager" />
     <form method="post" class="mat-actions">
-        <a class="mat-btn mat-btn--primary" href="/Banking/Import">@Ui.Icon("upload")<span>Kontoauszug importieren</span></a>
+        <a class="mat-btn mat-btn--primary" href="/Banking/Import">@Ui.Icon("upload")<span>@L["Banking.ImportStatement"]</span></a>
         @if (Model.OpenCount > 0)
         {
-            <button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="Match">@Ui.Icon("check-square")<span>Automatisch zuordnen (@Model.OpenCount offen)</span></button>
+            <button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="Match">@Ui.Icon("check-square")<span>@L["Banking.AutoMatch", Model.OpenCount]</span></button>
         }
         @if (Model.OnlineConfigured)
         {
-            <a class="mat-btn mat-btn--secondary" href="/Banking/Connect">@Ui.Icon("link")<span>Bank online verbinden</span></a>
+            <a class="mat-btn mat-btn--secondary" href="/Banking/Connect">@Ui.Icon("link")<span>@L["Banking.Connect"]</span></a>
         }
-        <a class="mat-btn mat-btn--ghost" href="/Banking/Accounts/Edit">@Ui.Icon("plus")<span>Konto anlegen</span></a>
+        <a class="mat-btn mat-btn--ghost" href="/Banking/Accounts/Edit">@Ui.Icon("plus")<span>@L["Banking.NewAccount"]</span></a>
     </form>
 </div>

@@ -45,7 +45,35 @@ public sealed class CsvMapping
     public bool IsUsable => BookingDate is not null && (Amount is not null || Debit is not null || Credit is not null);
 }
 
-/// <summary>Reads the CSV exports of any bank: the delimiter, the encoding, the header row, the columns, German or English numbers and dates.</summary>
+/// <summary>
+/// A problem of a statement file as a text key and its arguments in one string (Core has no localizer, and the list of problems stays a list of strings):
+/// the key, then each argument after a unit separator. <see cref="Split"/> takes it apart again; a text without the separator is a key or a finished text.
+/// </summary>
+public static class StatementProblem
+{
+    public const char Separator = '\u001F';
+
+    public const string MissingColumns = "Banking.Problem.MissingColumns";
+
+    /// <summary>{0} the row, {1} the text that is not a date.</summary>
+    public const string BadDate = "Banking.Problem.BadDate";
+
+    /// <summary>{0} the row, {1} the text that is not a number.</summary>
+    public const string BadAmount = "Banking.Problem.BadAmount";
+
+    public static string Of(string key, params object?[] arguments)
+        => arguments.Length == 0
+            ? key
+            : key + Separator + string.Join(Separator, arguments.Select(a => (Convert.ToString(a, CultureInfo.InvariantCulture) ?? "").Replace(Separator, ' ')));
+
+    public static (string Key, string[] Arguments) Split(string problem)
+    {
+        var parts = problem.Split(Separator);
+        return (parts[0], parts[1..]);
+    }
+}
+
+/// <summary>Reads the CSV exports of any bank:the delimiter, the encoding, the header row, the columns, German or English numbers and dates.</summary>
 public static class CsvStatement
 {
     private static readonly char[] Delimiters = [';', ',', '\t', '|'];
@@ -241,13 +269,13 @@ public static class CsvStatement
 
     // ------------------------------------------------------------------------------------------------ the bookings
 
-    /// <summary>The bookings of the table with <paramref name="mapping"/>. A row that cannot be read is skipped and named in <paramref name="problems"/>.</summary>
+    /// <summary>The bookings of the table with <paramref name="mapping"/>. A row that cannot be read is skipped and named in <paramref name="problems"/> (as <see cref="StatementProblem"/>).</summary>
     public static List<StatementLine> Lines(CsvTable table, CsvMapping mapping, List<string> problems, string defaultCurrency = "EUR")
     {
         var result = new List<StatementLine>();
         if (!mapping.IsUsable)
         {
-            problems.Add("Es fehlt die Spalte mit dem Datum oder mit dem Betrag.");
+            problems.Add(StatementProblem.Of(StatementProblem.MissingColumns));
             return result;
         }
 
@@ -266,7 +294,7 @@ public static class CsvStatement
                 // the sum lines at the end of many exports have no date: no problem worth naming
                 if (row.Count(f => f.Length > 0) > 2 && Get(mapping.BookingDate) is not null)
                 {
-                    problems.Add($"Zeile {r + 1}: Das Datum „{Get(mapping.BookingDate)}“ ist kein Datum.");
+                    problems.Add(StatementProblem.Of(StatementProblem.BadDate, r + 1, Get(mapping.BookingDate)));
                 }
 
                 continue;
@@ -277,7 +305,7 @@ public static class CsvStatement
             {
                 if (!Amount.TryParse(Get(mapping.Amount), out amount))
                 {
-                    problems.Add($"Zeile {r + 1}: Der Betrag „{Get(mapping.Amount)}“ ist keine Zahl.");
+                    problems.Add(StatementProblem.Of(StatementProblem.BadAmount, r + 1, Get(mapping.Amount)));
                     continue;
                 }
             }

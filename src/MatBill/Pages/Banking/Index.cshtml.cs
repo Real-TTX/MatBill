@@ -27,7 +27,7 @@ public sealed class IndexModel(MbDbContext db, MatchingService matching, BankSyn
 
     public async Task OnGetAsync()
     {
-        Head("Banking", "Kontoumsätze importieren oder abrufen und automatisch Rechnungen und Ausgaben zuordnen.", ("Banking", null));
+        Head(L["Banking.Title"], L["Banking.Sub"], (L["Banking.Title"], null));
         Accounts = await db.BankAccount.AsNoTracking().Include(a => a.BankConnection).Where(a => a.IsActive).OrderBy(a => a.Name).ToListAsync();
         Sums = await db.BankTransaction.GroupBy(t => t.BankAccountId).Select(g => new { g.Key, Sum = g.Sum(t => t.Amount) }).ToDictionaryAsync(x => x.Key, x => x.Sum);
         OpenCount = await db.BankTransaction.CountAsync(t => t.State == MatchState.Open);
@@ -36,9 +36,9 @@ public sealed class IndexModel(MbDbContext db, MatchingService matching, BankSyn
         {
             Id = "transactions",
             Action = "/Banking",
-            Label = "Umsätze",
-            Noun = "Umsätze",
-            SearchPlaceholder = "Name, Verwendungszweck, IBAN, Betrag ...",
+            Label = L["Banking.Transactions"],
+            Noun = L["Banking.Noun"],
+            SearchPlaceholder = L["Banking.Search"],
             Search = (q, text) =>
             {
                 var like = Like.Contains(text);
@@ -48,23 +48,23 @@ public sealed class IndexModel(MbDbContext db, MatchingService matching, BankSyn
             },
             Filters =
             [
-                new FilterSpec<BankTransaction>("status", "Zuordnung", [new("offen", "Offen"), new("zugeordnet", "Zugeordnet"), new("automatisch", "Automatisch zugeordnet"), new("ignoriert", "Ignoriert")], (q, v) => v switch
+                new FilterSpec<BankTransaction>("status", L["Banking.Match"], [new("open", L["Banking.State.Open"]), new("matched", L["Banking.State.Matched"]), new("auto", L["Banking.State.Auto"]), new("ignored", L["Banking.State.Ignored"])], (q, v) => v switch
                 {
-                    "offen" => q.Where(t => t.State == MatchState.Open),
-                    "zugeordnet" => q.Where(t => t.State == MatchState.Matched),
-                    "automatisch" => q.Where(t => t.State == MatchState.Matched && t.MatchedAutomatically),
+                    "open" => q.Where(t => t.State == MatchState.Open),
+                    "matched" => q.Where(t => t.State == MatchState.Matched),
+                    "auto" => q.Where(t => t.State == MatchState.Matched && t.MatchedAutomatically),
                     _ => q.Where(t => t.State == MatchState.Ignored),
                 }),
-                new FilterSpec<BankTransaction>("richtung", "Richtung", [new("ein", "Eingang"), new("aus", "Ausgang")], (q, v) => v == "ein" ? q.Where(t => t.Amount > 0) : q.Where(t => t.Amount < 0)),
-                new FilterSpec<BankTransaction>("konto", "Konto", [.. Accounts.Select(a => new FilterOption(a.Id.ToString(), a.Name))], (q, v) => long.TryParse(v, out var id) ? q.Where(t => t.BankAccountId == id) : q),
+                new FilterSpec<BankTransaction>("direction", L["Banking.Direction"], [new("in", L["Banking.Direction.In"]), new("out", L["Banking.Direction.Out"])], (q, v) => v == "in" ? q.Where(t => t.Amount > 0) : q.Where(t => t.Amount < 0)),
+                new FilterSpec<BankTransaction>("account", L["Banking.Account"], [.. Accounts.Select(a => new FilterOption(a.Id.ToString(), a.Name))], (q, v) => long.TryParse(v, out var id) ? q.Where(t => t.BankAccountId == id) : q),
             ],
             Sorts = new Dictionary<string, (string, Func<IQueryable<BankTransaction>, bool, IOrderedQueryable<BankTransaction>>)>
             {
-                ["datum"] = ("Buchungstag", (q, d) => d ? q.OrderByDescending(t => t.BookingDate).ThenByDescending(t => t.Id) : q.OrderBy(t => t.BookingDate).ThenBy(t => t.Id)),
-                ["betrag"] = ("Betrag", (q, d) => d ? q.OrderByDescending(t => t.Amount) : q.OrderBy(t => t.Amount)),
-                ["name"] = ("Name", (q, d) => d ? q.OrderByDescending(t => t.CounterpartyName) : q.OrderBy(t => t.CounterpartyName)),
+                ["date"] = (L["Banking.BookingDate"].Value, (q, d) => d ? q.OrderByDescending(t => t.BookingDate).ThenByDescending(t => t.Id) : q.OrderBy(t => t.BookingDate).ThenBy(t => t.Id)),
+                ["amount"] = (L["Common.Amount"].Value, (q, d) => d ? q.OrderByDescending(t => t.Amount) : q.OrderBy(t => t.Amount)),
+                ["name"] = (L["Common.Name"].Value, (q, d) => d ? q.OrderByDescending(t => t.CounterpartyName) : q.OrderBy(t => t.CounterpartyName)),
             },
-            DefaultSort = "datum",
+            DefaultSort = "date",
             DefaultDescending = true,
             PageSize = 30,
         };
@@ -72,25 +72,31 @@ public sealed class IndexModel(MbDbContext db, MatchingService matching, BankSyn
         var result = await ListBuilder.RunAsync(db.BankTransaction.AsNoTracking().Include(t => t.Invoice).Include(t => t.Expense).Include(t => t.BankAccount), Request, spec, HttpContext.RequestAborted);
         Toolbar = result.Toolbar;
         Pager = result.Pager;
-        Table = TableModel.Of("transaction-table", "Umsätze", result.Items,
+        var noName = L["Banking.NoName"].Value;
+        var auto = L["Banking.Pill.Auto"].Value;
+        var matched = L["Banking.Pill.Matched"].Value;
+        var ignored = L["Banking.Pill.Ignored"].Value;
+        var open = L["Banking.Pill.Open"].Value;
+        var invoice = L["Banking.Invoice"].Value;
+        Table = TableModel.Of("transaction-table", L["Banking.Transactions"], result.Items,
         [
-            (new TableColumn("Datum"), t => Ui.Text(Fmt.Date(t.BookingDate))),
-            (new TableColumn("Name / Verwendungszweck"), t => Ui.NameWithSub(t.CounterpartyName ?? "(ohne Namen)", $"/Banking/Transaction?id={t.Id}", t.Purpose is { Length: > 90 } p ? p[..90] + " …" : t.Purpose)),
-            (new TableColumn("Konto", HideOnPhone: true), t => Ui.Text(t.BankAccount?.Name)),
-            (new TableColumn("Betrag", Numeric: true), t => Ui.Money(t.Amount)),
-            (new TableColumn("Zuordnung"), t => t.State switch
+            (new TableColumn(L["Common.Date"]), t => Ui.Text(Fmt.Date(t.BookingDate))),
+            (new TableColumn(L["Banking.Column.NamePurpose"]), t => Ui.NameWithSub(t.CounterpartyName ?? noName, $"/Banking/Transaction?id={t.Id}", t.Purpose is { Length: > 90 } p ? p[..90] + " …" : t.Purpose)),
+            (new TableColumn(L["Banking.Account"], HideOnPhone: true), t => Ui.Text(t.BankAccount?.Name)),
+            (new TableColumn(L["Common.Amount"], Numeric: true), t => Ui.Money(t.Amount)),
+            (new TableColumn(L["Banking.Match"]), t => t.State switch
             {
-                MatchState.Matched when t.Invoice is not null => Ui.Concat(Ui.Pill(t.MatchedAutomatically ? "automatisch" : "zugeordnet", "ok"), Ui.Text(" "), Ui.Link(t.Invoice.Number ?? "Rechnung", $"/Invoices/Edit?id={t.InvoiceId}")),
-                MatchState.Matched when t.Expense is not null => Ui.Concat(Ui.Pill(t.MatchedAutomatically ? "automatisch" : "zugeordnet", "ok"), Ui.Text(" "), Ui.Link(t.Expense.Number, $"/Expenses/Edit?id={t.ExpenseId}")),
-                MatchState.Ignored => Ui.Pill("ignoriert", "plain"),
-                _ => Ui.Pill("offen", "warn"),
+                MatchState.Matched when t.Invoice is not null => Ui.Concat(Ui.Pill(t.MatchedAutomatically ? auto : matched, "ok"), Ui.Text(" "), Ui.Link(t.Invoice.Number ?? invoice, $"/Invoices/Edit?id={t.InvoiceId}")),
+                MatchState.Matched when t.Expense is not null => Ui.Concat(Ui.Pill(t.MatchedAutomatically ? auto : matched, "ok"), Ui.Text(" "), Ui.Link(t.Expense.Number, $"/Expenses/Edit?id={t.ExpenseId}")),
+                MatchState.Ignored => Ui.Pill(ignored, "plain"),
+                _ => Ui.Pill(open, "warn"),
             }),
         ],
-        t => [new RowAction("edit", "Zuordnen", $"/Banking/Transaction?id={t.Id}")]);
+        t => [new RowAction("edit", L["Banking.Assign"], $"/Banking/Transaction?id={t.Id}")]);
         Table = Table with
         {
-            EmptyTitle = Toolbar.Total == 0 ? "Noch keine Umsätze" : "Nichts gefunden",
-            EmptyText = Toolbar.Total == 0 ? "Importiere einen Kontoauszug (CSV, CAMT, MT940) oder verbinde ein Konto online." : "Ändere die Suche oder den Filter.",
+            EmptyTitle = Toolbar.Total == 0 ? L["Banking.Empty.Title"] : L["Banking.Empty.NothingFound"],
+            EmptyText = Toolbar.Total == 0 ? L["Banking.Empty.Text"] : L["Banking.Empty.ChangeSearch"],
             EmptyIcon = Toolbar.Total == 0 ? "credit-card" : "search",
         };
     }
@@ -99,7 +105,7 @@ public sealed class IndexModel(MbDbContext db, MatchingService matching, BankSyn
     {
         var matched = await matching.AutoMatchAsync();
         nav.Invalidate();
-        Flash(matched == 0 ? "Keine eindeutige Zuordnung gefunden. Offene Umsätze zeigen Vorschläge." : $"{matched} Umsätze zugeordnet.");
+        Flash(matched == 0 ? L["Banking.AutoMatch.None"] : L["Banking.AutoMatch.Done", matched]);
         return RedirectToPage();
     }
 
@@ -115,11 +121,11 @@ public sealed class IndexModel(MbDbContext db, MatchingService matching, BankSyn
         nav.Invalidate();
         if (import is null)
         {
-            FlashError(account.LastSyncError ?? "Das Konto konnte nicht abgerufen werden.");
+            FlashError(account.LastSyncError ?? L["Banking.Sync.Failed"]);
         }
         else
         {
-            Flash($"{account.Name}: {import.Added} neue Umsätze, {import.Matched} zugeordnet.");
+            Flash(L["Banking.Sync.Done", account.Name, import.Added, import.Matched]);
         }
 
         return RedirectToPage();

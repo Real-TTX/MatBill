@@ -10,7 +10,30 @@ public sealed record OpenItem(long Id, string Kind, string? Number, decimal Amou
 /// <summary>A booking as the matcher sees it.</summary>
 public sealed record PaymentInfo(decimal Amount, DateOnly Date, string? Name, string? Iban, string? Purpose);
 
+/// <summary>
+/// An item the booking could pay, its points and why. <see cref="Reasons"/> are text keys of the interface (<see cref="MatchReason"/>), translated by the page;
+/// <see cref="MatchReason.Number"/> takes the number of the item as its argument.
+/// </summary>
 public sealed record MatchCandidate(OpenItem Item, int Score, IReadOnlyList<string> Reasons);
+
+/// <summary>The reasons of a match as text keys (Core has no localizer: the Banking pages translate them).</summary>
+public static class MatchReason
+{
+    /// <summary>The number of the item is in the purpose; the text takes the number as {0}.</summary>
+    public const string Number = "Banking.Reason.Number";
+
+    public const string ExactAmount = "Banking.Reason.ExactAmount";
+
+    public const string OnlyItemWithAmount = "Banking.Reason.OnlyItemWithAmount";
+
+    public const string CashDiscount = "Banking.Reason.CashDiscount";
+
+    public const string PartnerIban = "Banking.Reason.PartnerIban";
+
+    public const string PartnerName = "Banking.Reason.PartnerName";
+
+    public const string PaidBeforeDocument = "Banking.Reason.PaidBeforeDocument";
+}
 
 /// <summary>
 /// Finds what a booking pays. Each open item gets points: its number in the purpose (60), the exact amount (40), the amount after a discount of up to 3 % (15),
@@ -44,41 +67,41 @@ public static partial class PaymentMatcher
             if (!string.IsNullOrWhiteSpace(item.Number) && Compact(item.Number) is { Length: >= 4 } number && purpose.Contains(number, StringComparison.Ordinal))
             {
                 score += 60;
-                reasons.Add($"Nummer {item.Number} im Verwendungszweck");
+                reasons.Add(MatchReason.Number);
             }
 
             if (item.Amount == amount)
             {
                 score += 40;
-                reasons.Add("Betrag stimmt genau");
+                reasons.Add(MatchReason.ExactAmount);
                 if (sameAmount == 1)
                 {
                     score += 20;
-                    reasons.Add("einziger offener Posten mit diesem Betrag");
+                    reasons.Add(MatchReason.OnlyItemWithAmount);
                 }
             }
             else if (amount < item.Amount && amount >= item.Amount * 0.97m)
             {
                 score += 15;
-                reasons.Add("Betrag mit bis zu 3 % Abzug (Skonto?)");
+                reasons.Add(MatchReason.CashDiscount);
             }
 
             var iban = (payment.Iban ?? "").Replace(" ", "", StringComparison.Ordinal);
             if (iban.Length > 10 && string.Equals(iban, item.PartyIban?.Replace(" ", "", StringComparison.Ordinal), StringComparison.OrdinalIgnoreCase))
             {
                 score += 25;
-                reasons.Add("IBAN des Partners");
+                reasons.Add(MatchReason.PartnerIban);
             }
             else if (NameMatches(nameTokens, Tokens(item.PartyName)) || NameMatches(Tokens(item.PartyName), Tokens(payment.Purpose), all: true))
             {
                 score += 25;
-                reasons.Add("Name des Partners");
+                reasons.Add(MatchReason.PartnerName);
             }
 
             if (payment.Date < item.Date.AddDays(-7))
             {
                 score -= 30;
-                reasons.Add("Zahlung liegt vor dem Beleg");
+                reasons.Add(MatchReason.PaidBeforeDocument);
             }
 
             if (score >= 25)

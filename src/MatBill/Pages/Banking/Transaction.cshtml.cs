@@ -44,7 +44,7 @@ public sealed class TransactionModel(MbDbContext db, MatchingService matching, E
         {
             await matching.AssignAsync(t, kind, itemId, automatic: false, 100);
             nav.Invalidate();
-            Flash(kind == "invoice" ? "Zugeordnet: die Rechnung ist bezahlt." : "Zugeordnet: die Ausgabe ist bezahlt.");
+            Flash(kind == "invoice" ? L["Banking.Transaction.Assigned.Invoice"] : L["Banking.Transaction.Assigned.Expense"]);
         }
         catch (InvoiceException ex)
         {
@@ -64,7 +64,7 @@ public sealed class TransactionModel(MbDbContext db, MatchingService matching, E
 
         await matching.UnassignAsync(t);
         nav.Invalidate();
-        Flash("Die Zuordnung ist aufgehoben.");
+        Flash(L["Banking.Transaction.Unassigned"]);
         return RedirectToPage(new { id = Id });
     }
 
@@ -78,7 +78,7 @@ public sealed class TransactionModel(MbDbContext db, MatchingService matching, E
 
         await matching.IgnoreAsync(t, note);
         nav.Invalidate();
-        Flash("Der Umsatz wird ignoriert.");
+        Flash(L["Banking.Transaction.Ignored"]);
         return await NextAsync();
     }
 
@@ -92,7 +92,7 @@ public sealed class TransactionModel(MbDbContext db, MatchingService matching, E
 
         var expense = await matching.CreateExpenseAsync(t, expenses.Categories.Contains(category) ? category : "Sonstiges");
         nav.Invalidate();
-        Flash($"Ausgabe {expense.Number} angelegt und zugeordnet. Lade jetzt den Beleg hoch.");
+        Flash(L["Banking.Transaction.ExpenseCreated", expense.Number]);
         return RedirectToPage("/Expenses/Edit", new { id = expense.Id });
     }
 
@@ -112,7 +112,7 @@ public sealed class TransactionModel(MbDbContext db, MatchingService matching, E
         }
 
         Transaction = t;
-        Head(t.CounterpartyName ?? "Umsatz", $"{Fmt.Date(t.BookingDate)} · {Fmt.Money(t.Amount)} · {t.BankAccount?.Name}", ("Banking", "/Banking"), ("Umsatz", null));
+        Head(t.CounterpartyName ?? L["Banking.Transaction"].Value, $"{Fmt.Date(t.BookingDate)} · {Fmt.Money(t.Amount)} · {t.BankAccount?.Name}", (L["Banking.Title"], "/Banking"), (L["Banking.Transaction"], null));
         ViewData["ActiveHref"] = "/Banking";
         if (t.State != MatchState.Matched)
         {

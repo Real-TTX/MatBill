@@ -2,18 +2,18 @@
 @model MatBill.Pages.Expenses.IndexModel
 
 <div class="mb-stats">
-    @Ui.Kpi("Ausgaben " + DateTime.Today.Year, Fmt.Money(Model.YearNet), "netto", "euro", href: $"/Expenses?jahr={DateTime.Today.Year}")
-    @Ui.Kpi("Vorsteuer " + DateTime.Today.Year, Fmt.Money(Model.YearTax), "aus den Belegen", "file-text")
-    @Ui.Kpi("Noch zu zahlen", Fmt.Money(Model.OpenSum), "offene Ausgaben", "clock", href: "/Expenses?status=offen")
-    @Ui.Kpi("Zu prüfen", Model.ToReview.ToString(), Model.ToReview == 0 ? "alles geprüft" : "hochgeladene Belege", "alert", href: "/Expenses?status=pruefen", bad: Model.ToReview > 0)
+    @Ui.Kpi(L["Expenses.Kpi.Year", DateTime.Today.Year], Fmt.Money(Model.YearNet), L["Expenses.Kpi.Year.Note"], "euro", href: $"/Expenses?year={DateTime.Today.Year}")
+    @Ui.Kpi(L["Expenses.Kpi.InputTax", DateTime.Today.Year], Fmt.Money(Model.YearTax), L["Expenses.Kpi.InputTax.Note"], "file-text")
+    @Ui.Kpi(L["Expenses.Kpi.Open"], Fmt.Money(Model.OpenSum), L["Expenses.Kpi.Open.Note"], "clock", href: "/Expenses?status=open")
+    @Ui.Kpi(L["Expenses.Kpi.Review"], Model.ToReview.ToString(), Model.ToReview == 0 ? L["Expenses.Kpi.Review.None"] : L["Expenses.Kpi.Review.Note"], "alert", href: "/Expenses?status=review", bad: Model.ToReview > 0)
 </div>
 
 <form method="post" asp-page-handler="Upload" enctype="multipart/form-data" class="mb-dropform" data-upload-form>
     <div class="mat-upload mb-drop" data-upload data-max-size="20MB" data-max-files="50" data-paste>
-        <input class="mat-upload__input" type="file" id="Files" name="Files" multiple accept=".pdf,.png,.jpg,.jpeg,.heic,.webp,.xml" aria-label="Belege hochladen" data-upload-autosubmit />
+        <input class="mat-upload__input" type="file" id="Files" name="Files" multiple accept=".pdf,.png,.jpg,.jpeg,.heic,.webp,.xml" aria-label="@L["Expenses.Upload.Label"]" data-upload-autosubmit />
     </div>
-    <p class="mat-hint">Belege hier ablegen, einfügen oder auswählen: PDF, Fotos, E-Rechnungen (ZUGFeRD, XRechnung). Jede Datei wird zu einer Ausgabe; E-Rechnungen werden vollständig ausgelesen.</p>
-    <noscript><button type="submit" class="mat-btn mat-btn--secondary">@Ui.Icon("upload")<span>Hochladen</span></button></noscript>
+    <p class="mat-hint">@L["Expenses.Upload.Hint"]</p>
+    <noscript><button type="submit" class="mat-btn mat-btn--secondary">@Ui.Icon("upload")<span>@L["Common.Upload"]</span></button></noscript>
 </form>
 
 <div class="mat-list">
@@ -21,7 +21,7 @@
     <partial name="_Table" model="Model.Table" />
     <partial name="_Pager" model="Model.Pager" />
     <div class="mat-actions">
-        <a class="mat-btn mat-btn--primary" href="/Expenses/Edit">@Ui.Icon("plus")<span>Ausgabe erfassen</span></a>
-        <a class="mat-btn mat-btn--secondary" href="/Export">@Ui.Icon("download")<span>Export für das Finanzamt</span></a>
+        <a class="mat-btn mat-btn--primary" href="/Expenses/Edit">@Ui.Icon("plus")<span>@L["Expenses.New"]</span></a>
+        <a class="mat-btn mat-btn--secondary" href="/Export">@Ui.Icon("download")<span>@L["Expenses.ToExport"]</span></a>
     </div>
 </div>

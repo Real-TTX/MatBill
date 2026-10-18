@@ -77,7 +77,7 @@ public sealed class ImportModel(MbDbContext db, BankingService banking, ConfigSt
 
     private void Prepare()
     {
-        Head("Kontoauszug importieren", "CSV jeder Bank, CAMT.052/053 (XML) oder MT940. Doppelte Umsätze werden erkannt.", ("Banking", "/Banking"), ("Import", null));
+        Head(L["Banking.ImportStatement"], L["Banking.Import.Sub"], (L["Banking.Title"], "/Banking"), (L["Banking.Import"], null));
         ViewData["ActiveHref"] = "/Banking";
         ViewData["Width"] = "wide";
         Accounts = [.. db.BankAccount.AsNoTracking().Where(a => a.IsActive).OrderBy(a => a.Name)];
@@ -89,7 +89,7 @@ public sealed class ImportModel(MbDbContext db, BankingService banking, ConfigSt
         var account = await AccountAsync();
         if (account is null)
         {
-            ModelState.AddModelError(nameof(AccountId), "Wähle das Konto (oder lege zuerst eines an).");
+            ModelState.AddModelError(nameof(AccountId), L["Banking.Import.ChooseAccount"]);
         }
 
         byte[]? bytes = null;
@@ -108,7 +108,7 @@ public sealed class ImportModel(MbDbContext db, BankingService banking, ConfigSt
         }
         else
         {
-            ModelState.AddModelError(nameof(Statement), "Wähle die Datei des Kontoauszugs (höchstens 20 MB).");
+            ModelState.AddModelError(nameof(Statement), L["Banking.Import.ChooseFile"]);
         }
 
         if (!ModelState.IsValid || bytes is null)
@@ -132,7 +132,7 @@ public sealed class ImportModel(MbDbContext db, BankingService banking, ConfigSt
         var account = await AccountAsync();
         if (account is null || string.IsNullOrEmpty(Token) || !Guid.TryParseExact(Token, "N", out _) || !System.IO.File.Exists(PathOf(Token)))
         {
-            FlashError("Die Datei ist nicht mehr da. Bitte wähle sie noch einmal.");
+            FlashError(L["Banking.Import.FileGone"]);
             return RedirectToPage(new { account = AccountId });
         }
 
@@ -141,15 +141,15 @@ public sealed class ImportModel(MbDbContext db, BankingService banking, ConfigSt
         if (preview.Lines.Count == 0)
         {
             Preview = preview;
-            ModelState.AddModelError(string.Empty, "Die Datei enthält mit dieser Zuordnung keine Umsätze.");
+            ModelState.AddModelError(string.Empty, L["Banking.Import.NoLinesError"]);
             return Page();
         }
 
         var import = await banking.ImportAsync(account, preview.Lines, preview.Format.ToString().ToUpperInvariant(), FileName, preview.Info, preview.Table, preview.Mapping);
         System.IO.File.Delete(PathOf(Token));
         nav.Invalidate();
-        Flash($"{import.Added} neue Umsätze importiert{(import.Duplicates > 0 ? $", {import.Duplicates} waren schon da" : "")}, {import.Matched} automatisch zugeordnet.");
-        return RedirectToPage("/Banking/Index", new { konto = account.Id });
+        Flash(import.Duplicates > 0 ? L["Banking.Import.DoneWithDuplicates", import.Added, import.Duplicates, import.Matched] : L["Banking.Import.Done", import.Added, import.Matched]);
+        return RedirectToPage("/Banking/Index", new { account = account.Id });
     }
 
     private async Task<BankAccount?> AccountAsync() => AccountId is { } id ? await db.BankAccount.FirstOrDefaultAsync(a => a.Id == id) : null;
@@ -167,4 +167,12 @@ public sealed class ImportModel(MbDbContext db, BankingService banking, ConfigSt
         StatementFormat.Mt940 => "MT940 (SWIFT)",
         _ => "CSV",
     };
+
+    /// <summary>A problem of the file in the language of the page: the reader names it by a text key and its arguments (<see cref="StatementProblem"/>); other texts stay as they are.</summary>
+    public string ProblemText(string problem)
+    {
+        var (key, arguments) = StatementProblem.Split(problem);
+        var text = arguments.Length == 0 ? L[key] : L[key, [.. arguments.Cast<object>()]];
+        return text.ResourceNotFound ? problem : text.Value;
+    }
 }

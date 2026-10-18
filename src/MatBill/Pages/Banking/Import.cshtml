@@ -5,40 +5,40 @@
     var headers = p?.Table?.Headers ?? [];
     var fields = new (string Name, string Label, int? Value)[]
     {
-        ("BookingDate", "Buchungstag *", Model.Mapping.BookingDate),
-        ("ValueDate", "Valuta", Model.Mapping.ValueDate),
-        ("Amount", "Betrag (mit Vorzeichen)", Model.Mapping.Amount),
-        ("Debit", "Soll / Ausgang", Model.Mapping.Debit),
-        ("Credit", "Haben / Eingang", Model.Mapping.Credit),
-        ("DebitCreditMark", "Kennzeichen S/H", Model.Mapping.DebitCreditMark),
-        ("Name", "Name Zahlungsbeteiligter", Model.Mapping.Name),
-        ("Iban", "IBAN Zahlungsbeteiligter", Model.Mapping.Iban),
-        ("Currency", "Währung", Model.Mapping.Currency),
-        ("Reference", "Referenz der Bank", Model.Mapping.Reference),
+        ("BookingDate", L["Banking.Import.Field.BookingDate"], Model.Mapping.BookingDate),
+        ("ValueDate", L["Banking.Import.Field.ValueDate"], Model.Mapping.ValueDate),
+        ("Amount", L["Banking.Import.Field.Amount"], Model.Mapping.Amount),
+        ("Debit", L["Banking.Import.Field.Debit"], Model.Mapping.Debit),
+        ("Credit", L["Banking.Import.Field.Credit"], Model.Mapping.Credit),
+        ("DebitCreditMark", L["Banking.Import.Field.DebitCreditMark"], Model.Mapping.DebitCreditMark),
+        ("Name", L["Banking.Import.Field.Name"], Model.Mapping.Name),
+        ("Iban", L["Banking.Import.Field.Iban"], Model.Mapping.Iban),
+        ("Currency", L["Banking.Import.Field.Currency"], Model.Mapping.Currency),
+        ("Reference", L["Banking.Import.Field.Reference"], Model.Mapping.Reference),
     };
 }
 
 <form class="mat-form" method="post" enctype="multipart/form-data" novalidate>
-    <mb-summary title="Der Import ging nicht." />
+    <mb-summary title="@L["Banking.Import.Failed"]" />
     <input type="hidden" name="Token" value="@Model.Token" />
     <input type="hidden" name="FileName" value="@Model.FileName" />
-    <mb-card title="@(p is null ? "1. Datei wählen" : "Datei")" icon="upload" sub="@Model.FileName">
+    <mb-card title="@(p is null ? L["Banking.Import.Step.File"] : L["Banking.Import.File"])" icon="upload" sub="@Model.FileName">
         <div class="mat-form__grid">
             <div class="mat-field">
-                <label class="mat-label" for="account">Konto <span class="mat-req" aria-hidden="true">*</span></label>
+                <label class="mat-label" for="account">@L["Banking.Account"] <span class="mat-req" aria-hidden="true">*</span></label>
                 <select class="mat-select" id="account" name="account" required>
-                    <option value="">(bitte wählen)</option>
+                    <option value="">@L["Banking.Import.PleaseChoose"]</option>
                     @foreach (var a in Model.Accounts) { <option value="@a.Id" selected="@(a.Id == Model.AccountId)">@a.Name@(a.Iban is null ? "" : " · " + a.Iban)</option> }
                 </select>
                 <span class="mat-error" aria-live="polite">@ViewData.ModelState["AccountId"]?.Errors.FirstOrDefault()?.ErrorMessage</span>
-                @if (Model.Accounts.Count == 0) { <span class="mat-hint"><a href="/Banking/Accounts/Edit">Lege zuerst ein Konto an.</a></span> }
+                @if (Model.Accounts.Count == 0) { <span class="mat-hint"><a href="/Banking/Accounts/Edit">@L["Banking.Import.CreateAccountFirst"]</a></span> }
             </div>
             @if (p is null)
             {
                 <div class="mat-field mat-field--full">
-                    <label class="mat-label" for="Statement">Kontoauszug</label>
+                    <label class="mat-label" for="Statement">@L["Banking.Import.Statement"]</label>
                     <div class="mat-upload" data-upload data-max-size="20MB" data-max-files="1"><input class="mat-upload__input" type="file" id="Statement" name="Statement" accept=".csv,.txt,.xml,.sta,.mt940,.940" /></div>
-                    <span class="mat-hint">Im Online-Banking unter „Umsätze exportieren“: CSV, CAMT.053 (XML) oder MT940. Die Spalten einer CSV erkennt MatBill selbst.</span>
+                    <span class="mat-hint">@L["Banking.Import.Statement.Hint"]</span>
                     <span class="mat-error" aria-live="polite">@ViewData.ModelState["Statement"]?.Errors.FirstOrDefault()?.ErrorMessage</span>
                 </div>
             }
@@ -49,57 +49,57 @@
     {
         @if (p.Table is not null)
         {
-            <mb-card title="2. Spalten prüfen" icon="table" sub="@($"{headers.Count} Spalten erkannt")">
-                <p class="mat-muted">So hat MatBill die Spalten zugeordnet. Ändere sie, wenn etwas nicht stimmt, und lies die Datei neu ein. Die Zuordnung wird für dieses Konto gemerkt.</p>
+            <mb-card title="@L["Banking.Import.Step.Columns"]" icon="table" sub="@L["Banking.Import.ColumnsFound", headers.Count]">
+                <p class="mat-muted">@L["Banking.Import.Columns.Hint"]</p>
                 <div class="mat-form__grid">
                     @foreach (var f in fields)
                     {
                         <div class="mat-field">
                             <label class="mat-label" for="map-@f.Name">@f.Label</label>
                             <select class="mat-select" id="map-@f.Name" name="Mapping.@f.Name">
-                                <option value="">(keine)</option>
+                                <option value="">@L["Banking.Import.NoColumn"]</option>
                                 @for (var i = 0; i < headers.Count; i++) { <option value="@i" selected="@(f.Value == i)">@headers[i]</option> }
                             </select>
                         </div>
                     }
                     <div class="mat-field">
-                        <label class="mat-label" for="map-Purpose">Verwendungszweck (mehrere möglich)</label>
+                        <label class="mat-label" for="map-Purpose">@L["Banking.Import.Field.Purpose"]</label>
                         <select class="mat-select mb-multi" id="map-Purpose" name="Mapping.Purpose" multiple size="4">
                             @for (var i = 0; i < headers.Count; i++) { <option value="@i" selected="@Model.Mapping.Purpose.Contains(i)">@headers[i]</option> }
                         </select>
                     </div>
-                    <label class="mat-switch mat-field--full"><input type="checkbox" name="Mapping.InvertSign" value="true" checked="@Model.Mapping.InvertSign" /><span class="mat-switch__track"></span><span>Vorzeichen umdrehen (Ausgaben stehen positiv in der Datei)</span></label>
+                    <label class="mat-switch mat-field--full"><input type="checkbox" name="Mapping.InvertSign" value="true" checked="@Model.Mapping.InvertSign" /><span class="mat-switch__track"></span><span>@L["Banking.Import.InvertSign"]</span></label>
                     <input type="hidden" name="Mapping.InvertSign" value="false" />
                 </div>
-                <div class="mat-actions"><button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="Preview">@Ui.Icon("refresh")<span>Neu einlesen</span></button></div>
+                <div class="mat-actions"><button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="Preview">@Ui.Icon("refresh")<span>@L["Banking.Import.Reread"]</span></button></div>
             </mb-card>
         }
 
-        <mb-card title="@(p.Table is null ? "2. Vorschau" : "3. Vorschau")" icon="eye" sub="@($"{Model.FormatName} · {p.Lines.Count} Umsätze")">
+        <mb-card title="@(p.Table is null ? L["Banking.Import.Step.Preview2"] : L["Banking.Import.Step.Preview3"])" icon="eye" sub="@L["Banking.Import.PreviewSub", Model.FormatName, p.Lines.Count]">
             @if (p.Problems.Count > 0)
             {
-                <div class="mat-alert mat-alert--warning">@Ui.Icon("alert")<div class="mat-alert__body"><strong>@p.Problems.Count Zeilen wurden übersprungen.</strong><ul class="mat-alert__list">@foreach (var pr in p.Problems.Take(5)) { <li>@pr</li> }</ul></div></div>
+                <div class="mat-alert mat-alert--warning">@Ui.Icon("alert")<div class="mat-alert__body"><strong>@L["Banking.Import.Skipped", p.Problems.Count]</strong><ul class="mat-alert__list">@foreach (var pr in p.Problems.Take(5)) { <li>@Model.ProblemText(pr)</li> }</ul></div></div>
             }
             @if (p.Lines.Count > 0)
             {
-                <p class="mat-muted">Zeitraum @Fmt.Date(p.Lines.Min(l => l.BookingDate)) bis @Fmt.Date(p.Lines.Max(l => l.BookingDate)) · Eingänge @Fmt.Money(p.Lines.Where(l => l.Amount > 0).Sum(l => l.Amount)) · Ausgänge @Fmt.Money(p.Lines.Where(l => l.Amount < 0).Sum(l => l.Amount))@(p.Info.Iban is null ? "" : $" · Konto {p.Info.Iban}")</p>
+                <p class="mat-muted">@L["Banking.Import.Summary", Fmt.Date(p.Lines.Min(l => l.BookingDate)), Fmt.Date(p.Lines.Max(l => l.BookingDate)), Fmt.Money(p.Lines.Where(l => l.Amount > 0).Sum(l => l.Amount)), Fmt.Money(p.Lines.Where(l => l.Amount < 0).Sum(l => l.Amount))]@(p.Info.Iban is null ? "" : " · " + L["Banking.Import.SummaryAccount", p.Info.Iban])</p>
                 <div class="mat-table-wrap">
                     <table class="mat-table">
-                        <caption class="mat-sr-only">Die ersten Umsätze der Datei</caption>
-                        <thead><tr><th scope="col">Datum</th><th scope="col">Name</th><th scope="col" class="mat-hide-sm">Verwendungszweck</th><th scope="col" class="mat-num">Betrag</th></tr></thead>
+                        <caption class="mat-sr-only">@L["Banking.Import.Caption"]</caption>
+                        <thead><tr><th scope="col">@L["Common.Date"]</th><th scope="col">@L["Common.Name"]</th><th scope="col" class="mat-hide-sm">@L["Banking.Purpose"]</th><th scope="col" class="mat-num">@L["Common.Amount"]</th></tr></thead>
                         <tbody>
                             @foreach (var l in p.Lines.Take(15))
                             {
-                                <tr><td data-label="Datum">@Fmt.Date(l.BookingDate)</td><td data-label="Name">@l.CounterpartyName</td><td data-label="Verwendungszweck" class="mat-hide-sm">@l.Purpose</td><td data-label="Betrag" class="mat-num">@Ui.Money(l.Amount)</td></tr>
+                                <tr><td data-label="@L["Common.Date"]">@Fmt.Date(l.BookingDate)</td><td data-label="@L["Common.Name"]">@l.CounterpartyName</td><td data-label="@L["Banking.Purpose"]" class="mat-hide-sm">@l.Purpose</td><td data-label="@L["Common.Amount"]" class="mat-num">@Ui.Money(l.Amount)</td></tr>
                             }
                         </tbody>
                     </table>
                 </div>
-                @if (p.Lines.Count > 15) { <p class="mat-hint">… und @(p.Lines.Count - 15) weitere.</p> }
+                @if (p.Lines.Count > 15) { <p class="mat-hint">@L["Banking.Import.More", p.Lines.Count - 15]</p> }
             }
             else
             {
-                <p class="mat-muted">Mit dieser Zuordnung ergeben sich keine Umsätze. Prüfe die Spalten für Datum und Betrag.</p>
+                <p class="mat-muted">@L["Banking.Import.NoLines"]</p>
             }
         </mb-card>
     }
@@ -107,13 +107,13 @@
     <div class="mat-btn-row">
         @if (p is null)
         {
-            <button type="submit" class="mat-btn mat-btn--primary" asp-page-handler="Preview">@Ui.Icon("arrow-right")<span>Weiter</span></button>
+            <button type="submit" class="mat-btn mat-btn--primary" asp-page-handler="Preview">@Ui.Icon("arrow-right")<span>@L["Banking.Import.Next"]</span></button>
         }
         else
         {
-            <button type="submit" class="mat-btn mat-btn--primary" asp-page-handler="Import" disabled="@(p.Lines.Count == 0)">@Ui.Icon("check")<span>@p.Lines.Count Umsätze importieren</span></button>
-            <a class="mat-btn mat-btn--secondary" href="/Banking/Import?account=@Model.AccountId">@Ui.Icon("upload")<span>Andere Datei</span></a>
+            <button type="submit" class="mat-btn mat-btn--primary" asp-page-handler="Import" disabled="@(p.Lines.Count == 0)">@Ui.Icon("check")<span>@L["Banking.Import.Run", p.Lines.Count]</span></button>
+            <a class="mat-btn mat-btn--secondary" href="/Banking/Import?account=@Model.AccountId">@Ui.Icon("upload")<span>@L["Banking.Import.OtherFile"]</span></a>
         }
-        <a class="mat-btn mat-btn--ghost" href="/Banking">@Ui.Icon("back")<span>Zurück</span></a>
+        <a class="mat-btn mat-btn--ghost" href="/Banking">@Ui.Icon("back")<span>@L["Common.Back"]</span></a>
     </div>
 </form>

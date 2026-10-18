@@ -29,16 +29,16 @@ public sealed class IndexModel(MbDbContext db, ExpenseService expenses, NavCount
 
     public async Task OnGetAsync()
     {
-        Head("Ausgaben", "Belege hochladen, prüfen und zuordnen. E-Rechnungen von Lieferanten füllen sich selbst aus.", ("Ausgaben", null));
+        Head(L["Expenses.Title"], L["Expenses.Sub"], (L["Expenses.Title"], null));
         var today = Fmt.Today(clock);
         var years = await db.Expense.Select(e => e.ExpenseDate.Year).Distinct().OrderByDescending(y => y).ToListAsync();
         var spec = new ListSpec<Expense>
         {
             Id = "expenses",
             Action = "/Expenses",
-            Label = "Ausgaben",
-            Noun = "Ausgaben",
-            SearchPlaceholder = "Lieferant, Belegnummer, Beschreibung ...",
+            Label = L["Expenses.Title"],
+            Noun = L["Expenses.Noun"],
+            SearchPlaceholder = L["Expenses.Search"],
             Search = (q, text) =>
             {
                 var like = Like.Contains(text);
@@ -46,24 +46,24 @@ public sealed class IndexModel(MbDbContext db, ExpenseService expenses, NavCount
             },
             Filters =
             [
-                new FilterSpec<Expense>("status", "Status", [new("pruefen", "Zu prüfen"), new("offen", "Offen"), new("bezahlt", "Bezahlt"), new("ohnebeleg", "Ohne Beleg")], (q, v) => v switch
+                new FilterSpec<Expense>("status", L["Common.Status"], [new("review", L["Expenses.Status.Review"]), new("open", L["Expenses.Status.Open"]), new("paid", L["Expenses.Status.Paid"]), new("noreceipt", L["Expenses.Status.NoReceipt"])], (q, v) => v switch
                 {
-                    "pruefen" => q.Where(e => e.NeedsReview),
-                    "offen" => q.Where(e => e.Status == ExpenseStatus.Open),
-                    "bezahlt" => q.Where(e => e.Status == ExpenseStatus.Paid),
+                    "review" => q.Where(e => e.NeedsReview),
+                    "open" => q.Where(e => e.Status == ExpenseStatus.Open),
+                    "paid" => q.Where(e => e.Status == ExpenseStatus.Paid),
                     _ => q.Where(e => e.ReceiptFileId == null),
                 }),
-                new FilterSpec<Expense>("kategorie", "Kategorie", [.. expenses.Categories.Select(c => new FilterOption(c, c))], (q, v) => q.Where(e => e.Category == v)),
-                new FilterSpec<Expense>("jahr", "Jahr", [.. years.Select(y => new FilterOption(y.ToString(), y.ToString()))], (q, v) => int.TryParse(v, out var y) ? q.Where(e => e.ExpenseDate.Year == y) : q),
+                new FilterSpec<Expense>("category", L["Expenses.Category"], [.. expenses.Categories.Select(c => new FilterOption(c, c))], (q, v) => q.Where(e => e.Category == v)),
+                new FilterSpec<Expense>("year", L["Expenses.Year"], [.. years.Select(y => new FilterOption(y.ToString(), y.ToString()))], (q, v) => int.TryParse(v, out var y) ? q.Where(e => e.ExpenseDate.Year == y) : q),
             ],
             Sorts = new Dictionary<string, (string, Func<IQueryable<Expense>, bool, IOrderedQueryable<Expense>>)>
             {
-                ["datum"] = ("Belegdatum", (q, d) => d ? q.OrderByDescending(e => e.ExpenseDate).ThenByDescending(e => e.Id) : q.OrderBy(e => e.ExpenseDate).ThenBy(e => e.Id)),
-                ["lieferant"] = ("Lieferant", (q, d) => d ? q.OrderByDescending(e => e.Supplier) : q.OrderBy(e => e.Supplier)),
-                ["betrag"] = ("Betrag", (q, d) => d ? q.OrderByDescending(e => e.GrossAmount) : q.OrderBy(e => e.GrossAmount)),
-                ["nummer"] = ("Belegnummer", (q, d) => d ? q.OrderByDescending(e => e.Number) : q.OrderBy(e => e.Number)),
+                ["date"] = (L["Expenses.Date"].Value, (q, d) => d ? q.OrderByDescending(e => e.ExpenseDate).ThenByDescending(e => e.Id) : q.OrderBy(e => e.ExpenseDate).ThenBy(e => e.Id)),
+                ["supplier"] = (L["Expenses.Supplier"].Value, (q, d) => d ? q.OrderByDescending(e => e.Supplier) : q.OrderBy(e => e.Supplier)),
+                ["amount"] = (L["Common.Amount"].Value, (q, d) => d ? q.OrderByDescending(e => e.GrossAmount) : q.OrderBy(e => e.GrossAmount)),
+                ["number"] = (L["Expenses.Number"].Value, (q, d) => d ? q.OrderByDescending(e => e.Number) : q.OrderBy(e => e.Number)),
             },
-            DefaultSort = "datum",
+            DefaultSort = "date",
             DefaultDescending = true,
         };
 
@@ -75,23 +75,30 @@ public sealed class IndexModel(MbDbContext db, ExpenseService expenses, NavCount
         OpenSum = await db.Expense.Where(e => e.Status == ExpenseStatus.Open).SumAsync(e => e.GrossAmount);
         ToReview = await db.Expense.CountAsync(e => e.NeedsReview);
 
-        Table = TableModel.Of("expense-table", "Ausgaben", result.Items,
+        var review = L["Expenses.Pill.Review"].Value;
+        var paid = L["Expenses.Pill.Paid"].Value;
+        var open = L["Expenses.Pill.Open"].Value;
+        var eInvoice = " " + L["Expenses.File.EInvoice"].Value;
+        var receipt = " " + L["Expenses.File.Receipt"].Value;
+        var edit = L["Common.Edit"].Value;
+        var view = L["Expenses.ViewReceipt"].Value;
+        Table = TableModel.Of("expense-table", L["Expenses.Title"], result.Items,
         [
-            (new TableColumn("Lieferant"), e => Ui.NameWithSub(e.Supplier, $"/Expenses/Edit?id={e.Id}", e.Description)),
-            (new TableColumn("Beleg", HideOnPhone: true, Mono: true), e => Ui.Text(e.Number)),
-            (new TableColumn("Datum", HideOnPhone: true), e => Ui.Text(Fmt.Date(e.ExpenseDate))),
-            (new TableColumn("Kategorie", HideOnPhone: true), e => Ui.Text(e.Category)),
-            (new TableColumn("Brutto", Numeric: true), e => Ui.Money(e.GrossAmount)),
-            (new TableColumn("Status"), e => e.NeedsReview ? Ui.Pill("zu prüfen", "warn") : e.Status == ExpenseStatus.Paid ? Ui.Pill("bezahlt", "ok") : Ui.Pill("offen", "info")),
-            (new TableColumn("Datei", HideOnPhone: true), e => e.ReceiptFileId is null ? Ui.Text("–") : Ui.Concat(Ui.Icon(e.FromEInvoice ? "check-circle" : "paperclip"), Ui.Text(e.FromEInvoice ? " E-Rechnung" : " Beleg"))),
+            (new TableColumn(L["Expenses.Supplier"]), e => Ui.NameWithSub(e.Supplier, $"/Expenses/Edit?id={e.Id}", e.Description)),
+            (new TableColumn(L["Expenses.Column.Receipt"], HideOnPhone: true, Mono: true), e => Ui.Text(e.Number)),
+            (new TableColumn(L["Common.Date"], HideOnPhone: true), e => Ui.Text(Fmt.Date(e.ExpenseDate))),
+            (new TableColumn(L["Expenses.Category"], HideOnPhone: true), e => Ui.Text(e.Category)),
+            (new TableColumn(L["Expenses.Column.Gross"], Numeric: true), e => Ui.Money(e.GrossAmount)),
+            (new TableColumn(L["Common.Status"]), e => e.NeedsReview ? Ui.Pill(review, "warn") : e.Status == ExpenseStatus.Paid ? Ui.Pill(paid, "ok") : Ui.Pill(open, "info")),
+            (new TableColumn(L["Expenses.Column.File"], HideOnPhone: true), e => e.ReceiptFileId is null ? Ui.Text("–") : Ui.Concat(Ui.Icon(e.FromEInvoice ? "check-circle" : "paperclip"), Ui.Text(e.FromEInvoice ? eInvoice : receipt))),
         ],
         e => e.ReceiptFileId is null
-            ? [new RowAction("edit", "Bearbeiten", $"/Expenses/Edit?id={e.Id}")]
-            : [new RowAction("edit", "Bearbeiten", $"/Expenses/Edit?id={e.Id}"), new RowAction("eye", "Beleg ansehen", $"/expenses/{e.Id}/receipt")]);
+            ? [new RowAction("edit", edit, $"/Expenses/Edit?id={e.Id}")]
+            : [new RowAction("edit", edit, $"/Expenses/Edit?id={e.Id}"), new RowAction("eye", view, $"/expenses/{e.Id}/receipt")]);
         Table = Table with
         {
-            EmptyTitle = Toolbar.Total == 0 ? "Noch keine Ausgaben" : "Nichts gefunden",
-            EmptyText = Toolbar.Total == 0 ? "Zieh Belege (PDF, Fotos, E-Rechnungen) auf die Fläche oben, oder erfasse eine Ausgabe von Hand." : "Ändere die Suche oder den Filter.",
+            EmptyTitle = Toolbar.Total == 0 ? L["Expenses.Empty.Title"] : L["Expenses.Empty.NothingFound"],
+            EmptyText = Toolbar.Total == 0 ? L["Expenses.Empty.Text"] : L["Expenses.Empty.ChangeSearch"],
             EmptyIcon = Toolbar.Total == 0 ? "upload" : "search",
         };
     }
@@ -101,7 +108,7 @@ public sealed class IndexModel(MbDbContext db, ExpenseService expenses, NavCount
     {
         if (Files.Count == 0)
         {
-            FlashError("Es kam keine Datei an.");
+            FlashError(L["Expenses.Upload.NoFile"]);
             return RedirectToPage();
         }
 
@@ -114,15 +121,15 @@ public sealed class IndexModel(MbDbContext db, ExpenseService expenses, NavCount
 
         if (result.Created == 1)
         {
-            Flash("Beleg hochgeladen. Prüfe die Angaben.");
+            Flash(L["Expenses.Upload.One"]);
             return RedirectToPage("/Expenses/Edit", new { id = result.Ids[0] });
         }
 
         if (result.Created > 1)
         {
-            Flash($"{result.Created} Belege hochgeladen. Sie stehen unter „zu prüfen“.");
+            Flash(L["Expenses.Upload.Many", result.Created]);
         }
 
-        return RedirectToPage(new { status = "pruefen" });
+        return RedirectToPage(new { status = "review" });
     }
 }

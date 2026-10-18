@@ -14,16 +14,16 @@ public sealed class CallbackModel(MbDbContext db, EnableBankingClient client, Ba
         var connection = Guid.TryParse(state, out var token) ? await db.BankConnection.FirstOrDefaultAsync(c => c.Token == token && c.Status == BankConnectionStatus.Pending) : null;
         if (connection is null)
         {
-            FlashError("Diese Rückmeldung der Bank gehört zu keiner offenen Verbindung. Bitte verbinde noch einmal.");
+            FlashError(L["Banking.Callback.Unknown"]);
             return RedirectToPage("/Banking/Index");
         }
 
         if (!string.IsNullOrEmpty(error) || string.IsNullOrEmpty(code))
         {
             connection.Status = BankConnectionStatus.Failed;
-            connection.Error = error_description ?? error ?? "abgebrochen";
+            connection.Error = error_description ?? error ?? L["Banking.Callback.Cancelled"];
             await db.SaveChangesAsync();
-            FlashError($"Die Bank hat den Zugang nicht freigegeben ({connection.Error}).");
+            FlashError(L["Banking.Callback.Denied", connection.Error]);
             return RedirectToPage("/Banking/Index");
         }
 
@@ -51,14 +51,14 @@ public sealed class CallbackModel(MbDbContext db, EnableBankingClient client, Ba
             }
 
             await db.SaveChangesAsync();
-            await log.LogAsync("Bankverbindung hergestellt", nameof(BankConnection), connection.Id, $"{connection.BankName}: {linked.Count} Konten");
+            await log.LogAsync(L["Banking.Log.Connected"], nameof(BankConnection), connection.Id, L["Banking.Log.Connected.Summary", connection.BankName, linked.Count]);
             var added = 0;
             foreach (var account in linked)
             {
                 added += (await sync.SyncAsync(account, HttpContext.RequestAborted))?.Added ?? 0;
             }
 
-            Flash($"{connection.BankName} ist verbunden: {linked.Count} Konten, {added} Umsätze abgerufen.");
+            Flash(L["Banking.Callback.Connected", connection.BankName, linked.Count, added]);
         }
         catch (Exception ex) when (ex is BankingException or HttpRequestException or TaskCanceledException)
         {

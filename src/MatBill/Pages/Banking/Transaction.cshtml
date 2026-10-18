@@ -1,48 +1,54 @@
 @page
+@using MatBill.Core.Banking
 @model MatBill.Pages.Banking.TransactionModel
 @{
     var t = Model.Transaction;
     var incoming = t.Amount >= 0;
     var kind = incoming ? "invoice" : "expense";
     var categories = Model.Categories;
+    var noNumber = L["Banking.Transaction.NoNumber"].Value;
 }
 
 <div class="mb-split">
     <div class="mb-cards">
-        <mb-card title="Umsatz" icon="credit-card" sub="@(incoming ? "Eingang" : "Ausgang")">
+        <mb-card title="@L["Banking.Transaction"]" icon="credit-card" sub="@(incoming ? L["Banking.Direction.In"] : L["Banking.Direction.Out"])">
             <dl class="mat-kv">
-                <dt>Betrag</dt><dd class="mb-money"><strong>@Fmt.Money(t.Amount)</strong></dd>
-                <dt>Buchungstag</dt><dd>@Fmt.Date(t.BookingDate)@(t.ValueDate is { } v && v != t.BookingDate ? $" (Valuta {Fmt.Date(v)})" : "")</dd>
-                <dt>@(incoming ? "Zahler" : "Empfänger")</dt><dd>@(t.CounterpartyName ?? "–")</dd>
+                <dt>@L["Common.Amount"]</dt><dd class="mb-money"><strong>@Fmt.Money(t.Amount)</strong></dd>
+                <dt>@L["Banking.BookingDate"]</dt><dd>@Fmt.Date(t.BookingDate)@(t.ValueDate is { } v && v != t.BookingDate ? " " + L["Banking.Transaction.ValueDate", Fmt.Date(v)] : "")</dd>
+                <dt>@(incoming ? L["Banking.Transaction.Payer"] : L["Banking.Transaction.Payee"])</dt><dd>@(t.CounterpartyName ?? "–")</dd>
                 <dt>IBAN</dt><dd class="mat-mono">@(t.CounterpartyIban ?? "–")</dd>
-                <dt>Verwendungszweck</dt><dd class="mb-prewrap">@(t.Purpose ?? "–")</dd>
-                @if (t.EndToEndId is not null) { <dt>End-to-End-Referenz</dt><dd class="mat-mono">@t.EndToEndId</dd> }
-                <dt>Konto</dt><dd>@t.BankAccount?.Name</dd>
+                <dt>@L["Banking.Purpose"]</dt><dd class="mb-prewrap">@(t.Purpose ?? "–")</dd>
+                @if (t.EndToEndId is not null) { <dt>@L["Banking.Transaction.EndToEnd"]</dt><dd class="mat-mono">@t.EndToEndId</dd> }
+                <dt>@L["Banking.Account"]</dt><dd>@t.BankAccount?.Name</dd>
             </dl>
         </mb-card>
 
         @if (t.State == MatchState.Matched)
         {
-            <mb-card title="Zugeordnet" icon="check-circle" sub="@(t.MatchedAutomatically ? $"automatisch ({t.MatchScore} Punkte)" : "von Hand")">
+            <mb-card title="@L["Banking.Transaction.Matched"]" icon="check-circle" sub="@(t.MatchedAutomatically ? L["Banking.Transaction.MatchedAuto", t.MatchScore] : L["Banking.Transaction.MatchedByHand"])">
                 @if (t.Invoice is { } i)
                 {
-                    <p>Rechnung <a href="/Invoices/Edit?id=@i.Id">@i.Number</a> an @i.RecipientName über @Fmt.Money(i.GrossTotal) · @Labels.Of(i.Status)</p>
+                    <p>@L["Banking.Transaction.MatchedInvoice.Before"] <a href="/Invoices/Edit?id=@i.Id">@i.Number</a> @L["Banking.Transaction.MatchedInvoice.After", i.RecipientName ?? "", Fmt.Money(i.GrossTotal), Labels.Of(i.Status)]</p>
                 }
                 else if (t.Expense is { } e)
                 {
-                    <p>Ausgabe <a href="/Expenses/Edit?id=@e.Id">@e.Number</a> bei @e.Supplier über @Fmt.Money(e.GrossAmount)</p>
+                    <p>@L["Banking.Transaction.MatchedExpense.Before"] <a href="/Expenses/Edit?id=@e.Id">@e.Number</a> @L["Banking.Transaction.MatchedExpense.After", e.Supplier, Fmt.Money(e.GrossAmount)]</p>
                 }
                 <form method="post" class="mat-actions">
-                    <button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="Unassign" asp-route-id="@t.Id" data-confirm="Zuordnung aufheben? Die @(incoming ? "Rechnung" : "Ausgabe") ist danach wieder offen." data-confirm-ok="Aufheben">@Ui.Icon("undo")<span>Zuordnung aufheben</span></button>
+                    <button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="Unassign" asp-route-id="@t.Id" data-confirm="@(incoming ? L["Banking.Transaction.Unassign.ConfirmInvoice"] : L["Banking.Transaction.Unassign.ConfirmExpense"])" data-confirm-ok="@L["Banking.Transaction.Unassign.Ok"]">@Ui.Icon("undo")<span>@L["Banking.Transaction.Unassign"]</span></button>
                 </form>
             </mb-card>
         }
         else
         {
-            <mb-card title="Vorschläge" icon="check-square" sub="@(Model.Candidates.Count == 0 ? "keine" : Ui.CountNoun(Model.Candidates.Count, incoming ? "Rechnungen" : "Ausgaben"))">
-                @if (Model.Candidates.Count == 0)
+            var count = Model.Candidates.Count;
+            var sub = count == 0 ? L["Banking.Transaction.Suggestions.None"]
+                : incoming ? (count == 1 ? L["Banking.Transaction.Suggestions.OneInvoice"] : L["Banking.Transaction.Suggestions.Invoices", count])
+                : (count == 1 ? L["Banking.Transaction.Suggestions.OneExpense"] : L["Banking.Transaction.Suggestions.Expenses", count]);
+            <mb-card title="@L["Banking.Transaction.Suggestions"]" icon="check-square" sub="@sub">
+                @if (count == 0)
                 {
-                    <p class="mat-muted">Keine @(incoming ? "offene Rechnung" : "offene Ausgabe") passt zu diesem Umsatz. Wähle unten von Hand@(incoming ? "" : ", erfasse eine neue Ausgabe") oder ignoriere ihn.</p>
+                    <p class="mat-muted">@(incoming ? L["Banking.Transaction.Suggestions.NoneInvoice"] : L["Banking.Transaction.Suggestions.NoneExpense"])</p>
                 }
                 else
                 {
@@ -52,13 +58,13 @@
                             <li class="mb-note">
                                 <span class="mb-score @(c.Score >= 80 ? "is-high" : c.Score >= 50 ? "is-mid" : "")">@c.Score</span>
                                 <div class="mb-note__body">
-                                    <span class="mb-note__title">@(c.Item.Number ?? "ohne Nummer") · @c.Item.PartyName · @Fmt.Money(c.Item.Amount)</span>
-                                    <span class="mb-note__meta">@string.Join(" · ", c.Reasons)</span>
+                                    <span class="mb-note__title">@(c.Item.Number ?? noNumber) · @c.Item.PartyName · @Fmt.Money(c.Item.Amount)</span>
+                                    <span class="mb-note__meta">@string.Join(" · ", c.Reasons.Select(r => r == MatchReason.Number ? L[r, c.Item.Number ?? ""].Value : L[r].Value))</span>
                                 </div>
                                 <form method="post">
                                     <input type="hidden" name="kind" value="@kind" />
                                     <input type="hidden" name="itemId" value="@c.Item.Id" />
-                                    <button type="submit" class="mat-btn mat-btn--primary mat-btn--sm" asp-page-handler="Assign" asp-route-id="@t.Id">@Ui.Icon("check")<span>Zuordnen</span></button>
+                                    <button type="submit" class="mat-btn mat-btn--primary mat-btn--sm" asp-page-handler="Assign" asp-route-id="@t.Id">@Ui.Icon("check")<span>@L["Banking.Assign"]</span></button>
                                 </form>
                             </li>
                         }
@@ -70,47 +76,47 @@
 
     @if (t.State != MatchState.Matched)
     {
-        <aside class="mb-cards" aria-label="Von Hand zuordnen">
+        <aside class="mb-cards" aria-label="@L["Banking.Transaction.ByHand.Label"]">
             <div class="mat-card">
-                <div class="mat-card__head">@Ui.Icon("search")<h2 class="mat-card__title">Von Hand</h2></div>
+                <div class="mat-card__head">@Ui.Icon("search")<h2 class="mat-card__title">@L["Banking.Transaction.ByHand"]</h2></div>
                 <form method="post" class="mat-card__body mat-form mat-stack">
                     <input type="hidden" name="kind" value="@kind" />
                     <div class="mat-field">
-                        <label class="mat-label" for="itemId">@(incoming ? "Offene Rechnung" : "Offene Ausgabe")</label>
-                        <div class="mat-picker" data-picker="select" data-search data-placeholder="suchen …">
-                            <input class="mat-picker__input" id="itemId" name="itemId" required data-msg-required="Bitte wähle etwas aus." />
+                        <label class="mat-label" for="itemId">@(incoming ? L["Banking.Transaction.OpenInvoice"] : L["Banking.Transaction.OpenExpense"])</label>
+                        <div class="mat-picker" data-picker="select" data-search data-placeholder="@L["Banking.Transaction.SearchPlaceholder"]">
+                            <input class="mat-picker__input" id="itemId" name="itemId" required data-msg-required="@L["Banking.Transaction.ChooseItem"]" />
                             <div class="mat-picker__options" hidden>
                                 @foreach (var o in Model.AllOpen.OrderBy(o => o.PartyName))
                                 {
-                                    <button type="button" class="mat-picker__option" data-value="@o.Id"><span class="mat-picker__text"><span class="mat-picker__name">@o.PartyName · @Fmt.Money(o.Amount)</span><span class="mat-picker__desc">@(o.Number ?? "ohne Nummer") vom @Fmt.Date(o.Date)</span></span></button>
+                                    <button type="button" class="mat-picker__option" data-value="@o.Id"><span class="mat-picker__text"><span class="mat-picker__name">@o.PartyName · @Fmt.Money(o.Amount)</span><span class="mat-picker__desc">@L["Banking.Transaction.ItemOf", o.Number ?? noNumber, Fmt.Date(o.Date)]</span></span></button>
                                 }
                             </div>
                         </div>
                     </div>
-                    <button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="Assign" asp-route-id="@t.Id" disabled="@(Model.AllOpen.Count == 0)">@Ui.Icon("check")<span>Zuordnen</span></button>
+                    <button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="Assign" asp-route-id="@t.Id" disabled="@(Model.AllOpen.Count == 0)">@Ui.Icon("check")<span>@L["Banking.Assign"]</span></button>
                 </form>
             </div>
 
             @if (!incoming)
             {
                 <div class="mat-card">
-                    <div class="mat-card__head">@Ui.Icon("file-plus")<h2 class="mat-card__title">Als Ausgabe erfassen</h2></div>
+                    <div class="mat-card__head">@Ui.Icon("file-plus")<h2 class="mat-card__title">@L["Banking.Transaction.AsExpense"]</h2></div>
                     <form method="post" class="mat-card__body mat-form mat-stack">
                         <div class="mat-field">
-                            <label class="mat-label" for="category">Kategorie</label>
+                            <label class="mat-label" for="category">@L["Expenses.Category"]</label>
                             <select class="mat-select" id="category" name="category">@foreach (var c in categories) { <option value="@c">@c</option> }</select>
                         </div>
-                        <button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="Expense" asp-route-id="@t.Id">@Ui.Icon("plus")<span>Ausgabe anlegen</span></button>
+                        <button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="Expense" asp-route-id="@t.Id">@Ui.Icon("plus")<span>@L["Banking.Transaction.CreateExpense"]</span></button>
                     </form>
                 </div>
             }
 
             <div class="mat-card">
-                <div class="mat-card__head">@Ui.Icon("ban")<h2 class="mat-card__title">Ignorieren</h2></div>
+                <div class="mat-card__head">@Ui.Icon("ban")<h2 class="mat-card__title">@L["Banking.Transaction.Ignore"]</h2></div>
                 <form method="post" class="mat-card__body mat-form mat-stack">
-                    <p class="mat-muted">Für Umbuchungen zwischen eigenen Konten, Privatentnahmen, Steuerzahlungen und alles, was keinen Beleg in MatBill hat.</p>
-                    <div class="mat-field"><label class="mat-label" for="note">Notiz (optional)</label><input class="mat-input" id="note" name="note" value="@t.Note" maxlength="300" /></div>
-                    <button type="submit" class="mat-btn mat-btn--ghost" asp-page-handler="Ignore" asp-route-id="@t.Id">@Ui.Icon("ban")<span>Ignorieren</span></button>
+                    <p class="mat-muted">@L["Banking.Transaction.Ignore.Hint"]</p>
+                    <div class="mat-field"><label class="mat-label" for="note">@L["Banking.Transaction.Note"]</label><input class="mat-input" id="note" name="note" value="@t.Note" maxlength="300" /></div>
+                    <button type="submit" class="mat-btn mat-btn--ghost" asp-page-handler="Ignore" asp-route-id="@t.Id">@Ui.Icon("ban")<span>@L["Banking.Transaction.Ignore"]</span></button>
                 </form>
             </div>
         </aside>
@@ -118,5 +124,5 @@
 </div>
 
 <div class="mat-btn-row">
-    <a class="mat-btn mat-btn--secondary" href="/Banking">@Ui.Icon("back")<span>Zurück</span></a>
+    <a class="mat-btn mat-btn--secondary" href="/Banking">@Ui.Icon("back")<span>@L["Common.Back"]</span></a>
 </div>

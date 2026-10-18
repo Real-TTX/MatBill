@@ -3,7 +3,7 @@
 
 @if (!Model.Configured)
 {
-    <div class="mat-alert mat-alert--info" role="note">@Ui.Icon("info")<div class="mat-alert__body">Für den Online-Abruf braucht MatBill einen Zugang zu Enable Banking. Ein Administrator richtet ihn unter <a href="/Admin/Banking">Einstellungen › Banking</a> ein. Bis dahin funktioniert der <a href="/Banking/Import">Import von Kontoauszügen</a> mit jeder Bank.</div></div>
+    <div class="mat-alert mat-alert--info" role="note">@Ui.Icon("info")<div class="mat-alert__body">@L["Banking.Connect.NotConfigured.Before"] <a href="/Admin/Banking">@L["Banking.Connect.NotConfigured.Settings"]</a>@L["Banking.Connect.NotConfigured.Middle"] <a href="/Banking/Import">@L["Banking.Connect.NotConfigured.Import"]</a> @L["Banking.Connect.NotConfigured.After"]</div></div>
 }
 else
 {
@@ -12,13 +12,13 @@ else
         <div class="mat-alert mat-alert--danger" role="alert">@Ui.Icon("x-circle")<div class="mat-alert__body">@Model.Problem</div></div>
     }
 
-    <form method="get" class="mat-toolbar" role="toolbar" aria-label="Land">
+    <form method="get" class="mat-toolbar" role="toolbar" aria-label="@L["Banking.Connect.CountryToolbar"]">
         <div class="mat-field">
-            <label class="mat-label" for="country">Land der Bank</label>
+            <label class="mat-label" for="country">@L["Banking.Connect.Country"]</label>
             <select class="mat-select" id="country" name="country" data-submit-on-change>
-                @foreach (var (code, name) in new[] { ("DE", "Deutschland"), ("AT", "Österreich"), ("CH", "Schweiz"), ("NL", "Niederlande"), ("FR", "Frankreich"), ("BE", "Belgien"), ("LU", "Luxemburg"), ("IT", "Italien"), ("ES", "Spanien"), ("PL", "Polen"), ("DK", "Dänemark"), ("SE", "Schweden"), ("FI", "Finnland") })
+                @foreach (var code in new[] { "DE", "AT", "CH", "NL", "FR", "BE", "LU", "IT", "ES", "PL", "DK", "SE", "FI" })
                 {
-                    <option value="@code" selected="@(Model.Country == code)">@name</option>
+                    <option value="@code" selected="@(Model.Country == code)">@L["Banking.Country." + code]</option>
                 }
             </select>
         </div>
@@ -26,11 +26,11 @@ else
 
     <form method="post" class="mat-form" novalidate>
         <input type="hidden" name="Country" value="@Model.Country" />
-        <mb-card title="Bank wählen" icon="building" sub="@($"{Model.Banks.Count} Banken")">
+        <mb-card title="@L["Banking.Connect.ChooseBank"]" icon="building" sub="@L["Banking.Connect.BankCount", Model.Banks.Count]">
             <div class="mat-field">
-                <label class="mat-label" for="Bank">Bank</label>
-                <div class="mat-picker" data-picker="select" data-search data-placeholder="Bank suchen …">
-                    <input class="mat-picker__input" id="Bank" name="Bank" required data-msg-required="Bitte wähle deine Bank." />
+                <label class="mat-label" for="Bank">@L["Banking.AccountEdit.Bank"]</label>
+                <div class="mat-picker" data-picker="select" data-search data-placeholder="@L["Banking.Connect.SearchBank"]">
+                    <input class="mat-picker__input" id="Bank" name="Bank" required data-msg-required="@L["Banking.Connect.BankRequired"]" />
                     <div class="mat-picker__options" hidden>
                         @foreach (var b in Model.Banks)
                         {
@@ -39,11 +39,11 @@ else
                     </div>
                 </div>
             </div>
-            <p class="mat-hint">Du wirst zu deiner Bank weitergeleitet und bestätigst dort den Lesezugriff (90 Tage). Danach kommst du hierher zurück; die Konten werden angelegt und regelmäßig abgerufen. MatBill sieht deine Zugangsdaten nie.</p>
+            <p class="mat-hint">@L["Banking.Connect.Hint"]</p>
         </mb-card>
         <div class="mat-btn-row">
-            <button type="submit" class="mat-btn mat-btn--primary mb-needs-online" disabled="@(Model.Banks.Count == 0)">@Ui.Icon("external")<span>Zur Bank</span></button>
-            <a class="mat-btn mat-btn--secondary" href="/Banking">@Ui.Icon("back")<span>Zurück</span></a>
+            <button type="submit" class="mat-btn mat-btn--primary mb-needs-online" disabled="@(Model.Banks.Count == 0)">@Ui.Icon("external")<span>@L["Banking.Connect.ToBank"]</span></button>
+            <a class="mat-btn mat-btn--secondary" href="/Banking">@Ui.Icon("back")<span>@L["Common.Back"]</span></a>
         </div>
     </form>
 }
