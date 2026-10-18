@@ -2,25 +2,26 @@
 @model MatBill.Pages.Admin.Users.EditModel
 @{
     var roles = Controls.Options.Of<UserRole>(Labels.Of);
+    var isNew = Model.Account is null;
 }
 
 <form class="mat-form" method="post" novalidate>
     <input type="hidden" name="Id" value="@Model.Id" />
     <mb-summary />
-    <mb-card title="Konto" icon="user" sub="@(Model.IsMe ? "das bist du" : null)">
+    <mb-card title="@L["Admin.Users.Account"]" icon="user" sub="@(Model.IsMe ? L["Admin.Users.ThatsYou"].Value : null)">
         <div class="mat-form__grid">
-            <mb-input for="Input.DisplayName" label="Name" required="true" autocomplete="off" />
-            <mb-input for="Input.Email" label="E-Mail-Adresse (Anmeldename)" type="email" inputmode="email" required="true" autocomplete="off" />
-            <mb-input for="Input.Phone" label="Telefon" type="tel" />
-            <mb-select for="Input.Role" label="Rolle" items="roles" hint="Administratoren verwalten alles, auch Benutzer, Backup und Freigaben. Benutzer schreiben Rechnungen und pflegen Kunden, Produkte und Serien." />
-            <mb-switch for="Input.IsActive" label="Darf sich anmelden" full="true" />
-            <mb-input for="Input.Password" label="@(Model.Account is null ? "Passwort" : "Neues Passwort")" type="password" autocomplete="new-password" required="@(Model.Account is null)" hint="@(Model.Account is null ? "Mindestens 10 Zeichen." : "Leer lassen, um das Passwort zu behalten. Mit einem neuen Passwort werden alle Sitzungen der Person beendet.")" />
+            <mb-input for="Input.DisplayName" label="@L["Common.Name"]" required="true" autocomplete="off" />
+            <mb-input for="Input.Email" label="@L["Admin.Users.Email.Login"]" type="email" inputmode="email" required="true" autocomplete="off" />
+            <mb-input for="Input.Phone" label="@L["Common.Phone"]" type="tel" />
+            <mb-select for="Input.Role" label="@L["Admin.Users.Role"]" items="roles" hint="@L["Admin.Users.Role.Hint"]" />
+            <mb-switch for="Input.IsActive" label="@L["Admin.Users.MaySignIn"]" full="true" />
+            <mb-input for="Input.Password" label="@(isNew ? L["Admin.Users.Password"] : L["Admin.Users.NewPassword"])" type="password" autocomplete="new-password" required="@isNew" hint="@(isNew ? L["Admin.Users.Password.Hint"] : L["Admin.Users.NewPassword.Hint"])" />
         </div>
     </mb-card>
 
     @if (Model.Account is not null)
     {
-        <mb-buttons back-href="/Admin/Users" delete-url="@(Model.IsMe ? null : Url.Page("/Admin/Users/Edit", "Delete", new { id = Model.Id }))" delete-confirm="Diesen Benutzer löschen? Er kann sich nicht mehr anmelden, seine Einträge bleiben erhalten." />
+        <mb-buttons back-href="/Admin/Users" delete-url="@(Model.IsMe ? null : Url.Page("/Admin/Users/Edit", "Delete", new { id = Model.Id }))" delete-confirm="@L["Admin.Users.Delete.Confirm"]" />
     }
     else
     {
@@ -30,25 +31,25 @@
 
 @if (Model.Account is not null)
 {
-    <mb-card title="Anmeldung" icon="shield">
+    <mb-card title="@L["Admin.Users.SignIn"]" icon="shield">
         <dl class="mat-kv">
-            <dt>Zwei-Faktor-Anmeldung</dt><dd>@(Model.HasTotp ? "an (Authenticator-App)" : "aus")</dd>
-            <dt>Letzte Anmeldung</dt><dd>@(Model.Account.LastLoginDate is null ? "noch nie" : Fmt.Moment(Model.Account.LastLoginDate))</dd>
-            <dt>Offene Sitzungen</dt><dd>@Model.Sessions</dd>
-            <dt>Falsche Anmeldungen</dt><dd>@Model.Account.FailedLogins@(Model.IsLocked ? $" · gesperrt bis {Fmt.Moment(Model.Account.LockoutEndDate)}" : "")</dd>
+            <dt>@L["Admin.Users.TwoFactorSignIn"]</dt><dd>@(Model.HasTotp ? L["Admin.Users.TotpOn"] : L["Admin.Users.Off"])</dd>
+            <dt>@L["Admin.Users.LastLogin"]</dt><dd>@(Model.Account.LastLoginDate is null ? L["Admin.Users.Never"].Value : Fmt.Moment(Model.Account.LastLoginDate))</dd>
+            <dt>@L["Admin.Users.Sessions"]</dt><dd>@Model.Sessions</dd>
+            <dt>@L["Admin.Users.FailedLogins"]</dt><dd>@Model.Account.FailedLogins@(Model.IsLocked ? " · " + L["Admin.Users.LockedUntil", Fmt.Moment(Model.Account.LockoutEndDate)].Value : "")</dd>
         </dl>
         <form method="post" class="mat-actions">
             @if (Model.IsLocked || Model.Account.FailedLogins > 0)
             {
-                <button type="submit" asp-page-handler="Unlock" asp-route-id="@Model.Id" class="mat-btn mat-btn--secondary">@Ui.Icon("lock-open")<span>Sperre aufheben</span></button>
+                <button type="submit" asp-page-handler="Unlock" asp-route-id="@Model.Id" class="mat-btn mat-btn--secondary">@Ui.Icon("lock-open")<span>@L["Admin.Users.Unlock"]</span></button>
             }
             @if (Model.HasTotp)
             {
-                <button type="submit" asp-page-handler="ResetTotp" asp-route-id="@Model.Id" class="mat-btn mat-btn--secondary" data-confirm="Die Zwei-Faktor-Anmeldung dieser Person abschalten? Sie kann sie danach neu einrichten." data-confirm-ok="Abschalten">@Ui.Icon("shield")<span>Zwei Faktoren zurücksetzen</span></button>
+                <button type="submit" asp-page-handler="ResetTotp" asp-route-id="@Model.Id" class="mat-btn mat-btn--secondary" data-confirm="@L["Admin.Users.ResetTotp.Confirm"]" data-confirm-ok="@L["Admin.Users.ResetTotp.Ok"]">@Ui.Icon("shield")<span>@L["Admin.Users.ResetTotp"]</span></button>
             }
             @if (Model.Sessions > 0)
             {
-                <button type="submit" asp-page-handler="EndSessions" asp-route-id="@Model.Id" class="mat-btn mat-btn--ghost" data-confirm="Alle Sitzungen dieser Person beenden?" data-confirm-ok="Beenden">@Ui.Icon("logout")<span>Alle Sitzungen beenden</span></button>
+                <button type="submit" asp-page-handler="EndSessions" asp-route-id="@Model.Id" class="mat-btn mat-btn--ghost" data-confirm="@L["Admin.Users.EndSessions.Confirm"]" data-confirm-ok="@L["Admin.Users.EndSessions.Ok"]">@Ui.Icon("logout")<span>@L["Admin.Users.EndSessions"]</span></button>
             }
         </form>
     </mb-card>

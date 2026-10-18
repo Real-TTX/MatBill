@@ -12,7 +12,7 @@ public sealed class MailModel(ConfigStore config, SecretProtector secrets, MailS
     {
         public string? Host { get; set; }
 
-        [Range(1, 65535, ErrorMessage = "Ein Port zwischen 1 und 65535.")]
+        [Range(1, 65535, ErrorMessage = "Admin.Mail.Port.Range")]
         public int Port { get; set; } = 587;
 
         public MailSecurity Security { get; set; } = MailSecurity.Auto;
@@ -21,17 +21,17 @@ public sealed class MailModel(ConfigStore config, SecretProtector secrets, MailS
 
         public string? Password { get; set; }
 
-        [EmailAddress(ErrorMessage = "Das ist keine E-Mail-Adresse.")]
+        [EmailAddress(ErrorMessage = "Admin.Mail.FromAddress.Invalid")]
         public string? FromAddress { get; set; }
 
         public string? FromName { get; set; }
 
         public string? Bcc { get; set; }
 
-        [Required(ErrorMessage = "Bitte gib einen Betreff ein.")]
+        [Required(ErrorMessage = "Admin.Mail.Subject.Required")]
         public string Subject { get; set; } = "";
 
-        [Required(ErrorMessage = "Bitte schreib einen Text.")]
+        [Required(ErrorMessage = "Admin.Mail.Body.Required")]
         public string Body { get; set; } = "";
 
         public string? QuoteSubject { get; set; }
@@ -67,7 +67,7 @@ public sealed class MailModel(ConfigStore config, SecretProtector secrets, MailS
         Prepare();
         if (!string.IsNullOrWhiteSpace(Input.Host) && string.IsNullOrWhiteSpace(Input.FromAddress))
         {
-            ModelState.AddModelError("Input.FromAddress", "Mit einem Server braucht es eine Absenderadresse.");
+            ModelState.AddModelError("Input.FromAddress", L["Admin.Mail.FromAddress.Required"]);
         }
 
         if (!ModelState.IsValid)
@@ -76,8 +76,8 @@ public sealed class MailModel(ConfigStore config, SecretProtector secrets, MailS
         }
 
         Save();
-        await log.LogAsync("E-Mail-Einstellungen geändert", "Mail");
-        Flash("Die E-Mail-Einstellungen sind gespeichert.");
+        await log.LogAsync(L["Admin.Mail.Log.Changed"], "Mail");
+        Flash(L["Admin.Mail.Saved"]);
         return RedirectToPage();
     }
 
@@ -92,14 +92,14 @@ public sealed class MailModel(ConfigStore config, SecretProtector secrets, MailS
 
         if (string.IsNullOrWhiteSpace(TestTo))
         {
-            ModelState.AddModelError(nameof(TestTo), "An welche Adresse soll die Testnachricht gehen?");
+            ModelState.AddModelError(nameof(TestTo), L["Admin.Mail.TestTo.Required"]);
             return Page();
         }
 
         Save();
         var error = await mail.SendTestAsync(TestTo.Trim(), HttpContext.RequestAborted);
         TestOk = error is null;
-        TestResult = error ?? $"Die Testnachricht ist an {TestTo} unterwegs. Die Einstellungen sind gespeichert.";
+        TestResult = error ?? L["Admin.Mail.Test.Sent", TestTo.Trim()].Value;
         return Page();
     }
 
@@ -128,7 +128,7 @@ public sealed class MailModel(ConfigStore config, SecretProtector secrets, MailS
 
     private void Prepare()
     {
-        Head("E-Mail", "Der Mailserver, über den Rechnungen als PDF versendet werden.", ("Einstellungen", null), ("E-Mail", null));
+        Head(L["Admin.Mail.Title"], L["Admin.Mail.Sub"], (L["Admin.Settings"], null), (L["Admin.Mail.Title"], null));
         ViewData["Width"] = "narrow";
     }
 }

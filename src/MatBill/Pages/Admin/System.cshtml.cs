@@ -45,7 +45,7 @@ public sealed class SystemModel(SystemService system, ConfigStore config, Activi
 
     public async Task OnGetAsync()
     {
-        Head("System", "Version, Speicher und Datenbank.", ("Einstellungen", null), ("System", null));
+        Head(L["Admin.System.Title"], L["Admin.System.Sub"], (L["Admin.Settings"], null), (L["Admin.System.Title"], null));
         var ct = HttpContext.RequestAborted;
 
         var database = await system.GetDatabaseAsync(ct);
@@ -56,11 +56,11 @@ public sealed class SystemModel(SystemService system, ConfigStore config, Activi
 
         Folders =
         [
-            Measure("files", "Dateien", "PDFs der Rechnungen und das Logo (bei Speicher auf dem NAS leer)"),
-            Measure("keys", "Schlüssel", "Schutz der Cookies und der gespeicherten Passwörter"),
-            Measure("config", "Einstellungen", "app.json"),
-            Measure("backups", "Sicherungen im Volume", "Lokale Ziele und Sicherheitskopien"),
-            Measure("tmp", "Temporär", "Zwischenablage für Sicherungen"),
+            Measure("files", L["Admin.System.Folder.Files.Name"], L["Admin.System.Folder.Files.Hint"]),
+            Measure("keys", L["Admin.System.Folder.Keys.Name"], L["Admin.System.Folder.Keys.Hint"]),
+            Measure("config", L["Admin.System.Folder.Config.Name"], "app.json"),
+            Measure("backups", L["Admin.System.Folder.Backups.Name"], L["Admin.System.Folder.Backups.Hint"]),
+            Measure("tmp", L["Admin.System.Folder.Tmp.Name"], L["Admin.System.Folder.Tmp.Hint"]),
         ];
     }
 
@@ -68,8 +68,13 @@ public sealed class SystemModel(SystemService system, ConfigStore config, Activi
     public async Task<IActionResult> OnPostMaintainAsync()
     {
         var result = await system.MaintainAsync(HttpContext.RequestAborted);
-        await log.LogAsync("Aufräumen", "System", null, $"{result.Total} Einträge entfernt");
-        Flash(result.Total == 0 ? "Es gab nichts aufzuräumen." : $"{Ui.Plural(result.Total, "alter Eintrag", "alte Einträge")} entfernt.");
+        await log.LogAsync(L["Admin.System.Log.Cleanup"], "System", null, L["Admin.System.Log.CleanupSummary", result.Total].Value);
+        Flash(result.Total switch
+        {
+            0 => L["Admin.System.Cleanup.Nothing"],
+            1 => L["Admin.System.Cleanup.One", result.Total],
+            _ => L["Admin.System.Cleanup.Many", result.Total],
+        });
         return RedirectToPage();
     }
 
@@ -78,12 +83,12 @@ public sealed class SystemModel(SystemService system, ConfigStore config, Activi
     {
         if (me.UserId is not { } id || !await demo.CreateAsync(id, HttpContext.RequestAborted))
         {
-            FlashError("Beispieldaten gibt es nur für eine leere Installation: es gibt schon Kunden oder Rechnungen.");
+            FlashError(L["Admin.System.Demo.NotEmpty"]);
             return RedirectToPage();
         }
 
-        await log.LogAsync("Beispieldaten angelegt", "System");
-        Flash("Die Beispieldaten sind da.");
+        await log.LogAsync(L["Admin.System.Log.Demo"], "System");
+        Flash(L["Admin.System.Demo.Created"]);
         return RedirectToPage("/Index");
     }
 

@@ -11,13 +11,13 @@ public sealed class InvoicingModel(ConfigStore config, NumberService numbers, Ac
 {
     public sealed class InputModel
     {
-        [Required(ErrorMessage = "Bitte gib ein Muster ein.")]
+        [Required(ErrorMessage = "Admin.Invoicing.Pattern.Required")]
         public string InvoiceNumberPattern { get; set; } = "";
 
-        [Required(ErrorMessage = "Bitte gib ein Muster ein.")]
+        [Required(ErrorMessage = "Admin.Invoicing.Pattern.Required")]
         public string CustomerNumberPattern { get; set; } = "";
 
-        [Range(0, 365, ErrorMessage = "Zwischen 0 und 365 Tagen.")]
+        [Range(0, 365, ErrorMessage = "Admin.Invoicing.Range0To365")]
         public int PaymentTermDays { get; set; } = 14;
 
         public string DefaultTaxRate { get; set; } = "19";
@@ -34,16 +34,16 @@ public sealed class InvoicingModel(ConfigStore config, NumberService numbers, Ac
         [StringLength(500)]
         public string? SmallBusinessNote { get; set; }
 
-        [Range(0, 30, ErrorMessage = "Zwischen 0 und 30 Tagen.")]
+        [Range(0, 30, ErrorMessage = "Admin.Invoicing.Range0To30")]
         public int NoticeDays { get; set; } = 3;
 
-        [Required(ErrorMessage = "Bitte gib ein Muster ein.")]
+        [Required(ErrorMessage = "Admin.Invoicing.Pattern.Required")]
         public string QuoteNumberPattern { get; set; } = "";
 
-        [Required(ErrorMessage = "Bitte gib ein Muster ein.")]
+        [Required(ErrorMessage = "Admin.Invoicing.Pattern.Required")]
         public string ExpenseNumberPattern { get; set; } = "";
 
-        [Range(1, 365, ErrorMessage = "Zwischen 1 und 365 Tagen.")]
+        [Range(1, 365, ErrorMessage = "Admin.Invoicing.Range1To365")]
         public int QuoteValidityDays { get; set; } = 30;
 
         [StringLength(4000)]
@@ -86,33 +86,29 @@ public sealed class InvoicingModel(ConfigStore config, NumberService numbers, Ac
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (NumberPattern.Problem(Input.InvoiceNumberPattern) is { } p1)
+        var patterns = new[]
         {
-            ModelState.AddModelError("Input.InvoiceNumberPattern", p1);
-        }
-
-        foreach (var (key, pattern) in new[] { ("Input.QuoteNumberPattern", Input.QuoteNumberPattern), ("Input.ExpenseNumberPattern", Input.ExpenseNumberPattern) })
+            ("Input.InvoiceNumberPattern", Input.InvoiceNumberPattern), ("Input.CustomerNumberPattern", Input.CustomerNumberPattern),
+            ("Input.QuoteNumberPattern", Input.QuoteNumberPattern), ("Input.ExpenseNumberPattern", Input.ExpenseNumberPattern),
+        };
+        foreach (var (key, pattern) in patterns)
         {
+            // Problem names the text (NumberPattern.*), not the text itself.
             if (NumberPattern.Problem(pattern) is { } problem)
             {
-                ModelState.AddModelError(key, problem);
+                ModelState.AddModelError(key, L[problem]);
             }
         }
 
         var categories = (Input.Categories ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Distinct(StringComparer.OrdinalIgnoreCase).Take(60).ToList();
         if (categories.Count == 0)
         {
-            ModelState.AddModelError("Input.Categories", "Es braucht mindestens eine Kategorie.");
-        }
-
-        if (NumberPattern.Problem(Input.CustomerNumberPattern) is { } p2)
-        {
-            ModelState.AddModelError("Input.CustomerNumberPattern", p2);
+            ModelState.AddModelError("Input.Categories", L["Admin.Invoicing.Categories.Required"]);
         }
 
         if (!Amount.TryParse(Input.DefaultTaxRate, out var rate) || rate is < 0 or > 100)
         {
-            ModelState.AddModelError("Input.DefaultTaxRate", "Der Steuersatz liegt zwischen 0 und 100 %.");
+            ModelState.AddModelError("Input.DefaultTaxRate", L["Admin.Invoicing.TaxRate.Range"]);
         }
 
         if (!ModelState.IsValid)
@@ -140,14 +136,14 @@ public sealed class InvoicingModel(ConfigStore config, NumberService numbers, Ac
             c.Invoicing.ZugferdPdf = Input.ZugferdPdf;
             c.Invoicing.ExpenseCategories = categories;
         });
-        await log.LogAsync("Einstellungen der Rechnungen geändert", "Invoicing");
-        Flash("Die Einstellungen sind gespeichert. Sie gelten für neue Rechnungen.");
+        await log.LogAsync(L["Admin.Invoicing.Log.Changed"], "Invoicing");
+        Flash(L["Admin.Invoicing.Saved"]);
         return RedirectToPage();
     }
 
     private async Task PrepareAsync()
     {
-        Head("Rechnungen", "Nummernkreise und die Texte, mit denen eine neue Rechnung beginnt.", ("Einstellungen", null), ("Rechnungen", null));
+        Head(L["Admin.Invoicing.Title"], L["Admin.Invoicing.Sub"], (L["Admin.Settings"], null), (L["Admin.Invoicing.Title"], null));
         ViewData["Width"] = "narrow";
         var today = Fmt.Today(clock);
         InvoiceExample = NumberPattern.Problem(Input.InvoiceNumberPattern) is null ? NumberPattern.Format(Input.InvoiceNumberPattern, today, 42) : "–";

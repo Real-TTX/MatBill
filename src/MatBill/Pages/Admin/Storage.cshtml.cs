@@ -14,25 +14,25 @@ public sealed class StorageModel(ConfigStore config, SecretProtector secrets, Fi
 {
     public sealed class InputModel
     {
-        [Display(Name = "Speicherort")]
+        [Display(Name = "Admin.Storage.Location")]
         public StorageMode Mode { get; set; } = StorageMode.Local;
 
-        [Display(Name = "Server")]
+        [Display(Name = "Admin.Storage.Host")]
         public string Host { get; set; } = "";
 
-        [Display(Name = "Freigabe")]
+        [Display(Name = "Admin.Storage.Share")]
         public string Share { get; set; } = "";
 
-        [Display(Name = "Ordner in der Freigabe")]
+        [Display(Name = "Admin.Storage.Path")]
         public string Path { get; set; } = "MatBill";
 
-        [Display(Name = "Domäne (optional)")]
+        [Display(Name = "Admin.Storage.Domain")]
         public string? Domain { get; set; }
 
-        [Display(Name = "Benutzername")]
+        [Display(Name = "Admin.UserName")]
         public string? UserName { get; set; }
 
-        [Display(Name = "Passwort")]
+        [Display(Name = "Admin.Password")]
         public string? Password { get; set; }
     }
 
@@ -65,12 +65,12 @@ public sealed class StorageModel(ConfigStore config, SecretProtector secrets, Fi
         {
             if (string.IsNullOrWhiteSpace(Input.Host))
             {
-                ModelState.AddModelError("Input.Host", "Bitte gib den Server (Namen oder Adresse) des NAS an.");
+                ModelState.AddModelError("Input.Host", L["Admin.Storage.Host.Required"]);
             }
 
             if (string.IsNullOrWhiteSpace(Input.Share))
             {
-                ModelState.AddModelError("Input.Share", "Bitte gib den Namen der Freigabe an.");
+                ModelState.AddModelError("Input.Share", L["Admin.Storage.Share.Required"]);
             }
         }
 
@@ -99,8 +99,8 @@ public sealed class StorageModel(ConfigStore config, SecretProtector secrets, Fi
                 s.PasswordProtected = secrets.Protect(Input.Password);
             }
         });
-        await log.LogAsync("Speicher geändert", "Storage", null, Input.Mode == StorageMode.Smb ? $"NAS {Input.Host}/{Input.Share}" : "Volume");
-        Flash("Der Speicher ist eingestellt. Neue Dateien werden dort abgelegt.");
+        await log.LogAsync(L["Admin.Storage.Log.Changed"], "Storage", null, Input.Mode == StorageMode.Smb ? $"NAS {Input.Host}/{Input.Share}" : "Volume");
+        Flash(L["Admin.Storage.Saved"]);
         return RedirectToPage();
     }
 
@@ -110,7 +110,7 @@ public sealed class StorageModel(ConfigStore config, SecretProtector secrets, Fi
         await PrepareAsync();
         if (string.IsNullOrWhiteSpace(Input.Host) || string.IsNullOrWhiteSpace(Input.Share))
         {
-            ModelState.AddModelError("Input.Host", "Bitte gib Server und Freigabe an, damit die Verbindung geprüft werden kann.");
+            ModelState.AddModelError("Input.Host", L["Admin.Storage.Test.Required"]);
             return Page();
         }
 
@@ -118,7 +118,7 @@ public sealed class StorageModel(ConfigStore config, SecretProtector secrets, Fi
         var share = new SmbShare(new SmbOptions(Input.Host.Trim(), Input.Share.Trim(), Input.Path, Input.Domain, Input.UserName, password));
         var check = await share.CheckAsync(HttpContext.RequestAborted);
         TestOk = check.Ok;
-        Test = check.Ok && check.FreeBytes is { } free ? $"{check.Message} Frei: {Fmt.FileSize(free)}." : check.Message;
+        Test = check.Ok && check.FreeBytes is { } free ? $"{check.Message} {L["Admin.Storage.Free", Fmt.FileSize(free)].Value}" : check.Message;
         return Page();
     }
 
@@ -128,7 +128,7 @@ public sealed class StorageModel(ConfigStore config, SecretProtector secrets, Fi
         await PrepareAsync();
         if (string.IsNullOrWhiteSpace(Input.Host))
         {
-            ModelState.AddModelError("Input.Host", "Bitte gib zuerst den Server an.");
+            ModelState.AddModelError("Input.Host", L["Admin.Storage.Shares.HostRequired"]);
             return Page();
         }
 
@@ -136,7 +136,7 @@ public sealed class StorageModel(ConfigStore config, SecretProtector secrets, Fi
         {
             var password = string.IsNullOrEmpty(Input.Password) ? secrets.Unprotect(config.Current.Storage.PasswordProtected) : Input.Password;
             Shares = await SmbShare.ListSharesAsync(Input.Host.Trim(), Input.Domain, Input.UserName, password, HttpContext.RequestAborted);
-            Test = Shares.Count == 0 ? "Der Server zeigt keine Freigaben." : "Freigaben auf dem Server: " + string.Join(", ", Shares);
+            Test = Shares.Count == 0 ? L["Admin.Storage.Shares.None"].Value : L["Admin.Storage.Shares.Found", string.Join(", ", Shares)].Value;
             TestOk = Shares.Count > 0;
         }
         catch (StorageException ex)
@@ -153,14 +153,19 @@ public sealed class StorageModel(ConfigStore config, SecretProtector secrets, Fi
         try
         {
             var result = await files.MoveAllAsync(scheme, HttpContext.RequestAborted);
-            await log.LogAsync("Dateien verschoben", "Storage", null, $"{result.Moved} nach {scheme}, {result.Failed} Fehler");
+            await log.LogAsync(L["Admin.Storage.Log.Moved"], "Storage", null, L["Admin.Storage.Log.MovedSummary", result.Moved, scheme, result.Failed].Value);
             if (result.Failed == 0)
             {
-                Flash(result.Moved == 0 ? "Es gab nichts zu verschieben." : $"{Ui.Plural(result.Moved, "Datei ist", "Dateien sind")} verschoben.");
+                Flash(result.Moved switch
+                {
+                    0 => L["Admin.Storage.Moved.Nothing"],
+                    1 => L["Admin.Storage.Moved.One", result.Moved],
+                    _ => L["Admin.Storage.Moved.Many", result.Moved],
+                });
             }
             else
             {
-                FlashError($"{result.Moved} verschoben, {result.Failed} nicht: {result.FirstError}");
+                FlashError(L["Admin.Storage.Moved.Partly", result.Moved, result.Failed, result.FirstError ?? ""]);
             }
         }
         catch (StorageException ex)
@@ -173,7 +178,7 @@ public sealed class StorageModel(ConfigStore config, SecretProtector secrets, Fi
 
     private async Task PrepareAsync()
     {
-        Head("Speicher (NAS)", "Wo die PDFs der ausgestellten Rechnungen und das Logo liegen.", ("Einstellungen", null), ("Speicher (NAS)", null));
+        Head(L["Admin.Storage.Title"], L["Admin.Storage.Sub"], (L["Admin.Settings"], null), (L["Admin.Storage.Title"], null));
         ViewData["Width"] = "narrow";
         var all = await db.StoredFile.AsNoTracking().Select(f => new { f.StorageKey, f.SizeBytes }).ToListAsync();
         var smb = all.Where(f => f.StorageKey.StartsWith(FileStoreService.SmbScheme + ":", StringComparison.Ordinal)).ToList();

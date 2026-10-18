@@ -49,8 +49,8 @@ public sealed class BankingModel(ConfigStore config, SecretProtector secrets, En
         }
 
         Save();
-        await log.LogAsync("Banking-Einstellungen geändert", "Banking");
-        Flash("Die Einstellungen sind gespeichert.");
+        await log.LogAsync(L["Admin.Banking.Log.Changed"], "Banking");
+        Flash(L["Admin.Saved"]);
         return RedirectToPage();
     }
 
@@ -67,7 +67,7 @@ public sealed class BankingModel(ConfigStore config, SecretProtector secrets, En
         {
             var banks = await client.BanksAsync(config.Current.Banking.Country, HttpContext.RequestAborted);
             TestOk = true;
-            TestResult = $"Die Verbindung zu Enable Banking steht: {banks.Count} Banken in {config.Current.Banking.Country} verfügbar. Die Einstellungen sind gespeichert.";
+            TestResult = L["Admin.Banking.Test.Ok", banks.Count, config.Current.Banking.Country].Value;
         }
         catch (Exception ex) when (ex is BankingException or HttpRequestException or TaskCanceledException)
         {
@@ -81,7 +81,7 @@ public sealed class BankingModel(ConfigStore config, SecretProtector secrets, En
     {
         if (Input.SyncHours is < 1 or > 48)
         {
-            ModelState.AddModelError("Input.SyncHours", "Zwischen 1 und 48 Stunden.");
+            ModelState.AddModelError("Input.SyncHours", L["Admin.Banking.SyncHours.Range"]);
         }
 
         if (!string.IsNullOrWhiteSpace(Input.PrivateKey))
@@ -93,7 +93,7 @@ public sealed class BankingModel(ConfigStore config, SecretProtector secrets, En
             }
             catch (ArgumentException)
             {
-                ModelState.AddModelError("Input.PrivateKey", "Das ist kein privater RSA-Schlüssel im PEM-Format (-----BEGIN PRIVATE KEY----- …).");
+                ModelState.AddModelError("Input.PrivateKey", L["Admin.Banking.PrivateKey.Invalid"]);
             }
         }
 
@@ -114,7 +114,7 @@ public sealed class BankingModel(ConfigStore config, SecretProtector secrets, En
 
     private void Prepare()
     {
-        Head("Banking", "Automatische Zuordnung und der Online-Abruf der Konten.", ("Einstellungen", null), ("Banking", null));
+        Head(L["Admin.Banking.Title"], L["Admin.Banking.Sub"], (L["Admin.Settings"], null), (L["Admin.Banking.Title"], null));
         ViewData["Width"] = "narrow";
     }
 }

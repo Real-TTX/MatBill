@@ -15,24 +15,24 @@ public sealed class EditModel(MbDbContext db, UserService users, SignInService s
 {
     public sealed class InputModel
     {
-        [Required(ErrorMessage = "Bitte gib den Namen ein.")]
-        [Display(Name = "Name")]
+        [Required(ErrorMessage = "Admin.Users.Name.Required")]
+        [Display(Name = "Common.Name")]
         public string DisplayName { get; set; } = "";
 
-        [Required(ErrorMessage = "Bitte gib die E-Mail-Adresse ein.")]
-        [EmailAddress(ErrorMessage = "Das ist keine gültige E-Mail-Adresse.")]
-        [Display(Name = "E-Mail-Adresse")]
+        [Required(ErrorMessage = "Admin.Users.Email.Required")]
+        [EmailAddress(ErrorMessage = "Admin.Users.Email.Invalid")]
+        [Display(Name = "Admin.Users.Email")]
         public string Email { get; set; } = "";
 
-        [Display(Name = "Telefon")]
+        [Display(Name = "Common.Phone")]
         public string? Phone { get; set; }
 
-        [Display(Name = "Rolle")]
+        [Display(Name = "Admin.Users.Role")]
         public UserRole Role { get; set; } = UserRole.User;
 
         public bool IsActive { get; set; } = true;
 
-        [Display(Name = "Passwort")]
+        [Display(Name = "Admin.Users.Password")]
         public string? Password { get; set; }
     }
 
@@ -78,7 +78,7 @@ public sealed class EditModel(MbDbContext db, UserService users, SignInService s
         var email = SignInService.NormalizeEmail(Input.Email);
         if (ModelState.IsValid && await users.EmailTakenAsync(email, Id))
         {
-            ModelState.AddModelError("Input.Email", "Zu dieser E-Mail-Adresse gibt es schon ein Konto.");
+            ModelState.AddModelError("Input.Email", L["Admin.Users.Email.Taken"]);
         }
 
         if (!string.IsNullOrEmpty(Input.Password) && UserService.CheckPassword(Input.Password, email) is { } weak)
@@ -88,17 +88,17 @@ public sealed class EditModel(MbDbContext db, UserService users, SignInService s
 
         if (Id is null && string.IsNullOrEmpty(Input.Password))
         {
-            ModelState.AddModelError("Input.Password", "Bitte vergib ein Passwort. ");
+            ModelState.AddModelError("Input.Password", L["Admin.Users.Password.Required"]);
         }
 
         if (Account is { Role: UserRole.Admin } && (Input.Role != UserRole.Admin || !Input.IsActive) && !await OtherAdminExistsAsync())
         {
-            ModelState.AddModelError("Input.Role", "Das ist der einzige aktive Administrator. Es muss immer einen geben.");
+            ModelState.AddModelError("Input.Role", L["Admin.Users.LastAdmin"]);
         }
 
         if (IsMe && (!Input.IsActive || Input.Role != UserRole.Admin))
         {
-            ModelState.AddModelError("Input.Role", "Du kannst dir nicht selbst die Rechte nehmen oder dich sperren.");
+            ModelState.AddModelError("Input.Role", L["Admin.Users.NotYourself"]);
         }
 
         if (!ModelState.IsValid)
@@ -112,8 +112,8 @@ public sealed class EditModel(MbDbContext db, UserService users, SignInService s
             created.Phone = string.IsNullOrWhiteSpace(Input.Phone) ? null : Input.Phone.Trim();
             created.IsActive = Input.IsActive;
             await db.SaveChangesAsync();
-            await log.LogAsync("Benutzer angelegt", "User", created.Id, $"{created.Email} ({Labels.Of(created.Role)})");
-            Flash("Der Benutzer ist angelegt.");
+            await log.LogAsync(L["Admin.Users.Log.Created"], "User", created.Id, $"{created.Email} ({Labels.Of(created.Role)})");
+            Flash(L["Admin.Users.Created"]);
             return RedirectToPage("/Admin/Users/Edit", new { id = created.Id });
         }
 
@@ -135,8 +135,8 @@ public sealed class EditModel(MbDbContext db, UserService users, SignInService s
         }
 
         cache.InvalidateUser(user.Id);
-        await log.LogAsync("Benutzer geändert", "User", user.Id, roleChanged ? $"{user.Email}, neue Rolle: {Labels.Of(user.Role)}" : user.Email);
-        Flash("Der Benutzer ist gespeichert.");
+        await log.LogAsync(L["Admin.Users.Log.Changed"], "User", user.Id, roleChanged ? L["Admin.Users.Log.NewRole", user.Email, Labels.Of(user.Role)].Value : user.Email);
+        Flash(L["Admin.Users.Saved"]);
         return RedirectToPage("/Admin/Users/Edit", new { id = user.Id });
     }
 
@@ -149,8 +149,8 @@ public sealed class EditModel(MbDbContext db, UserService users, SignInService s
         }
 
         await twoFactor.DisableAsync(user);
-        await log.LogAsync("Zwei-Faktor-Anmeldung zurückgesetzt", "User", user.Id, user.Email);
-        Flash("Die Zwei-Faktor-Anmeldung ist abgeschaltet. Die Person kann sie neu einrichten.");
+        await log.LogAsync(L["Admin.Users.Log.TotpReset"], "User", user.Id, user.Email);
+        Flash(L["Admin.Users.TotpReset"]);
         return RedirectToPage(new { id = Id });
     }
 
@@ -164,8 +164,8 @@ public sealed class EditModel(MbDbContext db, UserService users, SignInService s
         // An administrator who ends their own sessions would lock themselves out in the middle of the click; keep the one in use.
         var keep = id == current.UserId ? Guid.TryParse(User.FindFirst(AppClaims.Session)?.Value, out var token) ? token : (Guid?)null : null;
         await signIn.EndAllSessionsAsync(id, keep);
-        await log.LogAsync("Sitzungen beendet", "User", id);
-        Flash("Alle Sitzungen sind beendet. Die Person muss sich neu anmelden.");
+        await log.LogAsync(L["Admin.Users.Log.SessionsEnded"], "User", id);
+        Flash(L["Admin.Users.SessionsEnded"]);
         return RedirectToPage(new { id });
     }
 
@@ -181,7 +181,7 @@ public sealed class EditModel(MbDbContext db, UserService users, SignInService s
         user.LockoutEndDate = null;
         await db.SaveChangesAsync();
         cache.InvalidateUser(user.Id);
-        Flash("Die Sperre nach falschen Anmeldungen ist aufgehoben.");
+        Flash(L["Admin.Users.Unlocked"]);
         return RedirectToPage(new { id = Id });
     }
 
@@ -195,13 +195,13 @@ public sealed class EditModel(MbDbContext db, UserService users, SignInService s
 
         if (user.Id == current.UserId)
         {
-            FlashError("Du kannst dich nicht selbst löschen.");
+            FlashError(L["Admin.Users.CannotDeleteYourself"]);
             return RedirectToPage(new { id = Id });
         }
 
         if (user.Role == UserRole.Admin && user.IsActive && !await db.User.AnyAsync(u => u.Id != user.Id && u.Role == UserRole.Admin && u.IsActive))
         {
-            FlashError("Das ist der einzige aktive Administrator.");
+            FlashError(L["Admin.Users.OnlyAdmin"]);
             return RedirectToPage(new { id = Id });
         }
 
@@ -209,8 +209,8 @@ public sealed class EditModel(MbDbContext db, UserService users, SignInService s
         db.User.Remove(user);
         await db.SaveChangesAsync();
         cache.InvalidateUser(user.Id);
-        await log.LogAsync("Benutzer gelöscht", "User", user.Id, user.Email);
-        Flash("Der Benutzer ist gelöscht. Seine Einträge bleiben erhalten.");
+        await log.LogAsync(L["Admin.Users.Log.Deleted"], "User", user.Id, user.Email);
+        Flash(L["Admin.Users.Deleted"]);
         return RedirectToPage("/Admin/Users/Index");
     }
 
@@ -230,8 +230,8 @@ public sealed class EditModel(MbDbContext db, UserService users, SignInService s
             Sessions = await db.UserSession.CountAsync(s => s.UserId == id && s.RevokedDate == null && s.ExpiresDate > now);
         }
 
-        var title = Id is null ? "Neuer Benutzer" : Account!.DisplayName;
-        Head(title, null, ("Einstellungen", null), ("Benutzer", "/Admin/Users"), (title, null));
+        var title = Id is null ? L["Admin.Users.New"].Value : Account!.DisplayName;
+        Head(title, null, (L["Admin.Settings"], null), (L["Admin.Users.Title"], "/Admin/Users"), (title, null));
         ViewData["Width"] = "narrow";
         ViewData["ActiveHref"] = "/Admin/Users";
         return true;

@@ -30,8 +30,8 @@ public sealed class EditModel(MbDbContext db, ShareService shares, TimeProvider 
 
         link.RevokedDate ??= clock.GetUtcNow().UtcDateTime;
         await db.SaveChangesAsync();
-        await log.LogAsync("Freigabe-Link widerrufen", "ShareLink", link.Id, link.Title);
-        Flash("Der Link ist widerrufen. Wer ihn hat, sieht nichts mehr.");
+        await log.LogAsync(L["Admin.Shares.Log.Revoked"], "ShareLink", link.Id, link.Title);
+        Flash(L["Admin.Shares.Revoked"]);
         return RedirectToPage(new { id = Id });
     }
 
@@ -42,8 +42,8 @@ public sealed class EditModel(MbDbContext db, ShareService shares, TimeProvider 
         {
             db.ShareLink.Remove(link);
             await db.SaveChangesAsync();
-            await log.LogAsync("Freigabe-Link gelöscht", "ShareLink", link.Id, link.Title);
-            Flash("Der Link ist gelöscht.");
+            await log.LogAsync(L["Admin.Shares.Log.Deleted"], "ShareLink", link.Id, link.Title);
+            Flash(L["Admin.Shares.Deleted"]);
         }
 
         return RedirectToPage("/Admin/Shares/Index");
@@ -58,7 +58,7 @@ public sealed class EditModel(MbDbContext db, ShareService shares, TimeProvider 
         }
 
         Link = link;
-        Head(link.Title, null, ("Einstellungen", null), ("Freigaben", "/Admin/Shares"), (link.Title, null));
+        Head(link.Title, null, (L["Admin.Settings"], null), (L["Admin.Shares.Title"], "/Admin/Shares"), (link.Title, null));
         ViewData["Width"] = "narrow";
         ViewData["ActiveHref"] = "/Admin/Shares";
         return true;

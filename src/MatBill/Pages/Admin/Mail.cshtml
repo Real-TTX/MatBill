@@ -4,10 +4,10 @@
 @{
     var security = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
     {
-        new("Automatisch (STARTTLS, wenn angeboten)", nameof(MailSecurity.Auto)),
-        new("STARTTLS (meist Port 587)", nameof(MailSecurity.StartTls)),
-        new("SSL/TLS (meist Port 465)", nameof(MailSecurity.SslOnConnect)),
-        new("Keine Verschlüsselung", nameof(MailSecurity.None)),
+        new(L["Admin.Mail.Security.Auto"], nameof(MailSecurity.Auto)),
+        new(L["Admin.Mail.Security.StartTls"], nameof(MailSecurity.StartTls)),
+        new(L["Admin.Mail.Security.Ssl"], nameof(MailSecurity.SslOnConnect)),
+        new(L["Admin.Mail.Security.None"], nameof(MailSecurity.None)),
     };
 }
 
@@ -18,35 +18,35 @@
         <div class="mat-alert mat-alert--@(Model.TestOk ? "success" : "danger")" role="status">@Ui.Icon(Model.TestOk ? "check-circle" : "alert")<div class="mat-alert__body">@Model.TestResult</div></div>
     }
 
-    <mb-card title="Mailserver (SMTP)" icon="server">
+    <mb-card title="@L["Admin.Mail.Server"]" icon="server">
         <div class="mat-form__grid">
-            <mb-input for="Input.Host" label="Server" hint="Zum Beispiel smtp.example.de. Leer: MatBill versendet keine Mails." autocomplete="off" />
-            <mb-input for="Input.Port" label="Port" type="number" min="1" max="65535" step="1" show-if="Input.Host" />
-            <mb-select for="Input.Security" label="Verschlüsselung" items="security" show-if="Input.Host" />
-            <mb-input for="Input.UserName" label="Benutzername" autocomplete="off" show-if="Input.Host" />
-            <mb-input for="Input.Password" label="Passwort" type="password" autocomplete="new-password" show-if="Input.Host" hint="@(Model.HasPassword ? "Leer lassen, um das gespeicherte Passwort zu behalten." : "Wird verschlüsselt gespeichert.")" />
-            <mb-input for="Input.FromAddress" label="Absenderadresse" type="email" inputmode="email" show-if="Input.Host" />
-            <mb-input for="Input.FromName" label="Absendername" show-if="Input.Host" hint="Leer: der Name des Unternehmens." />
-            <mb-input for="Input.Bcc" label="Blindkopie jeder Rechnung an" show-if="Input.Host" hint="Für das eigene Archiv, optional." autocomplete="off" />
+            <mb-input for="Input.Host" label="@L["Admin.Mail.Host"]" hint="@L["Admin.Mail.Host.Hint"]" autocomplete="off" />
+            <mb-input for="Input.Port" label="@L["Admin.Mail.Port"]" type="number" min="1" max="65535" step="1" show-if="Input.Host" />
+            <mb-select for="Input.Security" label="@L["Admin.Mail.Security"]" items="security" show-if="Input.Host" />
+            <mb-input for="Input.UserName" label="@L["Admin.UserName"]" autocomplete="off" show-if="Input.Host" />
+            <mb-input for="Input.Password" label="@L["Admin.Password"]" type="password" autocomplete="new-password" show-if="Input.Host" hint="@(Model.HasPassword ? L["Admin.Password.Keep"] : L["Admin.Password.Encrypted"])" />
+            <mb-input for="Input.FromAddress" label="@L["Admin.Mail.FromAddress"]" type="email" inputmode="email" show-if="Input.Host" />
+            <mb-input for="Input.FromName" label="@L["Admin.Mail.FromName"]" show-if="Input.Host" hint="@L["Admin.Mail.FromName.Hint"]" />
+            <mb-input for="Input.Bcc" label="@L["Admin.Mail.Bcc"]" show-if="Input.Host" hint="@L["Admin.Mail.Bcc.Hint"]" autocomplete="off" />
         </div>
     </mb-card>
 
-    <mb-card title="Rechnungsmail" icon="mail">
-        <p class="mat-muted">Platzhalter: {Nummer}, {Kunde}, {Betrag}, {Datum}, {Faellig}, {Firma}. Die Rechnung hängt als PDF an.</p>
+    <mb-card title="@L["Admin.Mail.InvoiceMail"]" icon="mail">
+        <p class="mat-muted">@L["Admin.Mail.Placeholders"]</p>
         <div class="mat-form__grid">
-            <mb-input for="Input.Subject" label="Betreff" required="true" full="true" />
-            <mb-textarea for="Input.Body" label="Text" rows="8" required="true" full="true" />
-            <mb-input for="Input.QuoteSubject" label="Betreff eines Angebots" full="true" />
-            <mb-textarea for="Input.QuoteBody" label="Text eines Angebots" rows="6" full="true" hint="Wie oben, statt {Faellig} gibt es {Gueltig}." />
+            <mb-input for="Input.Subject" label="@L["Admin.Mail.Subject"]" required="true" full="true" />
+            <mb-textarea for="Input.Body" label="@L["Admin.Mail.Body"]" rows="8" required="true" full="true" />
+            <mb-input for="Input.QuoteSubject" label="@L["Admin.Mail.QuoteSubject"]" full="true" />
+            <mb-textarea for="Input.QuoteBody" label="@L["Admin.Mail.QuoteBody"]" rows="6" full="true" hint="@L["Admin.Mail.QuoteBody.Hint"]" />
         </div>
     </mb-card>
 
-    <mb-card title="Testnachricht" icon="send">
+    <mb-card title="@L["Admin.Mail.Test"]" icon="send">
         <div class="mat-form__grid">
-            <mb-input name="TestTo" for="TestTo" label="Empfänger" type="email" inputmode="email" hint="Speichert die Einstellungen und sendet eine kurze Nachricht." autocomplete="off" />
+            <mb-input name="TestTo" for="TestTo" label="@L["Admin.Mail.TestTo"]" type="email" inputmode="email" hint="@L["Admin.Mail.TestTo.Hint"]" autocomplete="off" />
         </div>
         <div class="mat-actions">
-            <button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="Test">@Ui.Icon("send")<span>Speichern und Test senden</span></button>
+            <button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="Test">@Ui.Icon("send")<span>@L["Admin.Mail.Test.Send"]</span></button>
         </div>
     </mb-card>
 

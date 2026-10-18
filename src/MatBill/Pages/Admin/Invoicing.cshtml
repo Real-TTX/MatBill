@@ -7,52 +7,52 @@
 
 <form class="mat-form" method="post" novalidate>
     <mb-summary />
-    <mb-card title="Nummernkreise" icon="list" sub="@($"nächste Rechnung: {Model.NextInvoice}")">
-        <p class="mat-muted">Platzhalter: {JJJJ} Jahr, {JJ} Jahr zweistellig, {MM} Monat, {NNNN} fortlaufender Zähler (so viele Stellen wie N). Mit dem Jahr im Muster beginnt der Zähler jedes Jahr neu. Entwürfe bekommen ihre Nummer erst beim Ausstellen, so bleibt der Kreis lückenlos.</p>
+    <mb-card title="@L["Admin.Invoicing.Ranges"]" icon="list" sub="@L["Admin.Invoicing.NextInvoice", Model.NextInvoice]">
+        <p class="mat-muted">@L["Admin.Invoicing.Ranges.Hint"]</p>
         <div class="mat-form__grid">
-            <mb-input for="Input.InvoiceNumberPattern" label="Rechnungsnummern" required="true" hint="@($"Beispiel: {Model.InvoiceExample}")" autocomplete="off" />
-            <mb-input for="Input.CustomerNumberPattern" label="Kundennummern" required="true" hint="@($"Beispiel: {Model.CustomerExample}")" autocomplete="off" />
-            <mb-input for="Input.QuoteNumberPattern" label="Angebotsnummern" required="true" hint="@($"Beispiel: {Model.QuoteExample}")" autocomplete="off" />
-            <mb-input for="Input.ExpenseNumberPattern" label="Belegnummern (Ausgaben)" required="true" hint="@($"Beispiel: {Model.ExpenseExample}")" autocomplete="off" />
+            <mb-input for="Input.InvoiceNumberPattern" label="@L["Admin.Invoicing.InvoiceNumbers"]" required="true" hint="@L["Admin.Invoicing.Example", Model.InvoiceExample]" autocomplete="off" />
+            <mb-input for="Input.CustomerNumberPattern" label="@L["Admin.Invoicing.CustomerNumbers"]" required="true" hint="@L["Admin.Invoicing.Example", Model.CustomerExample]" autocomplete="off" />
+            <mb-input for="Input.QuoteNumberPattern" label="@L["Admin.Invoicing.QuoteNumbers"]" required="true" hint="@L["Admin.Invoicing.Example", Model.QuoteExample]" autocomplete="off" />
+            <mb-input for="Input.ExpenseNumberPattern" label="@L["Admin.Invoicing.ExpenseNumbers"]" required="true" hint="@L["Admin.Invoicing.Example", Model.ExpenseExample]" autocomplete="off" />
         </div>
-        <p class="mat-hint">Stornorechnungen bekommen ihre Nummer aus dem Kreis der Rechnungen.</p>
+        <p class="mat-hint">@L["Admin.Invoicing.Cancellation.Hint"]</p>
     </mb-card>
 
-    <mb-card title="E-Rechnung" icon="file-document">
+    <mb-card title="@L["Admin.Invoicing.EInvoice"]" icon="file-document">
         <div class="mat-form__grid">
-            <mb-switch for="Input.ZugferdPdf" label="Ausgestellte Rechnungen als ZUGFeRD-E-Rechnung (PDF/A-3 mit XML nach EN 16931)" full="true" />
+            <mb-switch for="Input.ZugferdPdf" label="@L["Admin.Invoicing.Zugferd"]" full="true" />
         </div>
-        <p class="mat-hint">Die PDF bleibt für Menschen lesbar, die eingebettete XML liest jede Buchhaltungssoftware. Für Behörden gibt es an jeder Rechnung zusätzlich die XRechnung (XML); die Leitweg-ID trägst du beim Kunden ein.</p>
+        <p class="mat-hint">@L["Admin.Invoicing.EInvoice.Hint"]</p>
     </mb-card>
 
-    <mb-card title="Angebote" icon="file-document">
+    <mb-card title="@L["Admin.Invoicing.Quotes"]" icon="file-document">
         <div class="mat-form__grid">
-            <mb-input for="Input.QuoteValidityDays" label="Gültig (Tage)" type="number" min="1" max="365" step="1" />
-            <mb-textarea for="Input.QuoteIntroText" label="Einleitung" rows="3" full="true" />
-            <mb-textarea for="Input.QuoteTerms" label="Bedingungen" rows="3" full="true" hint="{Gueltig} wird zum Datum, bis zu dem das Angebot gilt." />
-        </div>
-    </mb-card>
-
-    <mb-card title="Ausgaben" icon="euro">
-        <div class="mat-form__grid">
-            <mb-textarea for="Input.Categories" label="Kategorien (eine pro Zeile)" rows="8" full="true" hint="Werden in Ausgaben, Auswertung und Export verwendet." />
+            <mb-input for="Input.QuoteValidityDays" label="@L["Admin.Invoicing.QuoteValidityDays"]" type="number" min="1" max="365" step="1" />
+            <mb-textarea for="Input.QuoteIntroText" label="@L["Admin.Invoicing.Intro"]" rows="3" full="true" />
+            <mb-textarea for="Input.QuoteTerms" label="@L["Admin.Invoicing.QuoteTerms"]" rows="3" full="true" hint="@L["Admin.Invoicing.QuoteTerms.Hint"]" />
         </div>
     </mb-card>
 
-    <mb-card title="Neue Rechnungen" icon="file-text">
+    <mb-card title="@L["Admin.Invoicing.Expenses"]" icon="euro">
         <div class="mat-form__grid">
-            <mb-input for="Input.PaymentTermDays" label="Zahlungsziel (Tage)" type="number" min="0" max="365" step="1" hint="Ein Kunde kann ein eigenes haben." />
-            <mb-select for="Input.DefaultTaxRate" label="Steuersatz neuer Positionen" items="rates" />
-            <mb-textarea for="Input.IntroText" label="Einleitung" rows="3" full="true" />
-            <mb-textarea for="Input.PaymentTerms" label="Zahlungsbedingungen" rows="3" full="true" hint="{Tage} wird zum Zahlungsziel, {Faellig} zum Fälligkeitsdatum." />
-            <mb-textarea for="Input.ClosingText" label="Schlusstext" rows="2" full="true" />
-            <mb-textarea for="Input.SmallBusinessNote" label="Hinweis für Kleinunternehmer" rows="2" full="true" hint="Steht unter den Summen, wenn im Branding „Kleinunternehmer“ eingeschaltet ist." />
+            <mb-textarea for="Input.Categories" label="@L["Admin.Invoicing.Categories"]" rows="8" full="true" hint="@L["Admin.Invoicing.Categories.Hint"]" />
         </div>
     </mb-card>
 
-    <mb-card title="Wiederkehrende Rechnungen" icon="repeat">
+    <mb-card title="@L["Admin.Invoicing.NewInvoices"]" icon="file-text">
         <div class="mat-form__grid">
-            <mb-input for="Input.NoticeDays" label="Hinweis vor der nächsten Rechnung (Tage)" type="number" min="0" max="30" step="1" hint="So viele Tage vorher bekommen alle eine Benachrichtigung. 0: keine." />
+            <mb-input for="Input.PaymentTermDays" label="@L["Admin.Invoicing.PaymentTermDays"]" type="number" min="0" max="365" step="1" hint="@L["Admin.Invoicing.PaymentTermDays.Hint"]" />
+            <mb-select for="Input.DefaultTaxRate" label="@L["Admin.Invoicing.DefaultTaxRate"]" items="rates" />
+            <mb-textarea for="Input.IntroText" label="@L["Admin.Invoicing.Intro"]" rows="3" full="true" />
+            <mb-textarea for="Input.PaymentTerms" label="@L["Admin.Invoicing.PaymentTerms"]" rows="3" full="true" hint="@L["Admin.Invoicing.PaymentTerms.Hint"]" />
+            <mb-textarea for="Input.ClosingText" label="@L["Admin.Invoicing.ClosingText"]" rows="2" full="true" />
+            <mb-textarea for="Input.SmallBusinessNote" label="@L["Admin.Invoicing.SmallBusinessNote"]" rows="2" full="true" hint="@L["Admin.Invoicing.SmallBusinessNote.Hint"]" />
+        </div>
+    </mb-card>
+
+    <mb-card title="@L["Admin.Invoicing.Recurring"]" icon="repeat">
+        <div class="mat-form__grid">
+            <mb-input for="Input.NoticeDays" label="@L["Admin.Invoicing.NoticeDays"]" type="number" min="0" max="30" step="1" hint="@L["Admin.Invoicing.NoticeDays.Hint"]" />
         </div>
     </mb-card>
 

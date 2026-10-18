@@ -3,29 +3,29 @@
 
 <form class="mat-form" method="post" novalidate>
     <mb-summary />
-    <mb-tabs id="security" label="Sicherheit">
-        <mb-tab id="signin" title="Anmeldung" icon="shield">
+    <mb-tabs id="security" label="@L["Admin.Security.Title"]">
+        <mb-tab id="signin" title="@L["Admin.Security.SignIn"]" icon="shield">
             <mb-card>
                 <div class="mat-form__grid">
-                    <mb-input for="Input.SessionDays" label="Sitzung bleibt gültig für Tage" type="number" min="1" max="365" hint="Danach muss man sich wieder anmelden. Die Sitzungen sind in der Datenbank gespeichert und überstehen einen Neustart." />
-                    <mb-switch for="Input.RequireTotpForAdmins" label="Administratoren müssen die Zwei-Faktor-Anmeldung einrichten" full="true" />
+                    <mb-input for="Input.SessionDays" label="@L["Admin.Security.SessionDays"]" type="number" min="1" max="365" hint="@L["Admin.Security.SessionDays.Hint"]" />
+                    <mb-switch for="Input.RequireTotpForAdmins" label="@L["Admin.Security.RequireTotp"]" full="true" />
                 </div>
             </mb-card>
         </mb-tab>
 
-        <mb-tab id="links" title="Links" icon="link">
+        <mb-tab id="links" title="@L["Admin.Security.Links"]" icon="link">
             <mb-card>
                 <div class="mat-form__grid">
-                    <mb-input for="Input.ShareLinkDays" label="Freigabe-Link gilt für Tage" type="number" min="1" max="365" hint="Der Vorschlag beim Erstellen eines Links. Jeder Link hat sein eigenes Ablaufdatum." />
+                    <mb-input for="Input.ShareLinkDays" label="@L["Admin.Security.ShareLinkDays"]" type="number" min="1" max="365" hint="@L["Admin.Security.ShareLinkDays.Hint"]" />
                 </div>
             </mb-card>
         </mb-tab>
 
-        <mb-tab id="address" title="Adresse" icon="globe">
+        <mb-tab id="address" title="@L["Admin.Security.Address"]" icon="globe">
             <mb-card>
                 <div class="mat-form__grid">
-                    <mb-input for="Input.PublicUrl" label="Öffentliche Adresse" type="url" full="true" hint="@(Model.UrlFromEnvironment ? "Wird gerade von der Umgebungsvariable MATBILL__Server__PublicUrl bestimmt." : $"Steht in den Links, die du weitergibst, zum Beispiel https://projekte.example.de. Leer: die Adresse der Anfrage (jetzt {Model.CurrentBase}).")" />
-                    <mb-switch for="Input.ForceSecureCookie" label="Cookie immer als „Secure“ markieren (wenn die Seite über HTTPS erreichbar ist)" full="true" />
+                    <mb-input for="Input.PublicUrl" label="@L["Admin.Security.PublicUrl"]" type="url" full="true" hint="@(Model.UrlFromEnvironment ? L["Admin.Security.PublicUrl.Environment"] : L["Admin.Security.PublicUrl.Hint", Model.CurrentBase])" />
+                    <mb-switch for="Input.ForceSecureCookie" label="@L["Admin.Security.ForceSecureCookie"]" full="true" />
                 </div>
             </mb-card>
         </mb-tab>

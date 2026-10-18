@@ -2,24 +2,24 @@
 @model MatBill.Pages.Admin.SystemModel
 
 <div class="mb-kpis">
-    @Ui.Kpi("Version", Model.Version, "seit " + Fmt.Moment(Model.Started) + " in Betrieb", "server", "accent")
-    @Ui.Kpi("Datenbank", Fmt.FileSize(Model.DatabaseBytes), Model.DatabaseVersion, "database", "busy")
-    @Ui.Kpi("Arbeitsspeicher", Fmt.FileSize(Model.Memory), "der Anwendung", "activity", "info")
+    @Ui.Kpi(L["Admin.System.Version"], Model.Version, L["Admin.System.Running", Fmt.Moment(Model.Started)], "server", "accent")
+    @Ui.Kpi(L["Admin.System.Database"], Fmt.FileSize(Model.DatabaseBytes), Model.DatabaseVersion, "database", "busy")
+    @Ui.Kpi(L["Admin.System.Memory"], Fmt.FileSize(Model.Memory), L["Admin.System.Memory.Sub"], "activity", "info")
 </div>
 
 <div class="mat-grid mat-grid--2">
-    <mb-card title="Anwendung" icon="server">
+    <mb-card title="@L["Admin.System.Application"]" icon="server">
         <dl class="mat-kv">
-            <dt>Laufzeit</dt><dd>@Model.Runtime</dd>
-            <dt>System</dt><dd>@Model.Os (@Model.Architecture)</dd>
-            <dt>Zeitzone</dt><dd>@Model.TimeZone</dd>
-            <dt>Datenordner</dt><dd class="mat-mono">@Model.DataDir</dd>
-            <dt>Dateispeicher</dt><dd>@(Model.Storage == MatBill.Configuration.StorageMode.Smb ? "NAS (SMB)" : "Volume") · <a href="/Admin/Storage">ändern</a></dd>
-            <dt>Sicherung</dt><dd>@(Model.BackupBusy ? "läuft gerade" : "bereit") · <a href="/Admin/Backup">öffnen</a></dd>
+            <dt>@L["Admin.System.Runtime"]</dt><dd>@Model.Runtime</dd>
+            <dt>@L["Admin.System.Os"]</dt><dd>@Model.Os (@Model.Architecture)</dd>
+            <dt>@L["Admin.System.TimeZone"]</dt><dd>@Model.TimeZone</dd>
+            <dt>@L["Admin.System.DataFolder"]</dt><dd class="mat-mono">@Model.DataDir</dd>
+            <dt>@L["Admin.System.FileStorage"]</dt><dd>@(Model.Storage == MatBill.Configuration.StorageMode.Smb ? L["Admin.System.FileStorage.Smb"] : L["Admin.System.FileStorage.Local"]) · <a href="/Admin/Storage">@L["Admin.System.Change"]</a></dd>
+            <dt>@L["Admin.System.Backup"]</dt><dd>@(Model.BackupBusy ? L["Admin.System.Backup.Busy"] : L["Admin.System.Backup.Ready"]) · <a href="/Admin/Backup">@L["Admin.System.Open"]</a></dd>
         </dl>
     </mb-card>
 
-    <mb-card title="Inhalt" icon="database">
+    <mb-card title="@L["Admin.System.Content"]" icon="database">
         <dl class="mat-kv">
             @foreach (var (name, count) in Model.Counts)
             {
@@ -29,19 +29,19 @@
     </mb-card>
 </div>
 
-<mb-card title="Datenordner" icon="folder">
+<mb-card title="@L["Admin.System.DataFolder"]" icon="folder">
     <div class="mat-table-wrap">
         <table class="mat-table" id="data-folders">
-            <caption class="mat-sr-only">Belegung des Datenordners</caption>
-            <thead><tr><th scope="col">Ordner</th><th scope="col" class="mat-hide-sm">Wofür</th><th scope="col" class="mat-num">Dateien</th><th scope="col" class="mat-num">Größe</th></tr></thead>
+            <caption class="mat-sr-only">@L["Admin.System.Folders.Caption"]</caption>
+            <thead><tr><th scope="col">@L["Admin.System.Folder"]</th><th scope="col" class="mat-hide-sm">@L["Admin.System.Folder.Purpose"]</th><th scope="col" class="mat-num">@L["Admin.System.Folder.Files"]</th><th scope="col" class="mat-num">@L["Admin.System.Folder.Size"]</th></tr></thead>
             <tbody>
                 @foreach (var f in Model.Folders)
                 {
                     <tr>
-                        <td data-label="Ordner">@f.Name</td>
-                        <td data-label="Wofür" class="mat-hide-sm">@f.Hint</td>
-                        <td data-label="Dateien" class="mat-num">@Fmt.Integer(f.Files)</td>
-                        <td data-label="Größe" class="mat-num">@Fmt.FileSize(f.Bytes)</td>
+                        <td data-label="@L["Admin.System.Folder"]">@f.Name</td>
+                        <td data-label="@L["Admin.System.Folder.Purpose"]" class="mat-hide-sm">@f.Hint</td>
+                        <td data-label="@L["Admin.System.Folder.Files"]" class="mat-num">@Fmt.Integer(f.Files)</td>
+                        <td data-label="@L["Admin.System.Folder.Size"]" class="mat-num">@Fmt.FileSize(f.Bytes)</td>
                     </tr>
                 }
             </tbody>
@@ -49,19 +49,19 @@
     </div>
 </mb-card>
 
-<mb-card title="Aufräumen" icon="refresh">
-    <p class="mat-muted">Einmal am Tag entfernt MatBill beendete Sitzungen, abgelaufene Freigabe-Links und Protokolle, die älter als ein Jahr sind. Du kannst das auch jetzt tun.</p>
+<mb-card title="@L["Admin.System.Cleanup"]" icon="refresh">
+    <p class="mat-muted">@L["Admin.System.Cleanup.Hint"]</p>
     <form method="post" class="mat-actions">
-        <button type="submit" asp-page-handler="Maintain" class="mat-btn mat-btn--secondary">@Ui.Icon("refresh")<span>Jetzt aufräumen</span></button>
+        <button type="submit" asp-page-handler="Maintain" class="mat-btn mat-btn--secondary">@Ui.Icon("refresh")<span>@L["Admin.System.Cleanup.Now"]</span></button>
     </form>
 </mb-card>
 
 @if (Model.CanCreateDemo)
 {
-    <mb-card title="Beispieldaten" icon="sparkles">
-        <p class="mat-muted">Zum Ausprobieren: Firmendaten, Kunden, Produkte, einige Rechnungen und zwei Serien. Das geht nur in einer leeren Installation.</p>
+    <mb-card title="@L["Admin.System.Demo"]" icon="sparkles">
+        <p class="mat-muted">@L["Admin.System.Demo.Hint"]</p>
         <form method="post" class="mat-actions">
-            <button type="submit" asp-page-handler="Demo" class="mat-btn mat-btn--secondary" data-confirm="Beispieldaten anlegen?" data-confirm-ok="Anlegen">@Ui.Icon("sparkles")<span>Beispieldaten anlegen</span></button>
+            <button type="submit" asp-page-handler="Demo" class="mat-btn mat-btn--secondary" data-confirm="@L["Admin.System.Demo.Confirm"]" data-confirm-ok="@L["Admin.System.Demo.Ok"]">@Ui.Icon("sparkles")<span>@L["Admin.System.Demo.Create"]</span></button>
         </form>
     </mb-card>
 }

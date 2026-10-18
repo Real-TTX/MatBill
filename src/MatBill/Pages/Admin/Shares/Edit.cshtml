@@ -4,24 +4,24 @@
     var l = Model.Link;
 }
 
-<mb-card title="Link" icon="share" sub="@(Model.Active ? "gültig" : l.RevokedDate is not null ? "widerrufen" : "abgelaufen")">
+<mb-card title="@L["Admin.Shares.Link"]" icon="share" sub="@(Model.Active ? L["Admin.Shares.Pill.Valid"] : l.RevokedDate is not null ? L["Admin.Shares.Pill.Revoked"] : L["Admin.Shares.Pill.Expired"])">
     <dl class="mat-kv">
-        <dt>Zeigt</dt><dd><a href="/Invoices/Edit?id=@l.InvoiceId">Rechnung @l.Invoice?.Number</a>@(l.Invoice is null ? "" : " · " + l.Invoice.RecipientName)</dd>
-        <dt>Titel</dt><dd>@l.Title</dd>
-        <dt>Für</dt><dd>@(l.RecipientName ?? "–")</dd>
-        <dt>Nachricht</dt><dd class="mb-prewrap">@(l.Message ?? "–")</dd>
-        <dt>Angelegt</dt><dd>@Fmt.Moment(l.CreateDate)</dd>
-        <dt>Gültig bis</dt><dd>@Fmt.Date(l.ExpiresDate)</dd>
-        <dt>Passwort</dt><dd>@(l.PasswordHash is null ? "keins" : "ja")</dd>
-        <dt>Aufrufe</dt><dd>@l.ViewCount@(l.LastViewDate is { } last ? ", zuletzt " + Fmt.Moment(last) : "")</dd>
+        <dt>@L["Admin.Shares.Shows"]</dt><dd><a href="/Invoices/Edit?id=@l.InvoiceId">@L["Admin.Shares.InvoiceNumber", l.Invoice?.Number ?? ""]</a>@(l.Invoice is null ? "" : " · " + l.Invoice.RecipientName)</dd>
+        <dt>@L["Admin.Shares.LinkTitle"]</dt><dd>@l.Title</dd>
+        <dt>@L["Admin.Shares.Recipient"]</dt><dd>@(l.RecipientName ?? "–")</dd>
+        <dt>@L["Admin.Shares.Message"]</dt><dd class="mb-prewrap">@(l.Message ?? "–")</dd>
+        <dt>@L["Admin.Shares.Created"]</dt><dd>@Fmt.Moment(l.CreateDate)</dd>
+        <dt>@L["Admin.Shares.ValidUntil"]</dt><dd>@Fmt.Date(l.ExpiresDate)</dd>
+        <dt>@L["Admin.Shares.Password"]</dt><dd>@(l.PasswordHash is null ? L["Admin.Shares.Password.None"] : L["Admin.Shares.Password.Yes"])</dd>
+        <dt>@L["Admin.Shares.Views"]</dt><dd>@l.ViewCount@(l.LastViewDate is { } last ? ", " + L["Admin.Shares.LastView", Fmt.Moment(last)].Value : "")</dd>
     </dl>
     @if (Model.Active)
     {
         <div class="mat-field">
-            <label class="mat-label" for="share-url">Adresse</label>
+            <label class="mat-label" for="share-url">@L["Admin.Shares.Address"]</label>
             <div class="mat-input-group">
                 <input class="mat-input mat-mono" id="share-url" value="@Model.LinkUrl" readonly />
-                <button type="button" class="mat-btn mat-btn--secondary" data-copy="#share-url">@Ui.Icon("copy")<span>Kopieren</span></button>
+                <button type="button" class="mat-btn mat-btn--secondary" data-copy="#share-url">@Ui.Icon("copy")<span>@L["Admin.Copy"]</span></button>
             </div>
         </div>
     }
@@ -29,13 +29,13 @@
 
 <form method="post" class="mat-form">
     <div class="mat-btn-row">
-        <a class="mat-btn mat-btn--secondary" href="/Admin/Shares">@Ui.Icon("back")<span>Zurück</span></a>
+        <a class="mat-btn mat-btn--secondary" href="/Admin/Shares">@Ui.Icon("back")<span>@L["Common.Back"]</span></a>
         @if (Model.Active)
         {
-            <button type="submit" asp-page-handler="Revoke" asp-route-id="@l.Id" class="mat-btn mat-btn--secondary" data-confirm="Diesen Link widerrufen? Wer ihn hat, sieht nichts mehr." data-confirm-ok="Widerrufen">@Ui.Icon("x-circle")<span>Widerrufen</span></button>
+            <button type="submit" asp-page-handler="Revoke" asp-route-id="@l.Id" class="mat-btn mat-btn--secondary" data-confirm="@L["Admin.Shares.Revoke.Confirm"]" data-confirm-ok="@L["Admin.Shares.Revoke"]">@Ui.Icon("x-circle")<span>@L["Admin.Shares.Revoke"]</span></button>
         }
 
         <span class="mat-btn-row__spacer"></span>
-        <button type="submit" asp-page-handler="Delete" asp-route-id="@l.Id" class="mat-btn mat-btn--danger" data-confirm="Diesen Link löschen?" data-confirm-ok="Löschen">@Ui.Icon("trash")<span>Löschen</span></button>
+        <button type="submit" asp-page-handler="Delete" asp-route-id="@l.Id" class="mat-btn mat-btn--danger" data-confirm="@L["Admin.Shares.Delete.Confirm"]" data-confirm-ok="@L["Common.Delete"]">@Ui.Icon("trash")<span>@L["Common.Delete"]</span></button>
     </div>
 </form>
