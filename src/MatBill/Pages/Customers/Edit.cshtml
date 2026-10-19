@@ -18,7 +18,7 @@
 <form class="mat-form" method="post" novalidate>
     <input type="hidden" name="Id" value="@Model.Id" />
     <mb-summary />
-    <div class="mat-card mb-tabcard" data-tabs>
+    <div data-tabs>
         <div class="mat-tabs" role="tablist" aria-label="@L["Customers.Tabs"]">
             @foreach (var (key, text, icon) in tabs)
             {
@@ -26,7 +26,7 @@
                 <button type="button" class="mat-tab" role="tab" id="customer-tab-@key" aria-controls="customer-panel-@key" aria-selected="@(on ? "true" : "false")" tabindex="@(on ? null : "-1")">@Ui.Icon(icon)<span>@text</span></button>
             }
         </div>
-        <div class="mat-tabpanel mat-card__body" role="tabpanel" id="customer-panel-general" aria-labelledby="customer-tab-general" hidden="@(Model.ActiveTab != "general")">
+        <div class="mat-tabpanel" role="tabpanel" id="customer-panel-general" aria-labelledby="customer-tab-general" hidden="@(Model.ActiveTab != "general")"><div class="mat-card"><div class="mat-card__body">
             <div class="mat-form__grid">
                 <mb-radios for="Input.Kind" label="@L["Customers.Kind"]" items="kinds" />
                 @if (Model.CanChooseNumber)
@@ -38,26 +38,26 @@
                 <mb-input for="Input.Email" label="@L["Customers.Email"]" type="email" inputmode="email" autocomplete="off" />
                 <mb-input for="Input.Phone" label="@L["Common.Phone"]" type="tel" autocomplete="off" />
             </div>
-        </div>
-        <div class="mat-tabpanel mat-card__body" role="tabpanel" id="customer-panel-address" aria-labelledby="customer-tab-address" hidden="@(Model.ActiveTab != "address")">
+        </div></div></div>
+        <div class="mat-tabpanel" role="tabpanel" id="customer-panel-address" aria-labelledby="customer-tab-address" hidden="@(Model.ActiveTab != "address")"><div class="mat-card"><div class="mat-card__body">
             <div class="mat-form__grid">
                 <mb-input for="Input.Street" label="@L["Customers.Street"]" full="true" autocomplete="off" />
                 <mb-input for="Input.PostalCode" label="@L["Customers.PostalCode"]" inputmode="numeric" autocomplete="off" />
                 <mb-input for="Input.City" label="@L["Customers.City"]" autocomplete="off" />
                 <mb-input for="Input.Country" label="@L["Customers.Country"]" autocomplete="off" />
             </div>
-        </div>
-        <div class="mat-tabpanel mat-card__body" role="tabpanel" id="customer-panel-billing" aria-labelledby="customer-tab-billing" hidden="@(Model.ActiveTab != "billing")">
+        </div></div></div>
+        <div class="mat-tabpanel" role="tabpanel" id="customer-panel-billing" aria-labelledby="customer-tab-billing" hidden="@(Model.ActiveTab != "billing")"><div class="mat-card"><div class="mat-card__body">
             <div class="mat-form__grid">
                 <mb-input for="Input.PaymentTermDays" label="@L["Customers.PaymentTerm"]" type="number" min="0" max="365" step="1" hint="@L["Customers.PaymentTerm.Hint"]" />
                 <mb-input for="Input.VatId" label="@L["Customers.VatId"]" hint="@L["Customers.VatId.Hint"]" autocomplete="off" />
                 <mb-input for="Input.BuyerReference" label="@L["Customers.BuyerReference"]" hint="@L["Customers.BuyerReference.Hint"]" autocomplete="off" />
                 <mb-textarea for="Input.Note" label="@L["Customers.Note"]" rows="3" full="true" />
             </div>
-        </div>
+        </div></div></div>
         @if (Model.Customer is not null)
         {
-            <div class="mat-tabpanel mat-card__body" role="tabpanel" id="customer-panel-invoices" aria-labelledby="customer-tab-invoices" hidden>
+            <div class="mat-tabpanel" role="tabpanel" id="customer-panel-invoices" aria-labelledby="customer-tab-invoices" hidden><div class="mat-card"><div class="mat-card__body">
                 @if (Model.Invoices.Count == 0)
                 {
                     <p class="mat-muted">@L["Customers.Invoices.None"] <a href="/Invoices/Edit?customer=@Model.Customer.Id">@L["Customers.Invoices.WriteOne"]</a></p>
@@ -83,7 +83,7 @@
                     </div>
                     <p class="mat-hint"><a href="/Invoices?customer=@Model.Customer.Id">@L["Customers.Invoices.All"]</a></p>
                 }
-            </div>
+            </div></div></div>
         }
     </div>
 
