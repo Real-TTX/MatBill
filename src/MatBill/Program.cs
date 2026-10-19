@@ -122,8 +122,6 @@ builder.Services.AddAuthorizationBuilder()
 builder.Services.AddRazorPages(options =>
 {
     options.Conventions.AuthorizeFolder("/Admin", "Admin");
-    options.Conventions.AuthorizeFolder("/Branding", "Admin");
-    options.Conventions.AuthorizeFolder("/Company", "Admin");
     options.Conventions.AuthorizeFolder("/Account", "SignedIn");
     options.Conventions.AllowAnonymousToPage("/Account/Login");
     options.Conventions.AllowAnonymousToPage("/Account/TwoFactor");
@@ -421,6 +419,10 @@ app.MapGet("/s/{token:guid}/pdf", async (Guid token, HttpContext http, ShareServ
     http.Response.Headers.CacheControl = "private, no-store";
     return Results.File(await invoices.PdfAsync(invoice, http.RequestAborted), "application/pdf", InvoiceService.PdfName(invoice));
 }).AllowAnonymous();
+
+// Company and branding were pages of their own before they moved into the settings: old bookmarks still arrive.
+app.MapGet("/Company", () => Results.Redirect("/Admin/Company"));
+app.MapGet("/Branding", () => Results.Redirect("/Admin/Branding"));
 
 app.MapRazorPages();
 

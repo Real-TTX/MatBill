@@ -1,5 +1,5 @@
 @page
-@model MatBill.Pages.Company.IndexModel
+@model MatBill.Pages.Admin.Company.IndexModel
 
 <div class="mb-split">
     <form class="mat-form" method="post" novalidate>
@@ -50,7 +50,7 @@
                 <div class="mb-brand-preview" data-editor data-readonly data-doc-accent="@Model.Preview.Company.AccentColor">
                     <partial name="_DocumentView" model="Model.Preview" />
                 </div>
-                <p class="mat-hint"><a href="/Branding">@L["Company.ToBranding"]</a></p>
+                <p class="mat-hint"><a href="/Admin/Branding">@L["Company.ToBranding"]</a></p>
             </div>
         </div>
     </aside>

@@ -206,7 +206,7 @@ docker compose up -d
 ```
 
 **http://localhost:2505** öffnen: Der erste Besuch legt den **Administrator** an (es gibt kein Standard-Passwort), danach führt
-MatBill zu **Unternehmen** für Firma, Anschrift, Steuernummer und Bankverbindung. Zum Ausprobieren legt
+MatBill zu *Einstellungen › Unternehmen* für Firma, Anschrift, Steuernummer und Bankverbindung. Zum Ausprobieren legt
 *Einstellungen › System › Beispieldaten anlegen* die Firma „MatBill Demo“ mit Logo, Kunden, Angeboten, Rechnungen, Serien,
 Ausgaben und einem Geschäftskonto an.
 
@@ -258,10 +258,10 @@ Fast alles wird in der App eingestellt und landet in `/data/config/app.json`. Um
 
 ### Nach der ersten Anmeldung
 
-- **Unternehmen:** Firma mit zweiter Namenszeile (z. B. Inhaber), Anschrift, Steuernummer/USt-IdNr., Register, Kleinunternehmer (§ 19 UStG),
+- *Einstellungen › Unternehmen:* Firma mit zweiter Namenszeile (z. B. Inhaber), Anschrift, Steuernummer/USt-IdNr., Register, Kleinunternehmer (§ 19 UStG),
   Bankverbindung – alles, was auf Rechnung und E-Rechnung gehört
-- **Branding:** Logo (SVG/PNG/JPEG), Farbe des Dokuments, Gruß in Handschrift
-- *Einstellungen › Rechnungen:* Nummernkreise, Zahlungsziel, Texte, Kategorien der Ausgaben, ZUGFeRD an/aus
+- *Einstellungen › Branding:* Logo (SVG/PNG/JPEG), Farbe des Dokuments, Gruß in Handschrift
+- *Einstellungen › Rechnungen:* Nummernkreise (nächster Zähler setzbar, Kundennummer auf Wunsch frei wählbar), Zahlungsziel, Texte, Kategorien der Ausgaben, ZUGFeRD an/aus
 - *Einstellungen › E-Mail:* SMTP-Server, Absender, Texte für Rechnung und Angebot, Testmail
 - *Einstellungen › Banking:* Enable Banking (eigene App-ID und Schlüssel), automatische Zuordnung, Abrufintervall
 - *Mein Konto:* Name, Darstellung (hell/dunkel) und **Sprache** (English/Deutsch)

@@ -17,6 +17,8 @@ public sealed class InvoicingModel(ConfigStore config, NumberService numbers, Ac
         [Required(ErrorMessage = "Admin.Invoicing.Pattern.Required")]
         public string CustomerNumberPattern { get; set; } = "";
 
+        public bool CustomerNumberManual { get; set; }
+
         [Range(0, 365, ErrorMessage = "Admin.Invoicing.Range0To365")]
         public int PaymentTermDays { get; set; } = 14;
 
@@ -93,7 +95,7 @@ public sealed class InvoicingModel(ConfigStore config, NumberService numbers, Ac
         var i = config.Current.Invoicing;
         Input = new InputModel
         {
-            InvoiceNumberPattern = i.InvoiceNumberPattern, CustomerNumberPattern = i.CustomerNumberPattern, PaymentTermDays = i.PaymentTermDays,
+            InvoiceNumberPattern = i.InvoiceNumberPattern, CustomerNumberPattern = i.CustomerNumberPattern, CustomerNumberManual = i.CustomerNumberManual, PaymentTermDays = i.PaymentTermDays,
             DefaultTaxRate = Amount.Quantity(i.DefaultTaxRate), IntroText = i.IntroText, PaymentTerms = i.PaymentTerms, ClosingText = i.ClosingText,
             SmallBusinessNote = i.SmallBusinessNote, NoticeDays = i.NoticeDays, QuoteNumberPattern = i.QuoteNumberPattern, ExpenseNumberPattern = i.ExpenseNumberPattern,
             QuoteValidityDays = i.QuoteValidityDays, QuoteIntroText = i.QuoteIntroText, QuoteTerms = i.QuoteTerms, ZugferdPdf = i.ZugferdPdf, Categories = string.Join("\n", i.ExpenseCategories),
@@ -144,6 +146,7 @@ public sealed class InvoicingModel(ConfigStore config, NumberService numbers, Ac
         {
             c.Invoicing.InvoiceNumberPattern = Input.InvoiceNumberPattern.Trim();
             c.Invoicing.CustomerNumberPattern = Input.CustomerNumberPattern.Trim();
+            c.Invoicing.CustomerNumberManual = Input.CustomerNumberManual;
             c.Invoicing.PaymentTermDays = Input.PaymentTermDays;
             c.Invoicing.DefaultTaxRate = rate;
             c.Invoicing.IntroText = Input.IntroText?.Trim() ?? "";

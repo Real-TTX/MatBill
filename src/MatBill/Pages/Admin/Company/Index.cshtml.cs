@@ -3,7 +3,7 @@ using MatBill.Configuration;
 using MatBill.Services;
 using Microsoft.AspNetCore.Mvc;
 
-namespace MatBill.Pages.Company;
+namespace MatBill.Pages.Admin.Company;
 
 /// <summary>
 /// The company that writes the invoices: name and address of the sender, tax number, VAT id and register for the footer, small business, bank details.
@@ -133,7 +133,7 @@ public sealed class IndexModel(ConfigStore config, ActivityLogger log) : PageMod
 
     private void Prepare()
     {
-        Head(L["Company.Title"], L["Company.Sub"], (L["Company.Title"], null));
+        Head(L["Company.Title"], L["Company.Sub"], (L["Admin.Settings"], null), (L["Company.Title"], null));
         ViewData["Width"] = "wide";
         Preview = SampleDocument.Of(config.Current, Brand.LogoUrl(config.Current.Company));
     }

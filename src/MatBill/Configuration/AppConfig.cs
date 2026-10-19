@@ -116,6 +116,9 @@ public sealed class InvoicingConfig
 
     public string CustomerNumberPattern { get; set; } = "K-{NNNN}";
 
+    /// <summary>A customer number can be typed when a customer is created; left empty (and when this is off) it comes from the range.</summary>
+    public bool CustomerNumberManual { get; set; }
+
     public int PaymentTermDays { get; set; } = 14;
 
     public string IntroText { get; set; } = "Hallo,\nvielen Dank für die gute Zusammenarbeit. Hiermit berechnen wir folgende Leistungen:";

@@ -3,7 +3,7 @@ using MatBill.Configuration;
 using MatBill.Services;
 using Microsoft.AspNetCore.Mvc;
 
-namespace MatBill.Pages.Branding;
+namespace MatBill.Pages.Admin.Branding;
 
 /// <summary>
 /// The look of the invoices: the logo, the colour of the document and the greeting in handwriting. A preview of a sample invoice stands beside the form.
@@ -76,7 +76,7 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
 
     private void Prepare()
     {
-        Head(L["Branding.Title"], L["Branding.Sub"], (L["Branding.Title"], null));
+        Head(L["Branding.Title"], L["Branding.Sub"], (L["Admin.Settings"], null), (L["Branding.Title"], null));
         ViewData["Width"] = "wide";
         Preview = SampleDocument.Of(config.Current, LogoUrl);
     }

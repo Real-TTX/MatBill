@@ -131,11 +131,6 @@ public sealed class ShellFactory(ICurrentUser user, NavCounts counts, Notificati
                 new(Text.T("Shell.Nav.Products"), "/Products", "box"),
             ]),
         };
-        if (user.IsAdmin)
-        {
-            groups[3] = groups[3] with { Items = [.. groups[3].Items, new(Text.T("Shell.Nav.Company"), "/Company", "building"), new(Text.T("Shell.Nav.Branding"), "/Branding", "palette")] };
-        }
-
         return new NavSet("work", Text.T("Shell.Menu.Work"), "file-text", groups);
     }
 
@@ -143,6 +138,8 @@ public sealed class ShellFactory(ICurrentUser user, NavCounts counts, Notificati
     [
         new(Text.T("Shell.Group.Organisation"),
         [
+            new(Text.T("Shell.Nav.Company"), "/Admin/Company", "building"),
+            new(Text.T("Shell.Nav.Branding"), "/Admin/Branding", "palette"),
             new(Text.T("Shell.Nav.Users"), "/Admin/Users", "user"),
             new(Text.T("Shell.Nav.Shares"), "/Admin/Shares", "share"),
             new(Text.T("Shell.Nav.Invoicing"), "/Admin/Invoicing", "sliders"),

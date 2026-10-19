@@ -26,7 +26,7 @@ Test changes by **rebuilding the container and redeploying the stack**. Wait for
 - `src/MatBill/Localization` (TextCatalog, Languages, ClientTexts) + `Resources/Texts/*.json`: the two languages of the interface.
 - `src/MatBill.Core`: no web types. `Billing/` (InvoiceMath: tax once per rate; Recurrence: dates counted from the anchor; NumberPattern: `{JJJJ}{JJ}{MM}{NNNN}`; Amount: German input), `Security/`,
   `Banking/` (StatementLine + dedup keys, SepaPurpose, CsvStatement: read/guess/map any bank CSV, CamtStatement, Mt940Statement, StatementFormats.Detect, PaymentMatcher).
-- `src/MatBill`: `Pages/` (Invoices, Quotes, Recurring, Expenses, Banking, Export, Customers, Products, Company, Branding, Notifications, Admin, Account, Share, Offline), `Services/` (InvoiceService, QuoteService,
+- `src/MatBill`: `Pages/` (Invoices, Quotes, Recurring, Expenses, Banking, Export, Customers (tabs), Products, Notifications, Admin (incl. Company and Branding), Account, Share, Offline), `Services/` (InvoiceService, QuoteService,
   RecurringService + BillingScheduler, ExpenseService, BankingService + MatchingService, EnableBanking (client, BankSyncService, BankingScheduler), ExportService, EInvoice (ZUGFeRD),
   MailService, NumberService, InvoicePdf (QuestPDF), BrandingService, NotificationService, ShareService, DemoData, Backup/), `Data/` (MbDbContext, entities incl. `Finance.cs`, migrations),
   `UiKit/` + `Controls/` (shell, list, table, toolbar, pager, `mb-*` tag helpers), `wwwroot/` (app.css, app.js, sw.js, manifest, icons, `ui/` = MatUi).

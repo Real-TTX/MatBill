@@ -9,11 +9,16 @@ using Microsoft.EntityFrameworkCore;
 namespace MatBill.Pages.Customers;
 
 /// <summary>A customer: address, contact, terms; its invoices and series below. A change here only shows on invoices written later.</summary>
-public sealed class EditModel(MbDbContext db, NumberService numbers, ActivityLogger log, TimeProvider clock) : PageModelBase
+public sealed class EditModel(MbDbContext db, NumberService numbers, Configuration.ConfigStore config, ActivityLogger log, TimeProvider clock) : PageModelBase
 {
     public sealed class InputModel
     {
         public CustomerKind Kind { get; set; } = CustomerKind.Company;
+
+        /// <summary>The number typed for a new customer (only when the settings allow it); empty: the next of the range.</summary>
+        [StringLength(40, ErrorMessage = "Customers.Number.Length")]
+        [Display(Name = "Customers.Number")]
+        public string? Number { get; set; }
 
         [Required(ErrorMessage = "Customers.Name.Required"), StringLength(200)]
         [Display(Name = "Common.Name")]
@@ -66,6 +71,8 @@ public sealed class EditModel(MbDbContext db, NumberService numbers, ActivityLog
 
     public List<Invoice> Invoices { get; private set; } = [];
 
+    public int InvoiceCount { get; private set; }
+
     public List<RecurringInvoice> Series { get; private set; } = [];
 
     public decimal OpenSum { get; private set; }
@@ -73,6 +80,15 @@ public sealed class EditModel(MbDbContext db, NumberService numbers, ActivityLog
     public decimal YearSum { get; private set; }
 
     public DateOnly Today => Fmt.Today(clock);
+
+    /// <summary>A new customer, and the settings let a person choose its number.</summary>
+    public bool CanChooseNumber => Customer is null && config.Current.Invoicing.CustomerNumberManual;
+
+    /// <summary>The number the range would give (the placeholder of the field).</summary>
+    public string NextNumber { get; private set; } = "";
+
+    /// <summary>The tab that is open: the first one with an error, else the first.</summary>
+    public string ActiveTab { get; private set; } = "general";
 
     public async Task<IActionResult> OnGetAsync()
     {
@@ -105,6 +121,12 @@ public sealed class EditModel(MbDbContext db, NumberService numbers, ActivityLog
         }
 
         Customer = customer;
+        var chosen = CanChooseNumber ? Clean(Input.Number) : null;
+        if (chosen is not null && await numbers.CustomerNumberTakenAsync(chosen))
+        {
+            ModelState.AddModelError("Input.Number", L["Customers.Number.Taken", chosen]);
+        }
+
         if (!ModelState.IsValid)
         {
             await LoadAsync();
@@ -113,7 +135,7 @@ public sealed class EditModel(MbDbContext db, NumberService numbers, ActivityLog
 
         if (customer is null)
         {
-            customer = new Customer { Number = await numbers.NextCustomerNumberAsync(Today) };
+            customer = new Customer { Number = chosen ?? await numbers.NextCustomerNumberAsync(Today) };
             db.Customer.Add(customer);
         }
 
@@ -163,12 +185,27 @@ public sealed class EditModel(MbDbContext db, NumberService numbers, ActivityLog
         var title = Customer?.Name ?? L["Customers.New"];
         Head(title, Customer is null ? null : L["Customers.NumberSub", Customer.Number], (L["Customers.Title"], "/Customers"), (title, null));
         ViewData["ActiveHref"] = "/Customers";
+
+        // a field with an error may be on a tab that is not the first: that tab opens
+        var tabs = new (string Tab, string[] Fields)[]
+        {
+            ("general", ["Kind", "Number", "Name", "ContactName", "Email", "Phone"]),
+            ("address", ["Street", "PostalCode", "City", "Country"]),
+            ("billing", ["PaymentTermDays", "VatId", "BuyerReference", "Note"]),
+        };
+        ActiveTab = tabs.FirstOrDefault(t => t.Fields.Any(f => ModelState.GetFieldValidationState("Input." + f) == Microsoft.AspNetCore.Mvc.ModelBinding.ModelValidationState.Invalid)).Tab ?? "general";
         if (Customer is null)
         {
+            if (CanChooseNumber)
+            {
+                NextNumber = await numbers.PeekCustomerNumberAsync(Today);
+            }
+
             return;
         }
 
         Invoices = await db.Invoice.AsNoTracking().Where(i => i.CustomerId == Customer.Id).OrderByDescending(i => i.InvoiceDate).ThenByDescending(i => i.Id).Take(20).ToListAsync();
+        InvoiceCount = await db.Invoice.CountAsync(i => i.CustomerId == Customer.Id);
         Series = await db.RecurringInvoice.AsNoTracking().Where(s => s.CustomerId == Customer.Id).OrderBy(s => s.Name).ToListAsync();
         OpenSum = await db.Invoice.Where(i => i.CustomerId == Customer.Id && i.Status == InvoiceStatus.Open).SumAsync(i => i.GrossTotal);
         YearSum = await db.Invoice.Where(i => i.CustomerId == Customer.Id && i.Status != InvoiceStatus.Draft && i.InvoiceDate.Year == Today.Year).SumAsync(i => i.GrossTotal);

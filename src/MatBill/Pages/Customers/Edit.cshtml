@@ -2,6 +2,8 @@
 @model MatBill.Pages.Customers.EditModel
 @{
     var kinds = Controls.Options.Of<CustomerKind>(Labels.Of);
+    var tabs = new List<(string Key, string Text, string Icon)> { ("general", L["Customers.Tab.General"], "building"), ("address", L["Customers.Card.Address"], "home"), ("billing", L["Customers.Tab.Billing"], "file-text") };
+    if (Model.Customer is not null) { tabs.Add(("invoices", L["Customers.Tab.Invoices", Model.InvoiceCount], "list")); }
 }
 
 @if (Model.Customer is not null)
@@ -16,31 +18,74 @@
 <form class="mat-form" method="post" novalidate>
     <input type="hidden" name="Id" value="@Model.Id" />
     <mb-summary />
-    <mb-card title="@L["Customers.Card.Customer"]" icon="building">
-        <div class="mat-form__grid">
-            <mb-radios for="Input.Kind" label="@L["Customers.Kind"]" items="kinds" />
-            <mb-input for="Input.Name" label="@(Model.Input.Kind == CustomerKind.Person ? L["Customers.Name.Person"] : L["Customers.Name.Company"])" required="true" autocomplete="off" />
-            <mb-input for="Input.ContactName" label="@L["Customers.Contact"]" show-if="Input.Kind" show-value="Company" hint="@L["Customers.Contact.Hint"]" />
-            <mb-input for="Input.Email" label="@L["Customers.Email"]" type="email" inputmode="email" autocomplete="off" />
-            <mb-input for="Input.Phone" label="@L["Common.Phone"]" type="tel" autocomplete="off" />
+    <div class="mat-card mb-tabcard" data-tabs>
+        <div class="mat-tabs" role="tablist" aria-label="@L["Customers.Tabs"]">
+            @foreach (var (key, text, icon) in tabs)
+            {
+                var on = key == Model.ActiveTab;
+                <button type="button" class="mat-tab" role="tab" id="customer-tab-@key" aria-controls="customer-panel-@key" aria-selected="@(on ? "true" : "false")" tabindex="@(on ? null : "-1")">@Ui.Icon(icon)<span>@text</span></button>
+            }
         </div>
-    </mb-card>
-    <mb-card title="@L["Customers.Card.Address"]" icon="home">
-        <div class="mat-form__grid">
-            <mb-input for="Input.Street" label="@L["Customers.Street"]" full="true" autocomplete="off" />
-            <mb-input for="Input.PostalCode" label="@L["Customers.PostalCode"]" inputmode="numeric" autocomplete="off" />
-            <mb-input for="Input.City" label="@L["Customers.City"]" autocomplete="off" />
-            <mb-input for="Input.Country" label="@L["Customers.Country"]" autocomplete="off" />
+        <div class="mat-tabpanel mat-card__body" role="tabpanel" id="customer-panel-general" aria-labelledby="customer-tab-general" hidden="@(Model.ActiveTab != "general")">
+            <div class="mat-form__grid">
+                <mb-radios for="Input.Kind" label="@L["Customers.Kind"]" items="kinds" />
+                @if (Model.CanChooseNumber)
+                {
+                    <mb-input for="Input.Number" label="@L["Customers.Number"]" placeholder="@Model.NextNumber" hint="@L["Customers.Number.Hint", Model.NextNumber]" autocomplete="off" />
+                }
+                <mb-input for="Input.Name" label="@(Model.Input.Kind == CustomerKind.Person ? L["Customers.Name.Person"] : L["Customers.Name.Company"])" required="true" autocomplete="off" />
+                <mb-input for="Input.ContactName" label="@L["Customers.Contact"]" show-if="Input.Kind" show-value="Company" hint="@L["Customers.Contact.Hint"]" />
+                <mb-input for="Input.Email" label="@L["Customers.Email"]" type="email" inputmode="email" autocomplete="off" />
+                <mb-input for="Input.Phone" label="@L["Common.Phone"]" type="tel" autocomplete="off" />
+            </div>
         </div>
-    </mb-card>
-    <mb-card title="@L["Customers.Card.Invoices"]" icon="file-text">
-        <div class="mat-form__grid">
-            <mb-input for="Input.PaymentTermDays" label="@L["Customers.PaymentTerm"]" type="number" min="0" max="365" step="1" hint="@L["Customers.PaymentTerm.Hint"]" />
-            <mb-input for="Input.VatId" label="@L["Customers.VatId"]" hint="@L["Customers.VatId.Hint"]" autocomplete="off" />
-            <mb-input for="Input.BuyerReference" label="@L["Customers.BuyerReference"]" hint="@L["Customers.BuyerReference.Hint"]" autocomplete="off" />
-            <mb-textarea for="Input.Note" label="@L["Customers.Note"]" rows="3" full="true" />
+        <div class="mat-tabpanel mat-card__body" role="tabpanel" id="customer-panel-address" aria-labelledby="customer-tab-address" hidden="@(Model.ActiveTab != "address")">
+            <div class="mat-form__grid">
+                <mb-input for="Input.Street" label="@L["Customers.Street"]" full="true" autocomplete="off" />
+                <mb-input for="Input.PostalCode" label="@L["Customers.PostalCode"]" inputmode="numeric" autocomplete="off" />
+                <mb-input for="Input.City" label="@L["Customers.City"]" autocomplete="off" />
+                <mb-input for="Input.Country" label="@L["Customers.Country"]" autocomplete="off" />
+            </div>
         </div>
-    </mb-card>
+        <div class="mat-tabpanel mat-card__body" role="tabpanel" id="customer-panel-billing" aria-labelledby="customer-tab-billing" hidden="@(Model.ActiveTab != "billing")">
+            <div class="mat-form__grid">
+                <mb-input for="Input.PaymentTermDays" label="@L["Customers.PaymentTerm"]" type="number" min="0" max="365" step="1" hint="@L["Customers.PaymentTerm.Hint"]" />
+                <mb-input for="Input.VatId" label="@L["Customers.VatId"]" hint="@L["Customers.VatId.Hint"]" autocomplete="off" />
+                <mb-input for="Input.BuyerReference" label="@L["Customers.BuyerReference"]" hint="@L["Customers.BuyerReference.Hint"]" autocomplete="off" />
+                <mb-textarea for="Input.Note" label="@L["Customers.Note"]" rows="3" full="true" />
+            </div>
+        </div>
+        @if (Model.Customer is not null)
+        {
+            <div class="mat-tabpanel mat-card__body" role="tabpanel" id="customer-panel-invoices" aria-labelledby="customer-tab-invoices" hidden>
+                @if (Model.Invoices.Count == 0)
+                {
+                    <p class="mat-muted">@L["Customers.Invoices.None"] <a href="/Invoices/Edit?customer=@Model.Customer.Id">@L["Customers.Invoices.WriteOne"]</a></p>
+                }
+                else
+                {
+                    <div class="mat-table-wrap">
+                        <table class="mat-table">
+                            <caption class="mat-sr-only">@L["Customers.Invoices.Caption"]</caption>
+                            <thead><tr><th scope="col">@L["Customers.Column.Number"]</th><th scope="col">@L["Common.Date"]</th><th scope="col" class="mat-num">@L["Common.Amount"]</th><th scope="col">@L["Common.Status"]</th></tr></thead>
+                            <tbody>
+                                @foreach (var i in Model.Invoices)
+                                {
+                                    <tr>
+                                        <td data-label="@L["Customers.Column.Number"]"><a href="/Invoices/Edit?id=@i.Id">@(i.Number ?? L["Customers.Invoices.Draft"])</a></td>
+                                        <td data-label="@L["Common.Date"]">@Fmt.Date(i.InvoiceDate)</td>
+                                        <td data-label="@L["Common.Amount"]" class="mat-num">@Ui.Money(i.GrossTotal)</td>
+                                        <td data-label="@L["Common.Status"]">@Labels.Pill(i, Model.Today)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="mat-hint"><a href="/Invoices?customer=@Model.Customer.Id">@L["Customers.Invoices.All"]</a></p>
+                }
+            </div>
+        }
+    </div>
 
     @if (Model.Customer is null)
     {
@@ -53,37 +98,3 @@
         </mb-buttons>
     }
 </form>
-
-@if (Model.Customer is not null)
-{
-    <section class="mat-card" aria-labelledby="customer-invoices">
-        <div class="mat-card__head">@Ui.Icon("file-text")<h2 class="mat-card__title" id="customer-invoices">@L["Customers.Card.Invoices"]</h2></div>
-        <div class="mat-card__body">
-            @if (Model.Invoices.Count == 0)
-            {
-                <p class="mat-muted">@L["Customers.Invoices.None"] <a href="/Invoices/Edit?customer=@Model.Customer.Id">@L["Customers.Invoices.WriteOne"]</a></p>
-            }
-            else
-            {
-                <div class="mat-table-wrap">
-                    <table class="mat-table">
-                        <caption class="mat-sr-only">@L["Customers.Invoices.Caption"]</caption>
-                        <thead><tr><th scope="col">@L["Customers.Column.Number"]</th><th scope="col">@L["Common.Date"]</th><th scope="col" class="mat-num">@L["Common.Amount"]</th><th scope="col">@L["Common.Status"]</th></tr></thead>
-                        <tbody>
-                            @foreach (var i in Model.Invoices)
-                            {
-                                <tr>
-                                    <td data-label="@L["Customers.Column.Number"]"><a href="/Invoices/Edit?id=@i.Id">@(i.Number ?? L["Customers.Invoices.Draft"])</a></td>
-                                    <td data-label="@L["Common.Date"]">@Fmt.Date(i.InvoiceDate)</td>
-                                    <td data-label="@L["Common.Amount"]" class="mat-num">@Ui.Money(i.GrossTotal)</td>
-                                    <td data-label="@L["Common.Status"]">@Labels.Pill(i, Model.Today)</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-                <p class="mat-hint"><a href="/Invoices?customer=@Model.Customer.Id">@L["Customers.Invoices.All"]</a></p>
-            }
-        </div>
-    </section>
-}

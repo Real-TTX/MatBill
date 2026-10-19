@@ -23,8 +23,26 @@ public sealed class NumberService(MbDbContext db, ConfigStore config)
     public Task<string> NextInvoiceNumberAsync(DateOnly date, CancellationToken ct = default)
         => NextAsync(InvoiceRange, config.Current.Invoicing.InvoiceNumberPattern, date, ct);
 
-    public Task<string> NextCustomerNumberAsync(DateOnly date, CancellationToken ct = default)
-        => NextAsync(CustomerRange, config.Current.Invoicing.CustomerNumberPattern, date, ct);
+    /// <summary>The next customer number of the range. A number typed by hand may already stand where the range arrives: that one is skipped.</summary>
+    public async Task<string> NextCustomerNumberAsync(DateOnly date, CancellationToken ct = default)
+    {
+        for (var tries = 0; ; tries++)
+        {
+            var number = await NextAsync(CustomerRange, config.Current.Invoicing.CustomerNumberPattern, date, ct);
+            if (tries >= 1000 || !await CustomerNumberTakenAsync(number, ct))
+            {
+                return number;
+            }
+        }
+    }
+
+    /// <summary>Whether a customer (also a deleted one, whose number is on old invoices) has the number.</summary>
+    public Task<bool> CustomerNumberTakenAsync(string number, CancellationToken ct = default)
+        => db.Customer.IgnoreQueryFilters().AnyAsync(c => c.Number == number, ct);
+
+    /// <summary>The customer number the next customer would get, without taking it (the placeholder of the field).</summary>
+    public Task<string> PeekCustomerNumberAsync(DateOnly date, CancellationToken ct = default)
+        => PeekAsync(CustomerRange, config.Current.Invoicing.CustomerNumberPattern, date, ct);
 
     /// <summary>The number the next invoice of <paramref name="date"/> would get, without taking it (the preview in a draft).</summary>
     public Task<string> PeekInvoiceNumberAsync(DateOnly date, CancellationToken ct = default)

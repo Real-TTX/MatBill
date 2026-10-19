@@ -46,7 +46,7 @@ public sealed class CompanyTests : IClassFixture<AppFixture>
             await AppFixture.LoginAsync(client, "admin@example.com", "Start12345");
             Assert.Contains(De("Dashboard.Setup.Title"), await AppFixture.TextAsync(client, "/"));
 
-            var saved = await AppFixture.PostFormAsync(client, "/Company", new Dictionary<string, string>
+            var saved = await AppFixture.PostFormAsync(client, "/Admin/Company", new Dictionary<string, string>
             {
                 ["Input.Name"] = "Matthix", ["Input.NameLine2"] = "Matthias Schmoldt", ["Input.Street"] = "Weg 1", ["Input.PostalCode"] = "12345", ["Input.City"] = "Stadt",
                 ["Input.SmallBusiness"] = "false",
@@ -56,8 +56,52 @@ public sealed class CompanyTests : IClassFixture<AppFixture>
             Assert.Equal("Matthix · Matthias Schmoldt · Weg 1 · 12345 Stadt", Config.Current.Company.SenderLine);
 
             Assert.DoesNotContain(De("Dashboard.Setup.Title"), await AppFixture.TextAsync(client, "/"));
-            Assert.Contains(De("Company.TaxNumber.Missing"), await AppFixture.TextAsync(client, "/Company"));
+            Assert.Contains(De("Company.TaxNumber.Missing"), await AppFixture.TextAsync(client, "/Admin/Company"));
         });
+    }
+
+    [DatabaseFact]
+    public async Task A_customer_gets_a_chosen_number_and_the_range_skips_it()
+    {
+        await _app.EnsureAdminAsync();
+        var saved = System.Text.Json.JsonSerializer.Serialize(Config.Current.Invoicing);
+        Config.Update(c => { c.Invoicing.CustomerNumberManual = true; c.Invoicing.CustomerNumberPattern = "KN-{NNNN}"; });
+        try
+        {
+            using var client = _app.NewClient();
+            await AppFixture.LoginAsync(client, "admin@example.com", "Start12345");
+            Assert.Contains("Input.Number", await AppFixture.TextAsync(client, "/Customers/Edit"));
+
+            var created = await AppFixture.PostFormAsync(client, "/Customers/Edit", new Dictionary<string, string> { ["Input.Kind"] = "Company", ["Input.Name"] = "Handnummer GmbH", ["Input.Number"] = "KN-0500" });
+            Assert.Equal(HttpStatusCode.Redirect, created.StatusCode);
+
+            // the same number again: refused, and the page opens the tab with the field
+            var again = await AppFixture.PostFormAsync(client, "/Customers/Edit", new Dictionary<string, string> { ["Input.Kind"] = "Company", ["Input.Name"] = "Doppelt GmbH", ["Input.Number"] = "KN-0500" });
+            Assert.Equal(HttpStatusCode.OK, again.StatusCode);
+            Assert.Contains(TextCatalog.Find("Customers.Number.Taken", "de")!.Replace("{0}", "KN-0500"), await AppFixture.TextAsync(again));
+
+            // the range arrives at 500: it takes 501
+            var next = await _app.WithScopeAsync(async sp =>
+            {
+                var numbers = sp.GetRequiredService<NumberService>();
+                var today = sp.GetRequiredService<InvoiceService>().Today;
+                await numbers.SetNextCounterAsync(NumberService.CustomerRange, "KN-{NNNN}", today, 500);
+                return await numbers.NextCustomerNumberAsync(today);
+            });
+            Assert.Equal("KN-0501", next);
+
+            // without the setting there is no field
+            Config.Update(c => c.Invoicing.CustomerNumberManual = false);
+            Assert.DoesNotContain("Input.Number", await AppFixture.TextAsync(client, "/Customers/Edit"));
+
+            // the old addresses of company and branding lead to the settings
+            var old = await client.GetAsync("/Company");
+            Assert.Equal("/Admin/Company", AppFixture.LocationPath(old));
+        }
+        finally
+        {
+            Config.Update(c => c.Invoicing = System.Text.Json.JsonSerializer.Deserialize<InvoicingConfig>(saved)!);
+        }
     }
 
     [DatabaseFact]
