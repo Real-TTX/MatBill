@@ -57,6 +57,7 @@
   "Editor.Line.Quantity": { "en": "Quantity", "de": "Menge" },
   "Editor.Line.Unit": { "en": "Unit", "de": "Einheit" },
   "Editor.Line.UnitPrice": { "en": "Unit price (net)", "de": "Einzelpreis (netto)" },
+  "Editor.Line.UnitPrice.Exempt": { "en": "Unit price", "de": "Einzelpreis" },
   "Editor.Line.Tax": { "en": "VAT", "de": "USt." },
   "Editor.Line.Actions": { "en": "Item actions", "de": "Aktionen der Position" },
   "Editor.Line.Up": { "en": "Move up", "de": "Nach oben" },

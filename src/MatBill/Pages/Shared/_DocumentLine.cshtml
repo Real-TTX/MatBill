@@ -40,7 +40,7 @@
         </div>
     </div>
     <div class="mb-line__price mb-field">
-        <label class="mb-label" data-for="UnitPrice" data-text="@L["Editor.Line.UnitPrice"]" for="@Id("UnitPrice")">@L["Editor.Line.UnitPrice"]</label>
+        <label class="mb-label" data-for="UnitPrice" data-text="@L[Model.TaxExempt ? "Editor.Line.UnitPrice.Exempt" : "Editor.Line.UnitPrice"]" for="@Id("UnitPrice")">@L[Model.TaxExempt ? "Editor.Line.UnitPrice.Exempt" : "Editor.Line.UnitPrice"]</label>
         <input class="mb-in mb-in--num" data-field="UnitPrice" name="@N("UnitPrice")" id="@Id("UnitPrice")" value="@l.UnitPrice" inputmode="decimal" placeholder="0,00" maxlength="20" aria-invalid="@(error("UnitPrice") is null ? null : "true")" />
     </div>
     <div class="mb-line__tax mb-field">

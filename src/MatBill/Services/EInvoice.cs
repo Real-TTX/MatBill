@@ -48,7 +48,7 @@ public static class EInvoice
             d.AddSellerTaxRegistration(company.TaxNumber, TaxRegistrationSchemeID.FC);
         }
 
-        d.SetSellerContact(name: StripRole(company.Manager) ?? company.Name, orgunit: "", emailAddress: company.Email ?? "", phoneno: company.Phone ?? "", faxno: "");
+        d.SetSellerContact(name: StripRole(company.Manager) ?? (string.IsNullOrWhiteSpace(company.NameLine2) ? company.Name : company.NameLine2.Trim()), orgunit: "", emailAddress: company.Email ?? "", phoneno: company.Phone ?? "", faxno: "");
         if (!string.IsNullOrWhiteSpace(company.Email))
         {
             d.SetSellerElectronicAddress(company.Email, ElectronicAddressSchemeIdentifiers.ElectronicMailSmtp);

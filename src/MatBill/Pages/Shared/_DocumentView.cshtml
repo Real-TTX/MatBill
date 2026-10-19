@@ -8,7 +8,7 @@
     var d = Model.Doc;
     var company = Model.Company;
     var showTax = d.Totals.Taxes.Count > 1;
-    var senderLines = new[] { company.Street, string.Join(" ", new[] { company.PostalCode, company.City }.Where(s => !string.IsNullOrWhiteSpace(s))), company.Email, company.Website }
+    var senderLines = new[] { company.NameLine2, company.Street, string.Join(" ", new[] { company.PostalCode, company.City }.Where(s => !string.IsNullOrWhiteSpace(s))), company.Email, company.Website }
         .Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
     var stamp = d.Stamp;
 }
@@ -99,9 +99,9 @@
     </div>
 
     <dl class="mb-doc__totals">
-        <div><dt>Zwischensumme</dt><dd>@DocFmt.Money(d.Totals.Net)</dd></div>
         @if (!d.TaxExempt)
         {
+            <div><dt>Zwischensumme</dt><dd>@DocFmt.Money(d.Totals.Net)</dd></div>
             foreach (var g in d.Totals.Taxes.Where(t => t.Rate > 0))
             {
                 <div><dt>@(d.Totals.Taxes.Count(t => t.Rate > 0) > 1 ? $"Umsatzsteuer {Amount.Quantity(g.Rate)} % auf {DocFmt.Money(g.Net)}" : $"Umsatzsteuer ({Amount.Quantity(g.Rate)} %)")</dt><dd>@DocFmt.Money(g.Tax)</dd></div>

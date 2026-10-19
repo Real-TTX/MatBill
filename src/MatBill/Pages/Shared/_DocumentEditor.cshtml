@@ -16,12 +16,12 @@
     var rates = InvoiceMath.CommonTaxRates;
     var lines = input.Lines.ToList();
     var blank = new LineInput { Quantity = "1", TaxRate = Amount.Quantity(Model.Invoicing.DefaultTaxRate) };
-    var senderLines = new[] { company.Street, string.Join(" ", new[] { company.PostalCode, company.City }.Where(s => !string.IsNullOrWhiteSpace(s))), company.Email, company.Website }
+    var senderLines = new[] { company.NameLine2, company.Street, string.Join(" ", new[] { company.PostalCode, company.City }.Where(s => !string.IsNullOrWhiteSpace(s))), company.Email, company.Website }
         .Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
     var termDays = $"<span data-term-days>{input.PaymentTermDays ?? Model.Invoicing.PaymentTermDays}</span>";
 }
 
-<article class="mb-paper mb-doc @(Model.Stamp is null ? "" : "is-draft")" data-stamp="@Model.Stamp" aria-label="@(template ? L["Editor.Aria.Template"] : quote ? L["Editor.Aria.Quote"] : L["Editor.Aria.Invoice"])">
+<article class="mb-paper mb-doc @(Model.Stamp is null ? "" : "is-draft") @(Model.TaxExempt ? "is-exempt" : "")" data-stamp="@Model.Stamp" aria-label="@(template ? L["Editor.Aria.Template"] : quote ? L["Editor.Aria.Quote"] : L["Editor.Aria.Invoice"])">
     <header class="mb-doc__head">
         <div class="mb-doc__logo">
             @if (Model.LogoUrl is not null)
@@ -126,7 +126,7 @@
     </div>
 
     <div class="mb-lines" data-lines data-caption="@L["Editor.Lines"]">
-        <div class="mb-lines__head" aria-hidden="true"><span>Leistung</span><span>Menge</span><span>Einzelpreis</span><span>USt.</span><span>Gesamtpreis</span><span></span></div>
+        <div class="mb-lines__head" aria-hidden="true"><span>Leistung</span><span>Menge</span><span>Einzelpreis</span><span class="mb-lines__tax">USt.</span><span>Gesamtpreis</span><span></span></div>
         <div class="mb-lines__body" data-lines-body role="list" aria-label="@L["Editor.Lines"]">
             @for (var i = 0; i < lines.Count; i++)
             {
@@ -139,7 +139,7 @@
     </div>
 
     <dl class="mb-doc__totals" aria-live="polite">
-        <div><dt>Zwischensumme</dt><dd data-sum-net>@DocFmt.Money(totals.Net)</dd></div>
+        <div hidden="@Model.TaxExempt"><dt>Zwischensumme</dt><dd data-sum-net>@DocFmt.Money(totals.Net)</dd></div>
         <div data-tax-rows class="mb-doc__taxes">
             @foreach (var g in totals.Taxes.Where(t => t.Rate > 0))
             {

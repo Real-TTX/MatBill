@@ -33,7 +33,7 @@
             <div class="mat-form__grid">
                 <mb-radios for="Input.Entry" label="@L["Expenses.Edit.Entry"]" items="entries" />
                 <mb-input for="Input.Amount" label="@L["Common.Amount"]" required="true" inputmode="decimal" hint="@L["Expenses.Edit.Amount.Hint"]" autocomplete="off" />
-                <mb-select for="Input.TaxRate" label="@L["Expenses.Edit.TaxRate"]" items="rates" />
+                <mb-select for="Input.TaxRate" label="@L["Expenses.Edit.TaxRate"]" items="rates" hint="@(Model.SmallBusiness ? L["Expenses.Edit.TaxRate.Small"].Value : null)" />
                 <mb-input for="Input.DueDate" label="@L["Expenses.Edit.DueDate"]" type="date" />
                 <mb-switch for="Input.Paid" label="@L["Expenses.Edit.Paid"]" full="true" />
                 <mb-input for="Input.PaidDate" label="@L["Expenses.Edit.PaidDate"]" type="date" show-if="Input.Paid" show-value="true" />

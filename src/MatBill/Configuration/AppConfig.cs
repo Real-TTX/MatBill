@@ -36,6 +36,9 @@ public sealed class CompanyConfig
 {
     public string Name { get; set; } = "";
 
+    /// <summary>A second line of the name, under it in the sender block and in the sender line ("Matthias Schmoldt" under the trading name "Matthix").</summary>
+    public string? NameLine2 { get; set; }
+
     /// <summary>The owner or managing director ("Inhaber: Jonas Dierksen", "Geschäftsführer: ..."), a line of the footer.</summary>
     public string? Manager { get; set; }
 
@@ -81,7 +84,7 @@ public sealed class CompanyConfig
     /// <summary>Small business (§ 19 UStG): no VAT is charged, the invoice says why.</summary>
     public bool SmallBusiness { get; set; }
 
-    public string SenderLine => string.Join(" · ", new[] { Name, Street, string.Join(" ", new[] { PostalCode, City }.Where(s => !string.IsNullOrWhiteSpace(s))) }.Where(s => !string.IsNullOrWhiteSpace(s)));
+    public string SenderLine => string.Join(" · ", new[] { Name, NameLine2, Street, string.Join(" ", new[] { PostalCode, City }.Where(s => !string.IsNullOrWhiteSpace(s))) }.Where(s => !string.IsNullOrWhiteSpace(s)));
 }
 
 /// <summary>The number ranges and the texts a new invoice starts with.</summary>

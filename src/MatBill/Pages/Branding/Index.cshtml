@@ -27,6 +27,7 @@
         <mb-card title="@L["Branding.Sender"]" icon="building">
             <div class="mat-form__grid">
                 <mb-input for="Input.Name" label="@L["Branding.Name"]" required="true" full="true" autocomplete="organization" />
+                <mb-input for="Input.NameLine2" label="@L["Branding.NameLine2"]" hint="@L["Branding.NameLine2.Hint"]" full="true" autocomplete="name" />
                 <mb-input for="Input.Street" label="@L["Branding.Street"]" full="true" autocomplete="street-address" />
                 <mb-input for="Input.PostalCode" label="@L["Branding.PostalCode"]" inputmode="numeric" autocomplete="postal-code" />
                 <mb-input for="Input.City" label="@L["Branding.City"]" autocomplete="address-level2" />
@@ -38,12 +39,16 @@
         </mb-card>
 
         <mb-card title="@L["Branding.Tax"]" icon="file-text">
+            @if (Model.MissingTaxNumber)
+            {
+                <div class="mat-alert mat-alert--warning" role="note">@Ui.Icon("alert")<div class="mat-alert__body">@L["Branding.TaxNumber.Missing"]</div></div>
+            }
             <div class="mat-form__grid">
                 <mb-input for="Input.TaxNumber" label="@L["Branding.TaxNumber"]" autocomplete="off" />
                 <mb-input for="Input.VatId" label="@L["Branding.VatId"]" autocomplete="off" />
                 <mb-input for="Input.Manager" label="@L["Branding.Manager"]" hint="@L["Branding.Manager.Hint"]" full="true" />
                 <mb-input for="Input.Register" label="@L["Branding.Register"]" hint="@L["Branding.Register.Hint"]" full="true" />
-                <mb-switch for="Input.SmallBusiness" label="@L["Branding.SmallBusiness"]" full="true" />
+                <mb-switch for="Input.SmallBusiness" label="@L["Branding.SmallBusiness"]" hint="@L["Branding.SmallBusiness.Hint"]" full="true" />
             </div>
         </mb-card>
 

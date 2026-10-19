@@ -70,7 +70,9 @@ public sealed class IndexModel(MbDbContext db, ConfigStore config, ICurrentUser 
         OverdueCount = await db.Invoice.CountAsync(i => i.Status == InvoiceStatus.Open && i.DueDate < Today);
         PaidThisMonth = await db.Invoice.Where(i => i.Status == InvoiceStatus.Paid && i.Kind == InvoiceKind.Invoice && i.PaidDate >= monthStart).SumAsync(i => i.GrossTotal);
         RevenueThisYear = await db.Invoice.Where(i => i.Status != InvoiceStatus.Draft && i.InvoiceDate >= yearStart).SumAsync(i => i.NetTotal);
-        ExpensesThisYear = await db.Expense.Where(e => e.ExpenseDate >= yearStart).SumAsync(e => e.NetAmount);
+        ExpensesThisYear = SmallBusiness
+            ? await db.Expense.Where(e => e.ExpenseDate >= yearStart).SumAsync(e => e.GrossAmount)
+            : await db.Expense.Where(e => e.ExpenseDate >= yearStart).SumAsync(e => e.NetAmount);
         OpenBookings = await db.BankTransaction.CountAsync(t => t.State == MatchState.Open);
         ExpensesToReview = await db.Expense.CountAsync(e => e.NeedsReview);
         OpenQuotes = await db.Quote.CountAsync(q => q.Status == QuoteStatus.Open && q.ValidUntil >= Today);
@@ -87,6 +89,7 @@ public sealed class IndexModel(MbDbContext db, ConfigStore config, ICurrentUser 
         SendProblems = await db.Invoice.AsNoTracking().Where(i => i.SendState == SendState.Failed && i.Status != InvoiceStatus.Cancelled).OrderByDescending(i => i.UpdateDate).Take(5).ToListAsync();
 
         var company = config.Current.Company;
-        NeedsSetup = string.IsNullOrWhiteSpace(company.Name) || (string.IsNullOrWhiteSpace(company.TaxNumber) && string.IsNullOrWhiteSpace(company.VatId)) || string.IsNullOrWhiteSpace(company.Iban);
+        // only what an invoice cannot do without: tax number and bank details are optional (Branding warns about a missing tax number)
+        NeedsSetup = string.IsNullOrWhiteSpace(company.Name) || string.IsNullOrWhiteSpace(company.Street) || string.IsNullOrWhiteSpace(company.City);
     }
 }

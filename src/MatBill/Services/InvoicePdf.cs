@@ -112,7 +112,7 @@ public static class InvoicePdf
             row.ConstantItem(62, Unit.Millimetre).AlignRight().Column(col =>
             {
                 col.Item().AlignRight().Text(company.Name).SemiBold();
-                foreach (var line in new[] { company.Street, Join(" ", company.PostalCode, company.City), company.Email, company.Phone, company.Website })
+                foreach (var line in new[] { company.NameLine2, company.Street, Join(" ", company.PostalCode, company.City), company.Email, company.Phone, company.Website })
                 {
                     if (!string.IsNullOrWhiteSpace(line))
                     {
@@ -249,9 +249,9 @@ public static class InvoicePdf
     private static void Totals(IContainer container, InvoiceDocument doc, string accent)
         => container.Column(col =>
         {
-            TotalRow(col, "Zwischensumme", DocFmt.Money(doc.Totals.Net));
             if (!doc.TaxExempt)
             {
+                TotalRow(col, "Zwischensumme", DocFmt.Money(doc.Totals.Net));
                 foreach (var g in doc.Totals.Taxes.Where(g => g.Rate > 0))
                 {
                     TotalRow(col, doc.Totals.Taxes.Count(t => t.Rate > 0) > 1 ? $"Umsatzsteuer {Amount.Quantity(g.Rate)} % auf {DocFmt.Money(g.Net)}" : $"Umsatzsteuer ({Amount.Quantity(g.Rate)} %)", DocFmt.Money(g.Tax));

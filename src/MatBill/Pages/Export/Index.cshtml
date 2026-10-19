@@ -4,6 +4,7 @@
     var m = Model.Months;
     var years = Enumerable.Range(DateTime.Today.Year - 6, 7).Reverse();
     var cash = Model.Basis == "cash";
+    var small = Model.SmallBusiness;
 }
 
 <form method="get" class="mat-toolbar" role="toolbar" aria-label="@L["Export.Toolbar"]">
@@ -18,33 +19,42 @@
 </form>
 
 <div class="mb-stats">
-    @Ui.Kpi(L["Export.Kpi.Income"], Fmt.Money(m.Sum(x => x.IncomeNet)), L["Export.Kpi.Income.Note", Fmt.Money(m.Sum(x => x.OutputTax))], "trending-up")
-    @Ui.Kpi(L["Export.Kpi.Expenses"], Fmt.Money(m.Sum(x => x.ExpenseNet)), L["Export.Kpi.Expenses.Note", Fmt.Money(m.Sum(x => x.InputTax))], "euro")
-    @Ui.Kpi(L["Export.Kpi.Result"], Fmt.Money(m.Sum(x => x.Result)), L["Export.Kpi.Result.Note"], "bar-chart", bad: m.Sum(x => x.Result) < 0)
-    @Ui.Kpi(L["Export.Kpi.TaxDue"], Fmt.Money(m.Sum(x => x.TaxDue)), m.Sum(x => x.TaxDue) < 0 ? L["Export.Kpi.TaxDue.Refund"] : L["Export.Kpi.TaxDue.Note"], "file-text")
+    @if (small)
+    {
+        @Ui.Kpi(L["Export.Kpi.Income.Small"], Fmt.Money(m.Sum(x => x.IncomeNet)), L["Export.Kpi.Income.Small.Note"], "trending-up")
+        @Ui.Kpi(L["Export.Kpi.Expenses.Small"], Fmt.Money(m.Sum(x => x.ExpenseNet)), L["Export.Kpi.Expenses.Small.Note"], "euro")
+        @Ui.Kpi(L["Export.Kpi.Result"], Fmt.Money(m.Sum(x => x.Result)), L["Export.Kpi.Result.Small.Note"], "bar-chart", bad: m.Sum(x => x.Result) < 0)
+    }
+    else
+    {
+        @Ui.Kpi(L["Export.Kpi.Income"], Fmt.Money(m.Sum(x => x.IncomeNet)), L["Export.Kpi.Income.Note", Fmt.Money(m.Sum(x => x.OutputTax))], "trending-up")
+        @Ui.Kpi(L["Export.Kpi.Expenses"], Fmt.Money(m.Sum(x => x.ExpenseNet)), L["Export.Kpi.Expenses.Note", Fmt.Money(m.Sum(x => x.InputTax))], "euro")
+        @Ui.Kpi(L["Export.Kpi.Result"], Fmt.Money(m.Sum(x => x.Result)), L["Export.Kpi.Result.Note"], "bar-chart", bad: m.Sum(x => x.Result) < 0)
+        @Ui.Kpi(L["Export.Kpi.TaxDue"], Fmt.Money(m.Sum(x => x.TaxDue)), m.Sum(x => x.TaxDue) < 0 ? L["Export.Kpi.TaxDue.Refund"] : L["Export.Kpi.TaxDue.Note"], "file-text")
+    }
 </div>
 
 <div class="mat-table-wrap">
     <table class="mat-table">
         <caption class="mat-sr-only">@L["Export.Table.Caption"]</caption>
-        <thead><tr><th scope="col">@L["Export.Column.Month"]</th><th scope="col" class="mat-num">@L["Export.Column.Income"]</th><th scope="col" class="mat-num mat-hide-sm">@L["Export.Column.OutputTax"]</th><th scope="col" class="mat-num">@L["Export.Column.Expenses"]</th><th scope="col" class="mat-num mat-hide-sm">@L["Export.Column.InputTax"]</th><th scope="col" class="mat-num">@L["Export.Column.Result"]</th><th scope="col" class="mat-num mat-hide-sm">@L["Export.Column.TaxDue"]</th></tr></thead>
+        <thead><tr><th scope="col">@L["Export.Column.Month"]</th><th scope="col" class="mat-num">@L["Export.Column.Income"]</th>@if (!small) { <th scope="col" class="mat-num mat-hide-sm">@L["Export.Column.OutputTax"]</th> }<th scope="col" class="mat-num">@L["Export.Column.Expenses"]</th>@if (!small) { <th scope="col" class="mat-num mat-hide-sm">@L["Export.Column.InputTax"]</th> }<th scope="col" class="mat-num">@L["Export.Column.Result"]</th>@if (!small) { <th scope="col" class="mat-num mat-hide-sm">@L["Export.Column.TaxDue"]</th> }</tr></thead>
         <tbody>
             @foreach (var x in m)
             {
                 <tr>
                     <td data-label="@L["Export.Column.Month"]">@(new DateOnly(x.Year, x.Month, 1).ToString("MMMM", Fmt.Culture))</td>
                     <td data-label="@L["Export.Column.Income"]" class="mat-num">@Ui.Money(x.IncomeNet)</td>
-                    <td data-label="@L["Export.Column.OutputTax"]" class="mat-num mat-hide-sm">@Ui.Money(x.OutputTax)</td>
+                    @if (!small) { <td data-label="@L["Export.Column.OutputTax"]" class="mat-num mat-hide-sm">@Ui.Money(x.OutputTax)</td> }
                     <td data-label="@L["Export.Column.Expenses"]" class="mat-num">@Ui.Money(x.ExpenseNet)</td>
-                    <td data-label="@L["Export.Column.InputTax"]" class="mat-num mat-hide-sm">@Ui.Money(x.InputTax)</td>
+                    @if (!small) { <td data-label="@L["Export.Column.InputTax"]" class="mat-num mat-hide-sm">@Ui.Money(x.InputTax)</td> }
                     <td data-label="@L["Export.Column.Result"]" class="mat-num @(x.Result < 0 ? "mb-warn-text" : "")">@Ui.Money(x.Result)</td>
-                    <td data-label="@L["Export.Column.TaxDue"]" class="mat-num mat-hide-sm">@Ui.Money(x.TaxDue)</td>
+                    @if (!small) { <td data-label="@L["Export.Column.TaxDue"]" class="mat-num mat-hide-sm">@Ui.Money(x.TaxDue)</td> }
                 </tr>
             }
         </tbody>
     </table>
 </div>
-<p class="mat-hint">@L["Export.Hint"]</p>
+<p class="mat-hint">@(small ? L["Export.Hint.Small"] : L["Export.Hint"])</p>
 
 <form method="post" class="mat-form" novalidate>
     <mb-card title="@L["Export.Zip.Title"]" icon="download">

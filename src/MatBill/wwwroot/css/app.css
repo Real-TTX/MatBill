@@ -26,6 +26,8 @@
 .mb-qr { display: flex; justify-content: center; margin: var(--mat-space-4) 0; }
 .mb-qr svg { width: 200px; height: 200px; background: var(--mat-surface); padding: var(--mat-space-2); border: 1px solid var(--mat-border); border-radius: var(--mat-radius); }
 .mb-cards { display: grid; gap: var(--mat-space-4); }
+/* A note at the top of a card stands apart from the fields below it. */
+.mat-card__body > .mat-alert + .mat-form__grid { margin-top: var(--mat-space-4); }
 .mb-split { display: grid; gap: var(--mat-space-4); align-items: start; }
 @media (min-width: 1100px) { .mb-split { grid-template-columns: minmax(0, 1fr) 22rem; } }
 
@@ -164,6 +166,9 @@ button.mb-note__title:focus-visible { outline: none; box-shadow: var(--mat-focus
 .mb-lines__head, .mb-line { display: grid; grid-template-columns: minmax(0, 1fr) 7rem 6rem 3.75rem 6rem 1.75rem; gap: var(--mat-space-2); align-items: start; }
 .mb-lines__head { background: var(--mat-surface-2); border-radius: var(--mat-radius-sm); padding: var(--mat-space-2) var(--mat-space-3); font-size: 12.5px; font-weight: 600; }
 .mb-lines__head > :nth-child(n+2):not(:last-child) { text-align: right; }
+/* A small business charges no VAT: the editor leaves out the tax column. */
+.mb-doc.is-exempt .mb-line__tax, .mb-doc.is-exempt .mb-lines__tax { display: none; }
+.mb-doc.is-exempt .mb-lines__head, .mb-doc.is-exempt .mb-line { grid-template-columns: minmax(0, 1fr) 7rem 7rem 6.5rem 1.75rem; }
 .mb-lines__body { display: grid; }
 .mb-line { padding: var(--mat-space-3); border-bottom: 1px solid var(--mat-border); position: relative; }
 .mb-line__what { display: grid; gap: 2px; min-width: 0; }
@@ -294,6 +299,7 @@ select.mb-in { appearance: none; -webkit-appearance: none; cursor: pointer; text
 .mb-editor[data-view="form"] .mb-line__qty { grid-column: span 4; gap: var(--mat-space-2); }
 .mb-editor[data-view="form"] .mb-line__price { grid-column: span 3; }
 .mb-editor[data-view="form"] .mb-line__tax { grid-column: span 2; }
+.mb-editor[data-view="form"] .mb-doc.is-exempt .mb-line__price { grid-column: span 5; }
 .mb-editor[data-view="form"] .mb-line__total { grid-column: span 2; align-self: end; padding-bottom: 10px; font-weight: 600; }
 .mb-editor[data-view="form"] .mb-line__tools { grid-column: span 1; align-self: end; flex-direction: row; justify-content: flex-end; }
 .mb-editor[data-view="form"] .mb-doc__totals { background: var(--mat-surface); border: 1px solid var(--mat-border); border-radius: var(--mat-radius); padding: var(--mat-space-4) var(--mat-space-5); }
@@ -319,6 +325,8 @@ select.mb-in { appearance: none; -webkit-appearance: none; cursor: pointer; text
   .mb-line__tax { grid-column: span 2; }
   .mb-line__total { grid-column: span 3; align-self: center; font-weight: 600; }
   .mb-line__tools { grid-column: span 1; flex-direction: row; justify-content: flex-end; }
+  .mb-doc.is-exempt .mb-line { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .mb-doc.is-exempt .mb-line__total { grid-column: span 5; }
   .mb-paper--view .mb-line > :nth-child(n+2) { grid-column: span 2; }
   .mb-paper--view .mb-line > :nth-child(n+2)::before { content: attr(data-label); display: block; font-size: 11px; color: var(--mat-text-muted); }
   .mb-editor[data-view="document"] .mb-line .mb-label { position: static; width: auto; height: auto; margin: 0; overflow: visible; clip: auto; white-space: normal; display: block; font-size: 11px; color: var(--mat-text-muted); }
@@ -328,6 +336,8 @@ select.mb-in { appearance: none; -webkit-appearance: none; cursor: pointer; text
   .mb-editor[data-view="form"] .mb-line__tax { grid-column: span 4; }
   .mb-editor[data-view="form"] .mb-line__total { grid-column: span 6; }
   .mb-editor[data-view="form"] .mb-line__tools { grid-column: span 2; }
+  .mb-editor[data-view="form"] .mb-doc.is-exempt .mb-line { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .mb-editor[data-view="form"] .mb-doc.is-exempt .mb-line__total { grid-column: span 10; }
   .mb-doc__closing { flex-direction: column; align-items: stretch; }
   .mb-doc__signature { align-self: flex-end; }
   .mb-doc__totals { width: 100%; }

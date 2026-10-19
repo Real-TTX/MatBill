@@ -133,6 +133,7 @@
   "Admin.Invoicing.PaymentTermDays": { "en": "Payment term (days)", "de": "Zahlungsziel (Tage)" },
   "Admin.Invoicing.PaymentTermDays.Hint": { "en": "A customer can have their own.", "de": "Ein Kunde kann ein eigenes haben." },
   "Admin.Invoicing.DefaultTaxRate": { "en": "Tax rate of new line items", "de": "Steuersatz neuer Positionen" },
+  "Admin.Invoicing.DefaultTaxRate.Small": { "en": "Not used while \"Small business\" is switched on in Branding: invoices then show no VAT.", "de": "Wird nicht verwendet, solange im Branding „Kleinunternehmer“ eingeschaltet ist: Rechnungen weisen dann keine Umsatzsteuer aus." },
   "Admin.Invoicing.PaymentTerms": { "en": "Payment terms", "de": "Zahlungsbedingungen" },
   "Admin.Invoicing.PaymentTerms.Hint": { "en": "{Days} becomes the payment term, {DueDate} the due date.", "de": "{Days} wird zum Zahlungsziel, {DueDate} zum Fälligkeitsdatum." },
   "Admin.Invoicing.ClosingText": { "en": "Closing text", "de": "Schlusstext" },

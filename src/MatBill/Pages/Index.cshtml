@@ -23,8 +23,8 @@
     @Ui.Kpi(L["Dashboard.Kpi.Open"], Fmt.Money(Model.Open), Ui.CountNoun(Model.OpenCount, "Ui.Noun.Invoice"), "clock", href: "/Invoices?status=open")
     @Ui.Kpi(L["Dashboard.Kpi.Overdue"], Fmt.Money(Model.Overdue), Model.OverdueCount == 0 ? L["Dashboard.Kpi.NothingOverdue"].Value : Ui.CountNoun(Model.OverdueCount, "Ui.Noun.Invoice"), "alert", href: "/Invoices?status=overdue", bad: Model.OverdueCount > 0)
     @Ui.Kpi(L["Dashboard.Kpi.PaidIn", Model.Today.ToString("MMMM", Fmt.Culture)], Fmt.Money(Model.PaidThisMonth), L["Dashboard.Kpi.PaymentsReceived"], "check-circle", href: "/Invoices?status=paid")
-    @Ui.Kpi(L["Dashboard.Kpi.Revenue", Model.Today.Year], Fmt.Money(Model.RevenueThisYear), L["Dashboard.Kpi.RevenueNote"], "trending-up", href: $"/Invoices?year={Model.Today.Year}")
-    @Ui.Kpi(L["Dashboard.Kpi.Result", Model.Today.Year], Fmt.Money(Model.RevenueThisYear - Model.ExpensesThisYear), L["Dashboard.Kpi.ResultNote", Fmt.Money(Model.ExpensesThisYear)], "bar-chart", href: "/Export", bad: Model.RevenueThisYear < Model.ExpensesThisYear)
+    @Ui.Kpi(L["Dashboard.Kpi.Revenue", Model.Today.Year], Fmt.Money(Model.RevenueThisYear), L[Model.SmallBusiness ? "Dashboard.Kpi.RevenueNote.Small" : "Dashboard.Kpi.RevenueNote"], "trending-up", href: $"/Invoices?year={Model.Today.Year}")
+    @Ui.Kpi(L["Dashboard.Kpi.Result", Model.Today.Year], Fmt.Money(Model.RevenueThisYear - Model.ExpensesThisYear), L[Model.SmallBusiness ? "Dashboard.Kpi.ResultNote.Small" : "Dashboard.Kpi.ResultNote", Fmt.Money(Model.ExpensesThisYear)], "bar-chart", href: "/Export", bad: Model.RevenueThisYear < Model.ExpensesThisYear)
 </div>
 
 @if (Model.SeriesProblems.Count > 0 || Model.SendProblems.Count > 0)

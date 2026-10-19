@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MatBill.Services;
 
-/// <summary>One month of the report: income and expenses (net), the tax charged and the input tax, the result.</summary>
+/// <summary>One month of the report: income and expenses (net; a small business counts expenses gross and has no input tax), the tax charged and the input tax, the result.</summary>
 public sealed record MonthFigures(int Year, int Month, decimal IncomeNet, decimal OutputTax, decimal ExpenseNet, decimal InputTax)
 {
     public decimal Result => IncomeNet - ExpenseNet;
@@ -25,12 +25,14 @@ public sealed record MonthFigures(int Year, int Month, decimal IncomeNet, decima
 /// </summary>
 public sealed partial class ExportService(MbDbContext db, FileStoreService files, InvoiceService invoices, ConfigStore config, ILogger<ExportService> logger)
 {
-    /// <summary>The months of a period. <paramref name="cash"/>: income and expenses by the day they were paid (Ist-Versteuerung), else by their date (Soll).</summary>
+    /// <summary>The months of a period. <paramref name="cash"/>: income and expenses by the day they were paid (Ist-Versteuerung), else by their date (Soll).
+    /// A small business (§ 19 UStG) cannot deduct input tax: its expenses cost what was paid (gross).</summary>
     public async Task<List<MonthFigures>> MonthsAsync(DateOnly from, DateOnly to, bool cash, CancellationToken ct = default)
     {
         var issued = await db.Invoice.AsNoTracking().Where(i => i.Status != InvoiceStatus.Draft)
             .Select(i => new { i.InvoiceDate, i.PaidDate, i.Status, i.Kind, i.CancelsInvoiceId, i.NetTotal, i.TaxTotal }).ToListAsync(ct);
-        var expenses = await db.Expense.AsNoTracking().Select(e => new { e.ExpenseDate, e.PaidDate, e.Status, e.NetAmount, e.TaxAmount }).ToListAsync(ct);
+        var expenses = await db.Expense.AsNoTracking().Select(e => new { e.ExpenseDate, e.PaidDate, e.Status, e.NetAmount, e.TaxAmount, e.GrossAmount }).ToListAsync(ct);
+        var small = config.Current.Company.SmallBusiness;
 
         var result = new List<MonthFigures>();
         for (var m = new DateOnly(from.Year, from.Month, 1); m <= to; m = m.AddMonths(1))
@@ -39,7 +41,7 @@ public sealed partial class ExportService(MbDbContext db, FileStoreService files
             bool In(DateOnly? d) => d is { } x && x >= m && x <= end && x >= from && x <= to;
             var inc = issued.Where(i => cash ? i.Kind == InvoiceKind.Invoice && i.Status == InvoiceStatus.Paid && In(i.PaidDate) : In(i.InvoiceDate)).ToList();
             var exp = expenses.Where(e => cash ? e.Status == ExpenseStatus.Paid && In(e.PaidDate) : In(e.ExpenseDate)).ToList();
-            result.Add(new MonthFigures(m.Year, m.Month, inc.Sum(i => i.NetTotal), inc.Sum(i => i.TaxTotal), exp.Sum(e => e.NetAmount), exp.Sum(e => e.TaxAmount)));
+            result.Add(new MonthFigures(m.Year, m.Month, inc.Sum(i => i.NetTotal), inc.Sum(i => i.TaxTotal), small ? exp.Sum(e => e.GrossAmount) : exp.Sum(e => e.NetAmount), small ? 0m : exp.Sum(e => e.TaxAmount)));
         }
 
         return result;
@@ -98,7 +100,7 @@ public sealed partial class ExportService(MbDbContext db, FileStoreService files
                 })));
 
             await WriteAsync(zip, $"{root}/Ausgaben.csv", Csv(
-                ["Belegnummer", "Belegdatum", "Lieferant", "Rechnungsnummer Lieferant", "Kategorie", "Beschreibung", "Netto", "USt-Satz", "Vorsteuer", "Brutto", "Status", "Bezahlt am", "E-Rechnung", "Datei"],
+                ["Belegnummer", "Belegdatum", "Lieferant", "Rechnungsnummer Lieferant", "Kategorie", "Beschreibung", "Netto", "USt-Satz", company.SmallBusiness ? "USt (keine Vorsteuer)" : "Vorsteuer", "Brutto", "Status", "Bezahlt am", "E-Rechnung", "Datei"],
                 expenseList.Select(e => new[]
                 {
                     e.Number, D(e.ExpenseDate), e.Supplier, e.SupplierInvoiceNumber ?? "", e.Category, e.Description ?? "", M(e.NetAmount), M(e.TaxRate), M(e.TaxAmount), M(e.GrossAmount),
@@ -107,10 +109,15 @@ public sealed partial class ExportService(MbDbContext db, FileStoreService files
                 })));
 
             var months = await MonthsAsync(from, to, cash: false, ct);
-            await WriteAsync(zip, $"{root}/Uebersicht.csv", Csv(
-                ["Monat", "Einnahmen netto", "Umsatzsteuer", "Ausgaben netto", "Vorsteuer", "Ergebnis", "USt-Zahllast"],
-                months.Select(m => new[] { $"{m.Year}-{m.Month:00}", M(m.IncomeNet), M(m.OutputTax), M(m.ExpenseNet), M(m.InputTax), M(m.Result), M(m.TaxDue) })
-                    .Append(["Summe", M(months.Sum(m => m.IncomeNet)), M(months.Sum(m => m.OutputTax)), M(months.Sum(m => m.ExpenseNet)), M(months.Sum(m => m.InputTax)), M(months.Sum(m => m.Result)), M(months.Sum(m => m.TaxDue))])));
+            await WriteAsync(zip, $"{root}/Uebersicht.csv", company.SmallBusiness
+                ? Csv(
+                    ["Monat", "Einnahmen", "Ausgaben (brutto)", "Ergebnis"],
+                    months.Select(m => new[] { $"{m.Year}-{m.Month:00}", M(m.IncomeNet), M(m.ExpenseNet), M(m.Result) })
+                        .Append(["Summe", M(months.Sum(m => m.IncomeNet)), M(months.Sum(m => m.ExpenseNet)), M(months.Sum(m => m.Result))]))
+                : Csv(
+                    ["Monat", "Einnahmen netto", "Umsatzsteuer", "Ausgaben netto", "Vorsteuer", "Ergebnis", "USt-Zahllast"],
+                    months.Select(m => new[] { $"{m.Year}-{m.Month:00}", M(m.IncomeNet), M(m.OutputTax), M(m.ExpenseNet), M(m.InputTax), M(m.Result), M(m.TaxDue) })
+                        .Append(["Summe", M(months.Sum(m => m.IncomeNet)), M(months.Sum(m => m.OutputTax)), M(months.Sum(m => m.ExpenseNet)), M(months.Sum(m => m.InputTax)), M(months.Sum(m => m.Result)), M(months.Sum(m => m.TaxDue))])));
 
             if (withBank)
             {
@@ -130,7 +137,9 @@ public sealed partial class ExportService(MbDbContext db, FileStoreService files
                 $"Export von MatBill für {company.Name}\r\nZeitraum: {DocFmt.Date(from)} bis {DocFmt.Date(to)}\r\nErstellt: {DocFmt.Moment(DateTime.UtcNow)}\r\n\r\n" +
                 $"Rechnungen: {invoiceList.Count} (Ordner Rechnungen, Liste Rechnungen.csv; ausgestellte Rechnungen sind ZUGFeRD-E-Rechnungen, die XML-Daten stecken in der PDF)\r\n" +
                 $"Ausgaben: {expenseList.Count} (Ordner Ausgaben, Liste Ausgaben.csv){(missing > 0 ? $"; ohne Beleg: {missing}" : "")}\r\n" +
-                "Übersicht.csv: Einnahmen, Ausgaben, Umsatzsteuer und Vorsteuer je Monat (nach Rechnungs- und Belegdatum).\r\n" +
+                (company.SmallBusiness
+                    ? "Übersicht.csv: Einnahmen und Ausgaben (brutto) je Monat (nach Rechnungs- und Belegdatum). Kleinunternehmer nach § 19 UStG: keine Umsatzsteuer, keine Vorsteuer.\r\n"
+                    : "Übersicht.csv: Einnahmen, Ausgaben, Umsatzsteuer und Vorsteuer je Monat (nach Rechnungs- und Belegdatum).\r\n") +
                 "Die CSV-Dateien sind mit Semikolon getrennt, Beträge mit Komma (öffnen in Excel oder LibreOffice).\r\n"));
         }
 

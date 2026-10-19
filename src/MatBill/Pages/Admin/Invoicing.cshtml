@@ -42,7 +42,7 @@
     <mb-card title="@L["Admin.Invoicing.NewInvoices"]" icon="file-text">
         <div class="mat-form__grid">
             <mb-input for="Input.PaymentTermDays" label="@L["Admin.Invoicing.PaymentTermDays"]" type="number" min="0" max="365" step="1" hint="@L["Admin.Invoicing.PaymentTermDays.Hint"]" />
-            <mb-select for="Input.DefaultTaxRate" label="@L["Admin.Invoicing.DefaultTaxRate"]" items="rates" />
+            <mb-select for="Input.DefaultTaxRate" label="@L["Admin.Invoicing.DefaultTaxRate"]" items="rates" hint="@(Model.SmallBusiness ? L["Admin.Invoicing.DefaultTaxRate.Small"].Value : null)" />
             <mb-textarea for="Input.IntroText" label="@L["Admin.Invoicing.Intro"]" rows="3" full="true" />
             <mb-textarea for="Input.PaymentTerms" label="@L["Admin.Invoicing.PaymentTerms"]" rows="3" full="true" hint="@L["Admin.Invoicing.PaymentTerms.Hint"]" />
             <mb-textarea for="Input.ClosingText" label="@L["Admin.Invoicing.ClosingText"]" rows="2" full="true" />

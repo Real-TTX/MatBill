@@ -2,8 +2,11 @@
 @model MatBill.Pages.Expenses.IndexModel
 
 <div class="mb-stats">
-    @Ui.Kpi(L["Expenses.Kpi.Year", DateTime.Today.Year], Fmt.Money(Model.YearNet), L["Expenses.Kpi.Year.Note"], "euro", href: $"/Expenses?year={DateTime.Today.Year}")
-    @Ui.Kpi(L["Expenses.Kpi.InputTax", DateTime.Today.Year], Fmt.Money(Model.YearTax), L["Expenses.Kpi.InputTax.Note"], "file-text")
+    @Ui.Kpi(L["Expenses.Kpi.Year", DateTime.Today.Year], Fmt.Money(Model.YearNet), L[Model.SmallBusiness ? "Expenses.Kpi.Year.Note.Small" : "Expenses.Kpi.Year.Note"], "euro", href: $"/Expenses?year={DateTime.Today.Year}")
+    @if (!Model.SmallBusiness)
+    {
+        @Ui.Kpi(L["Expenses.Kpi.InputTax", DateTime.Today.Year], Fmt.Money(Model.YearTax), L["Expenses.Kpi.InputTax.Note"], "file-text")
+    }
     @Ui.Kpi(L["Expenses.Kpi.Open"], Fmt.Money(Model.OpenSum), L["Expenses.Kpi.Open.Note"], "clock", href: "/Expenses?status=open")
     @Ui.Kpi(L["Expenses.Kpi.Review"], Model.ToReview.ToString(), Model.ToReview == 0 ? L["Expenses.Kpi.Review.None"] : L["Expenses.Kpi.Review.Note"], "alert", href: "/Expenses?status=review", bad: Model.ToReview > 0)
 </div>

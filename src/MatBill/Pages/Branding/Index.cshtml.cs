@@ -19,6 +19,10 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
         public string Name { get; set; } = "";
 
         [StringLength(200)]
+        [Display(Name = "Branding.NameLine2")]
+        public string? NameLine2 { get; set; }
+
+        [StringLength(200)]
         [Display(Name = "Branding.Manager")]
         public string? Manager { get; set; }
 
@@ -93,12 +97,15 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
 
     public DocumentViewModel Preview { get; private set; } = null!;
 
+    /// <summary>Neither tax number nor VAT id: allowed (a new business may not have one yet), but an invoice over 250 euros needs one (§ 14 (4) UStG).</summary>
+    public bool MissingTaxNumber => string.IsNullOrWhiteSpace(config.Current.Company.TaxNumber) && string.IsNullOrWhiteSpace(config.Current.Company.VatId);
+
     public void OnGet()
     {
         var c = config.Current.Company;
         Input = new InputModel
         {
-            Name = c.Name, Manager = c.Manager, Street = c.Street, PostalCode = c.PostalCode, City = c.City, Country = c.Country, Email = c.Email, Phone = c.Phone, Website = c.Website,
+            Name = c.Name, NameLine2 = c.NameLine2, Manager = c.Manager, Street = c.Street, PostalCode = c.PostalCode, City = c.City, Country = c.Country, Email = c.Email, Phone = c.Phone, Website = c.Website,
             TaxNumber = c.TaxNumber, VatId = c.VatId, Register = c.Register, BankName = c.BankName, Iban = c.Iban, Bic = c.Bic, AccentColor = c.AccentColor, Signature = c.Signature,
             SmallBusiness = c.SmallBusiness,
         };
@@ -107,11 +114,6 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (string.IsNullOrWhiteSpace(Input.TaxNumber) && string.IsNullOrWhiteSpace(Input.VatId))
-        {
-            ModelState.AddModelError("Input.TaxNumber", L["Branding.TaxNumber.Required"]);
-        }
-
         if (Logo is { Length: > 0 })
         {
             var problem = await branding.SaveLogoAsync(Logo);
@@ -131,6 +133,7 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
         config.Update(c =>
         {
             c.Company.Name = Input.Name.Trim();
+            c.Company.NameLine2 = Clean(Input.NameLine2);
             c.Company.Manager = Clean(Input.Manager);
             c.Company.Street = Clean(Input.Street);
             c.Company.PostalCode = Clean(Input.PostalCode);

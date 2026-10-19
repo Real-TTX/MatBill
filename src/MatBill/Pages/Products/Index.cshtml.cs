@@ -35,7 +35,8 @@ public sealed class IndexModel(MbDbContext db) : PageModelBase
             [
                 new FilterSpec<Product>("kind", L["Products.Filter.Kind"], ListBuilder.EnumOptions<ProductKind>(Labels.Of), (q, v) => q.Where(p => p.Kind == Enum.Parse<ProductKind>(v))),
                 new FilterSpec<Product>("status", L["Common.Status"], [new("active", L["Products.Status.Active"]), new("inactive", L["Products.Status.Inactive"])], (q, v) => v == "active" ? q.Where(p => p.IsActive) : q.Where(p => !p.IsActive)),
-                new FilterSpec<Product>("vat", L["Products.Filter.TaxRate"], [new("19", "19 %"), new("7", "7 %"), new("0", "0 %")], (q, v) => decimal.TryParse(v, out var r) ? q.Where(p => p.TaxRate == r) : q),
+                // a small business charges no VAT: the tax rate of a product does not matter
+                .. SmallBusiness ? [] : new[] { new FilterSpec<Product>("vat", L["Products.Filter.TaxRate"], [new("19", "19 %"), new("7", "7 %"), new("0", "0 %")], (q, v) => decimal.TryParse(v, out var r) ? q.Where(p => p.TaxRate == r) : q) },
             ],
             Sorts = new Dictionary<string, (string, Func<IQueryable<Product>, bool, IOrderedQueryable<Product>>)>
             {
@@ -52,12 +53,13 @@ public sealed class IndexModel(MbDbContext db) : PageModelBase
         var active = L["Products.Pill.Active"].Value;
         var inactive = L["Products.Pill.Inactive"].Value;
         var edit = L["Common.Edit"].Value;
+        var small = SmallBusiness;
         Table = TableModel.Of("product-table", L["Products.Title"], result.Items,
         [
             (new TableColumn(L["Common.Name"]), p => Ui.NameWithSub(p.Name, $"/Products/Edit?id={p.Id}", p.Description)),
             (new TableColumn(L["Products.Column.Kind"], HideOnPhone: true), p => Ui.Text(Labels.Of(p.Kind))),
-            (new TableColumn(L["Products.Column.Price"], Numeric: true), p => Ui.Concat(Ui.Money(p.UnitPrice), Ui.Text(p.Unit is null ? "" : " / " + p.Unit))),
-            (new TableColumn(L["Products.Column.Vat"], Numeric: true, HideOnPhone: true), p => Ui.Text(Amount.Quantity(p.TaxRate) + " %")),
+            (new TableColumn(L[small ? "Products.Column.Price.Small" : "Products.Column.Price"], Numeric: true), p => Ui.Concat(Ui.Money(p.UnitPrice), Ui.Text(p.Unit is null ? "" : " / " + p.Unit))),
+            .. small ? [] : new (TableColumn, Func<Product, Microsoft.AspNetCore.Html.IHtmlContent>)[] { (new TableColumn(L["Products.Column.Vat"], Numeric: true, HideOnPhone: true), p => Ui.Text(Amount.Quantity(p.TaxRate) + " %")) },
             (new TableColumn(L["Common.Status"], HideOnPhone: true), p => p.IsActive ? Ui.Pill(active, "ok") : Ui.Pill(inactive, "plain")),
         ],
         p => [new RowAction("edit", edit, $"/Products/Edit?id={p.Id}")]);

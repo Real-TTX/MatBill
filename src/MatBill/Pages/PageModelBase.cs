@@ -12,6 +12,9 @@ public abstract class PageModelBase : PageModel
     /// <summary>The texts of the interface in the language of the request: <c>L["Invoices.Title"]</c>, <c>L["Invoices.Issued", number]</c>.</summary>
     protected IStringLocalizer L => Text.L;
 
+    /// <summary>Small business (§ 19 UStG): no VAT on invoices, no input tax on expenses; pages leave out tax rates and tax figures and count expenses gross.</summary>
+    public bool SmallBusiness => HttpContext.RequestServices.GetRequiredService<Configuration.ConfigStore>().Current.Company.SmallBusiness;
+
     protected void Head(string title, string? sub = null, params (string Text, string? Url)[] crumbs)
     {
         ViewData["Title"] = title;

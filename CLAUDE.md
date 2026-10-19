@@ -52,6 +52,9 @@ Test changes by **rebuilding the container and redeploying the stack**. Wait for
   statement imported twice adds nothing. `PaymentMatcher` scores candidates (number in purpose 60, exact amount 40, unique amount 20, skonto ≤ 3 % 15, name/IBAN 25,
   paid before the document −30); `Auto` assigns at ≥ 80 with a lead of 20. Assigning marks the invoice/expense paid, unassigning reopens it. No partial payments.
   Online: Enable Banking (JWT RS256 signed with the app's key, `kid` = app id; the key is stored protected in `BankingConfig`), sync every `SyncHours` by `BankingScheduler`.
+- **Small business** (`CompanyConfig.SmallBusiness`, § 19 UStG; `PageModelBase.SmallBusiness` in pages): documents get `TaxExempt` (no tax rows, no subtotal, the note,
+  category E in the e-invoice), the editor hides the tax column (`is-exempt`), products and settings leave out tax rates, expenses count **gross** with no input tax
+  (dashboard, expenses, `ExportService.MonthsAsync`, `Uebersicht.csv`). Tax number and VAT id are optional (Branding warns); the dashboard only asks for name and address.
 - Money: `numeric(18,2)` totals, unit price `numeric(18,4)`, quantity `numeric(18,3)`; positions rounded to cents, tax per rate on the sum (`InvoiceMath`); the editor's
   script repeats the same arithmetic. Amounts in forms are strings in German format, read with `Amount.TryParse`.
 - Database: tables PascalCase, `Id` bigint, audit columns filled by `MbDbContext`, `UpdateState` soft delete (`ISoftDeletable`: User, Customer, Product, Invoice,

@@ -70,7 +70,9 @@ public sealed class IndexModel(MbDbContext db, ExpenseService expenses, NavCount
         var result = await ListBuilder.RunAsync(db.Expense.AsNoTracking(), Request, spec, HttpContext.RequestAborted);
         Toolbar = result.Toolbar;
         Pager = result.Pager;
-        YearNet = await db.Expense.Where(e => e.ExpenseDate.Year == today.Year).SumAsync(e => e.NetAmount);
+        YearNet = SmallBusiness
+            ? await db.Expense.Where(e => e.ExpenseDate.Year == today.Year).SumAsync(e => e.GrossAmount)
+            : await db.Expense.Where(e => e.ExpenseDate.Year == today.Year).SumAsync(e => e.NetAmount);
         YearTax = await db.Expense.Where(e => e.ExpenseDate.Year == today.Year).SumAsync(e => e.TaxAmount);
         OpenSum = await db.Expense.Where(e => e.Status == ExpenseStatus.Open).SumAsync(e => e.GrossAmount);
         ToReview = await db.Expense.CountAsync(e => e.NeedsReview);

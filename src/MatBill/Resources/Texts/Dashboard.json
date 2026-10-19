@@ -6,10 +6,10 @@
   "Dashboard.Greeting.Name": { "en": "{0}, {1}", "de": "{0}, {1}" },
 
   "Dashboard.Setup.Title": { "en": "One more step to your first invoice:", "de": "Noch ein Schritt bis zur ersten Rechnung:" },
-  "Dashboard.Setup.AdminBefore": { "en": "Enter the company name, address, tax number and bank details in", "de": "Trage im" },
+  "Dashboard.Setup.AdminBefore": { "en": "Enter the name and address of the company in", "de": "Trage im" },
   "Dashboard.Setup.AdminLink": { "en": "Branding", "de": "Branding" },
-  "Dashboard.Setup.AdminAfter": { "en": "– they appear on every invoice.", "de": "Firmennamen, Anschrift, Steuernummer und Bankverbindung ein. Sie stehen auf jeder Rechnung." },
-  "Dashboard.Setup.User": { "en": "An administrator has to enter the company name, tax number and bank details in Branding.", "de": "Ein Administrator muss im Branding Firmennamen, Steuernummer und Bankverbindung eintragen." },
+  "Dashboard.Setup.AdminAfter": { "en": "– they appear on every invoice. Tax number and bank details can follow.", "de": "Namen und Anschrift deines Unternehmens ein. Sie stehen auf jeder Rechnung; Steuernummer und Bankverbindung können folgen." },
+  "Dashboard.Setup.User": { "en": "An administrator has to enter the name and address of the company in Branding.", "de": "Ein Administrator muss im Branding Namen und Anschrift des Unternehmens eintragen." },
 
   "Dashboard.Kpi.Open": { "en": "Open", "de": "Offen" },
   "Dashboard.Kpi.Overdue": { "en": "Overdue", "de": "Überfällig" },
@@ -18,8 +18,10 @@
   "Dashboard.Kpi.PaymentsReceived": { "en": "Payments received", "de": "Zahlungseingang" },
   "Dashboard.Kpi.Revenue": { "en": "Revenue {0}", "de": "Umsatz {0}" },
   "Dashboard.Kpi.RevenueNote": { "en": "net, issued", "de": "netto, ausgestellt" },
+  "Dashboard.Kpi.RevenueNote.Small": { "en": "issued, no VAT", "de": "ausgestellt, ohne USt." },
   "Dashboard.Kpi.Result": { "en": "Result {0}", "de": "Ergebnis {0}" },
   "Dashboard.Kpi.ResultNote": { "en": "Expenses {0} net", "de": "Ausgaben {0} netto" },
+  "Dashboard.Kpi.ResultNote.Small": { "en": "Expenses {0} gross", "de": "Ausgaben {0} brutto" },
 
   "Dashboard.Problems.Title": { "en": "This needs a look:", "de": "Das braucht einen Blick:" },
   "Dashboard.Problems.Series": { "en": "Series “{0}”", "de": "Serie „{0}“" },
