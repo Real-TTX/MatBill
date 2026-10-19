@@ -371,12 +371,13 @@ public sealed class EditModel(MbDbContext db, InvoiceService invoices, Recurring
             Stamp = "ENTWURF",
         };
 
-        var customers = await db.Customer.AsNoTracking().OrderBy(c => c.Name).Take(5000).ToListAsync();
-        var products = await db.Product.AsNoTracking().Where(p => p.IsActive).OrderBy(p => p.Name).Take(5000).ToListAsync();
+        // the pickers ask /api/customers and /api/products as one types: the page only says whether there is anything to find
+        var hasCustomers = await db.Customer.AnyAsync();
+        var hasProducts = await db.Product.AnyAsync(p => p.IsActive);
         EditorJson = EditorData.Serialize(new
         {
-            customers = customers.Select(CustomerJson.Of),
-            products = products.Select(ProductJson.Of),
+            hasCustomers,
+            hasProducts,
             taxExempt = company.SmallBusiness,
             defaultTaxRate = Amount.Quantity(config.Current.Invoicing.DefaultTaxRate),
             draftKey = "invoice-" + (Invoice.Id == 0 ? "new" : Invoice.Id.ToString()),

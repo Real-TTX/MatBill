@@ -13,6 +13,12 @@
   "Editor.CompanyPlaceholder": { "en": "Your company name", "de": "Ihr Firmenname" },
   "Editor.BrandingLink": { "en": "Add a logo in Branding", "de": "Logo im Branding hinterlegen" },
   "Editor.CompanyLink": { "en": "Enter the sender under Company", "de": "Absender unter Unternehmen eintragen" },
+  "Editor.Lookup.Customers": { "en": "Search customers", "de": "Kunden durchsuchen" },
+  "Editor.Lookup.Products": { "en": "Search products", "de": "Produkte durchsuchen" },
+  "Editor.Lookup.Search": { "en": "Name, number, contact or email", "de": "Name, Nummer, Ansprechpartner oder E-Mail" },
+  "Editor.Lookup.City": { "en": "City or postcode", "de": "Ort oder PLZ" },
+  "Editor.Lookup.Kind": { "en": "Kind", "de": "Art" },
+  "Editor.Lookup.More": { "en": "Show more", "de": "Mehr anzeigen" },
 
   "Editor.Recipient": { "en": "Recipient (search a customer or type a new name)", "de": "Empfänger (Kunde suchen oder neuen Namen eingeben)" },
   "Editor.Recipient.Placeholder": { "en": "Choose a customer …", "de": "Kunde auswählen …" },

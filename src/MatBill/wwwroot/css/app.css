@@ -42,6 +42,9 @@ a.mb-stat--link:hover { border-color: var(--mat-border-strong); text-decoration:
 /* ---- The bell in the header bar ---- */
 .mb-bell { position: relative; }
 .mb-bell__count { position: absolute; top: 2px; right: 0; min-width: 1.15rem; height: 1.15rem; padding: 0 4px; font-size: 11px; line-height: 1.15rem; pointer-events: none; }
+/* The tooltip of the bell at the right edge opens below and to the left: centred above it, it would stand out of the window and let the page scroll sideways. */
+.mb-bell[data-tip]::after { left: auto; right: 0; bottom: auto; top: calc(100% + 6px); transform: translateY(-2px); }
+.mb-bell[data-tip]:hover::after, .mb-bell[data-tip]:focus-visible::after { transform: none; }
 
 /* ---- No connection ---- */
 .mb-offline { margin: 0; border-radius: 0; border-inline: 0; border-top: 0; padding-left: calc(var(--mat-content-pad) + var(--mat-safe-left)); padding-right: calc(var(--mat-content-pad) + var(--mat-safe-right)); }
@@ -74,16 +77,20 @@ button.mb-note__title:focus-visible { outline: none; box-shadow: var(--mat-focus
    The document editor. One form, two looks: "document" (the A4 page is the interface: every value is edited where it stands, the fields look like text
    until the pointer or the focus is on them) and "form" (the same fields as an ordinary form with visible labels). The switch only changes data-view.
    ========================================================================== */
-.mb-editor { --mb-doc-accent: var(--mat-accent); display: grid; gap: var(--mat-space-4); }
+.mb-editor { --mb-doc-accent: var(--mat-accent); display: grid; gap: var(--mat-space-4); container-type: inline-size; }
 .mb-editor__head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--mat-space-3) var(--mat-space-4); }
 .mb-editor__title { display: flex; flex-wrap: wrap; align-items: center; gap: var(--mat-space-2) var(--mat-space-3); min-width: 0; flex: 1; }
 .mb-editor__title h1 { margin: 0; font-size: var(--mat-fs-2xl); overflow-wrap: break-word; hyphens: auto; }
 @media (max-width: 599px) { .mb-editor__title { flex-basis: 100%; } .mb-editor__title h1 { font-size: var(--mat-fs-xl); } .mb-editor__head .mat-seg { width: 100%; } .mb-editor__head .mat-seg__btn { flex: 1; justify-content: center; } }
 .mb-editor__grid { display: grid; gap: var(--mat-space-5); align-items: start; }
-@media (min-width: 1200px) { .mb-editor__grid { grid-template-columns: minmax(0, 1fr) 20rem; } }
+/* The side column only when the paper keeps (nearly) its A4 width beside it; else the cards go below the paper, side by side. The width of the editor decides, not the window (the menu takes its share). */
+@container (min-width: 68rem) { .mb-editor__grid { grid-template-columns: minmax(0, 1fr) 20rem; } }
+@container (max-width: 67.99rem) { .mb-editor__side { grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); max-width: 210mm; } }
+/* In the editor the paper starts where the title and the buttons start. */
+.mb-editor__main .mb-paper { margin-inline: 0; }
 .mb-editor__main { min-width: 0; }
 .mb-editor__side { display: grid; gap: var(--mat-space-4); min-width: 0; }
-@media (min-width: 1200px) { .mb-editor__side { position: sticky; top: calc(var(--mat-topbar-h) + var(--mat-space-4)); } }
+@container (min-width: 68rem) { .mb-editor__side { position: sticky; top: calc(var(--mat-topbar-h) + var(--mat-space-4)); } }
 .mb-editor__side .mat-card__body > :first-child { margin-top: 0; }
 .mb-editor__side .mat-card__body > :last-child { margin-bottom: 0; }
 .mb-editor__foot { margin-top: var(--mat-space-2); }
@@ -416,3 +423,22 @@ select.mb-multi { min-height: 7rem; padding-block: var(--mat-space-1); }
 .mb-langs__item:hover { color: var(--mat-text); background: var(--mat-bg-2); }
 .mb-langs__item.is-active { color: var(--mat-accent-text); border-color: var(--mat-border); background: var(--mat-surface); }
 .mb-langs__item:focus-visible { outline: none; box-shadow: var(--mat-focus-ring); }
+
+/* ---- The pickers of the editor: a search button beside the field opens the detail search, a dialog from the side ---- */
+.mb-combo__row { display: flex; align-items: center; gap: 2px; }
+.mb-combo__row > .mb-in { flex: 1; min-width: 0; }
+.mb-lookup-btn { flex: none; display: inline-grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: var(--mat-radius-sm); background: none; color: var(--mat-text-muted); cursor: pointer; opacity: .5; transition: opacity var(--mat-dur-fast) var(--mat-ease), background-color var(--mat-dur-fast) var(--mat-ease); }
+.mb-lookup-btn .mat-icon { width: 16px; height: 16px; }
+.mb-combo:hover .mb-lookup-btn, .mb-combo:focus-within .mb-lookup-btn, .mb-lookup-btn:focus-visible { opacity: 1; }
+.mb-lookup-btn:hover { background: var(--mat-surface-2); color: var(--mat-text); }
+.mb-editor[data-view="form"] .mb-lookup-btn { width: 40px; height: 40px; opacity: 1; }
+[data-readonly] .mb-lookup-btn { display: none; }
+@media (hover: none) { .mb-lookup-btn { opacity: 1; } }
+@media print { .mb-lookup-btn { display: none; } }
+.mb-lookup__filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); gap: var(--mat-space-3); }
+.mb-lookup__filters > [hidden] { display: none; }
+.mb-lookup__list { margin: 0; }
+.mb-lookup__list .mat-item__main { width: 100%; text-align: start; }
+.mb-lookup__end { font-variant-numeric: tabular-nums; white-space: nowrap; }
+[data-lookup-dialog].is-busy .mb-lookup__list { opacity: .6; transition: opacity var(--mat-dur-fast) var(--mat-ease); }
+[data-lookup-more][hidden] { display: none; }

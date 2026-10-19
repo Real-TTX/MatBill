@@ -283,13 +283,28 @@ app.MapPost("/api/customers", async (HttpContext http, IAntiforgery antiforgery,
     var name = http.Request.Form["name"].ToString().Trim();
     if (name.Length is 0 or > 200)
     {
-        return Results.BadRequest(new { error = "Bitte gib einen Namen ein." });
+        return Results.BadRequest(new { error = Text.T("Customers.Name.Required") });
     }
 
     var customer = new Customer { Name = name, Number = await numbers.NextCustomerNumberAsync(invoices.Today) };
     db.Customer.Add(customer);
     await db.SaveChangesAsync();
     return Results.Ok(new { value = customer.Id.ToString(CultureInfo.InvariantCulture), name = customer.Name, description = customer.Number, customer = CustomerJson.Of(customer) });
+});
+
+// The pickers of the editor ask the database (a few at a time), the side dialog of the detail search pages through the rest.
+app.MapGet("/api/customers", async (HttpContext http, MbDbContext db) =>
+{
+    var r = http.Request.Query;
+    var kind = Enum.TryParse<CustomerKind>(r["kind"].ToString(), ignoreCase: true, out var k) ? k : (CustomerKind?)null;
+    return Results.Ok(await Lookup.CustomersAsync(db, r["q"], r["city"], kind, IntOf(r["skip"], 0), IntOf(r["take"], 8), http.RequestAborted));
+});
+
+app.MapGet("/api/products", async (HttpContext http, MbDbContext db) =>
+{
+    var r = http.Request.Query;
+    var kind = Enum.TryParse<ProductKind>(r["kind"].ToString(), ignoreCase: true, out var k) ? k : (ProductKind?)null;
+    return Results.Ok(await Lookup.ProductsAsync(db, r["q"], kind, IntOf(r["skip"], 0), IntOf(r["take"], 8), http.RequestAborted));
 });
 
 app.MapGet("/api/customers/{id:long}", async (long id, MbDbContext db) =>
@@ -411,6 +426,8 @@ app.MapRazorPages();
 
 await app.RunAsync();
 return 0;
+
+static int IntOf(string? value, int fallback) => int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var n) ? n : fallback;
 
 /// <summary>Whether the first administrator exists: the question is asked on every request until the answer is yes, then never again.</summary>
 public sealed class SetupState

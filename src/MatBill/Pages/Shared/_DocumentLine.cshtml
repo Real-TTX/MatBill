@@ -22,7 +22,10 @@
         <input type="hidden" data-field="ProductId" name="@N("ProductId")" id="@Id("ProductId")" value="@l.ProductId" />
         <div class="mb-field mb-combo">
             <label class="mb-label" data-for="Name" data-text="@nameText" for="@Id("Name")">@nameText.Replace("{n}", n.ToString())</label>
+            <div class="mb-combo__row">
             <input class="mb-in mb-in--strong" data-field="Name" name="@N("Name")" id="@Id("Name")" value="@l.Name" placeholder="@L["Editor.Line.Name.Placeholder"]" maxlength="300" aria-invalid="@(error("Name") is null ? null : "true")" />
+            <button type="button" class="mb-lookup-btn" data-lookup-open="products" data-tip="@L["Editor.Lookup.Products"]" aria-label="@L["Editor.Lookup.Products"]">@Ui.Icon("search")</button>
+            </div>
         </div>
         <div class="mb-field">
             <label class="mb-label" data-for="Description" data-text="@descriptionText" for="@Id("Description")">@descriptionText.Replace("{n}", n.ToString())</label>

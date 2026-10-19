@@ -26,10 +26,12 @@ und ein Export für Steuerberater oder Finanzamt – auf einem Server im eigenen
 ## Auf einen Blick
 
 **Schreiben**
-- **Dokument-Editor auf A4:** Empfänger per Autocomplete aus den Kunden, Positionen per Produktsuche, Texte durch Anklicken
+- **Dokument-Editor auf A4:** Empfänger per Autocomplete aus den Kunden, Positionen per Produktsuche, Texte durch Anklicken;
+  die Datenbank sucht beim Tippen, eine **Detailsuche** im Seitendialog filtert nach Ort und Art – auch bei Tausenden Kunden
 - Summen und Umsatzsteuer **je Steuersatz** rechnen sich beim Tippen; Kleinunternehmer-Regelung (§ 19 UStG) auf Knopfdruck
 - Umschalten auf eine **normale Formularansicht** mit denselben Feldern – die Wahl bleibt pro Person gemerkt
-- **Entwurf → Ausstellen:** lückenloser Nummernkreis (`RE-{JJJJ}-{NNNN}`), danach ist die Rechnung unveränderlich (GoBD)
+- **Entwurf → Ausstellen:** lückenloser Nummernkreis (`RE-{YYYY}-{NNNN}`), der Zähler lässt sich setzen (Weitermachen nach einem anderen Programm),
+  danach ist die Rechnung unveränderlich (GoBD)
 - **Storno** als Stornorechnung mit eigener Nummer und negativen Beträgen; das Original bleibt erhalten
 - **Angebote** im selben Editor, mit Gültigkeit, Annahme/Ablehnung und Umwandlung in eine Rechnung
 
@@ -65,6 +67,10 @@ und ein Export für Steuerberater oder Finanzamt – auf einem Server im eigenen
 
 Jeder Wert wird dort bearbeitet, wo er auf dem Papier steht; die Felder sehen aus wie Text, bis man sie anklickt.
 Wer lieber ein Formular ausfüllt, schaltet um – es sind dieselben Felder.
+
+| Detailsuche |
+|---|
+| ![Kunden durchsuchen im Seitendialog](docs/images/editor-lookup.png) |
 
 ### Ausgestellt, storniert, als E-Rechnung
 

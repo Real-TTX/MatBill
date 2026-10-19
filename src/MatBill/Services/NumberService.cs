@@ -37,6 +37,51 @@ public sealed class NumberService(MbDbContext db, ConfigStore config)
         return NumberPattern.Format(pattern, date, last + 1);
     }
 
+    /// <summary>The counter the next number of the period of <paramref name="date"/> gets (1 when the period has none yet).</summary>
+    public async Task<long> NextCounterAsync(string name, string pattern, DateOnly date, CancellationToken ct = default)
+    {
+        var period = NumberPattern.PeriodKey(pattern, date);
+        return (await db.NumberSequence.AsNoTracking().Where(s => s.Name == name && s.Period == period).Select(s => (long?)s.LastValue).FirstOrDefaultAsync(ct) ?? 0) + 1;
+    }
+
+    /// <summary>
+    /// Lets the range of the period of <paramref name="date"/> continue at <paramref name="next"/> (an invoice program that is replaced, a counter that goes on).
+    /// Check with <see cref="CanContinueAtAsync"/> first.
+    /// </summary>
+    public async Task SetNextCounterAsync(string name, string pattern, DateOnly date, long next, CancellationToken ct = default)
+    {
+        if (next == await NextCounterAsync(name, pattern, date, ct))
+        {
+            return;
+        }
+
+        var period = NumberPattern.PeriodKey(pattern, date);
+        var now = DateTime.UtcNow;
+        await db.Database.ExecuteSqlAsync($"""
+            INSERT INTO "NumberSequence" ("Name", "Period", "LastValue", "CreateDate", "UpdateDate")
+            VALUES ({name}, {period}, {next - 1}, {now}, {now})
+            ON CONFLICT ("Name", "Period") DO UPDATE SET "LastValue" = {next - 1}, "UpdateDate" = {now}
+            """, ct);
+    }
+
+    /// <summary>Forward always; back only when none of the numbers in between is on a document (also a deleted one), so a number is never given twice.</summary>
+    public async Task<bool> CanContinueAtAsync(string name, string pattern, DateOnly date, long next, CancellationToken ct = default)
+    {
+        var current = await NextCounterAsync(name, pattern, date, ct);
+        return next >= current || (next >= 1 && current - next <= 5000
+            && !await InUseAsync(name, [.. Enumerable.Range(0, (int)(current - next)).Select(k => NumberPattern.Format(pattern, date, next + k))], ct));
+    }
+
+    /// <summary>Whether a document carries one of the numbers.</summary>
+    private async Task<bool> InUseAsync(string name, List<string> numbers, CancellationToken ct) => name switch
+    {
+        InvoiceRange => await db.Invoice.IgnoreQueryFilters().AnyAsync(i => i.Number != null && numbers.Contains(i.Number), ct),
+        CustomerRange => await db.Customer.IgnoreQueryFilters().AnyAsync(c => numbers.Contains(c.Number), ct),
+        ExpenseRange => await db.Expense.IgnoreQueryFilters().AnyAsync(e => numbers.Contains(e.Number), ct),
+        QuoteService.QuoteRange => await db.Quote.IgnoreQueryFilters().AnyAsync(q => q.Number != null && numbers.Contains(q.Number), ct),
+        _ => true,
+    };
+
     /// <summary>The next number of any range (quotes, receipts of expenses ...).</summary>
     public async Task<string> NextAsync(string name, string pattern, DateOnly date, CancellationToken ct = default)
     {

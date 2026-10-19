@@ -56,20 +56,37 @@ public sealed class InvoicingModel(ConfigStore config, NumberService numbers, Ac
 
         /// <summary>One category per line.</summary>
         public string? Categories { get; set; }
+
+        // The counter the next number of each range gets in the current period (a range can go on where another program stopped).
+        [Range(1, 999_999_999, ErrorMessage = "Admin.Invoicing.Next.Range")]
+        public long InvoiceNext { get; set; } = 1;
+
+        [Range(1, 999_999_999, ErrorMessage = "Admin.Invoicing.Next.Range")]
+        public long CustomerNext { get; set; } = 1;
+
+        [Range(1, 999_999_999, ErrorMessage = "Admin.Invoicing.Next.Range")]
+        public long QuoteNext { get; set; } = 1;
+
+        [Range(1, 999_999_999, ErrorMessage = "Admin.Invoicing.Next.Range")]
+        public long ExpenseNext { get; set; } = 1;
     }
 
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
-    public string InvoiceExample { get; private set; } = "";
-
-    public string CustomerExample { get; private set; } = "";
-
-    public string QuoteExample { get; private set; } = "";
-
-    public string ExpenseExample { get; private set; } = "";
-
     public string NextInvoice { get; private set; } = "";
+
+    /// <summary>What the next number of each range will be, by the name of its field.</summary>
+    public Dictionary<string, string> NextNumbers { get; } = [];
+
+    /// <summary>The ranges: the field of the pattern, the field of the next counter, the name of the range, the pattern.</summary>
+    private (string PatternKey, string NextKey, string Range, string Pattern, long Next)[] Ranges =>
+    [
+        ("Input.InvoiceNumberPattern", "Input.InvoiceNext", NumberService.InvoiceRange, Input.InvoiceNumberPattern, Input.InvoiceNext),
+        ("Input.CustomerNumberPattern", "Input.CustomerNext", NumberService.CustomerRange, Input.CustomerNumberPattern, Input.CustomerNext),
+        ("Input.QuoteNumberPattern", "Input.QuoteNext", QuoteService.QuoteRange, Input.QuoteNumberPattern, Input.QuoteNext),
+        ("Input.ExpenseNumberPattern", "Input.ExpenseNext", NumberService.ExpenseRange, Input.ExpenseNumberPattern, Input.ExpenseNext),
+    ];
 
     public async Task OnGetAsync()
     {
@@ -81,22 +98,28 @@ public sealed class InvoicingModel(ConfigStore config, NumberService numbers, Ac
             SmallBusinessNote = i.SmallBusinessNote, NoticeDays = i.NoticeDays, QuoteNumberPattern = i.QuoteNumberPattern, ExpenseNumberPattern = i.ExpenseNumberPattern,
             QuoteValidityDays = i.QuoteValidityDays, QuoteIntroText = i.QuoteIntroText, QuoteTerms = i.QuoteTerms, ZugferdPdf = i.ZugferdPdf, Categories = string.Join("\n", i.ExpenseCategories),
         };
+        var today = Fmt.Today(clock);
+        Input.InvoiceNext = await numbers.NextCounterAsync(NumberService.InvoiceRange, i.InvoiceNumberPattern, today);
+        Input.CustomerNext = await numbers.NextCounterAsync(NumberService.CustomerRange, i.CustomerNumberPattern, today);
+        Input.QuoteNext = await numbers.NextCounterAsync(QuoteService.QuoteRange, i.QuoteNumberPattern, today);
+        Input.ExpenseNext = await numbers.NextCounterAsync(NumberService.ExpenseRange, i.ExpenseNumberPattern, today);
         await PrepareAsync();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        var patterns = new[]
-        {
-            ("Input.InvoiceNumberPattern", Input.InvoiceNumberPattern), ("Input.CustomerNumberPattern", Input.CustomerNumberPattern),
-            ("Input.QuoteNumberPattern", Input.QuoteNumberPattern), ("Input.ExpenseNumberPattern", Input.ExpenseNumberPattern),
-        };
-        foreach (var (key, pattern) in patterns)
+        var today = Fmt.Today(clock);
+        foreach (var r in Ranges)
         {
             // Problem names the text (NumberPattern.*), not the text itself.
-            if (NumberPattern.Problem(pattern) is { } problem)
+            if (NumberPattern.Problem(r.Pattern) is { } problem)
             {
-                ModelState.AddModelError(key, L[problem]);
+                ModelState.AddModelError(r.PatternKey, L[problem]);
+            }
+            else if (ModelState.GetFieldValidationState(r.NextKey) != Microsoft.AspNetCore.Mvc.ModelBinding.ModelValidationState.Invalid
+                && !await numbers.CanContinueAtAsync(r.Range, r.Pattern.Trim(), today, r.Next))
+            {
+                ModelState.AddModelError(r.NextKey, L["Admin.Invoicing.Next.Taken", await numbers.NextCounterAsync(r.Range, r.Pattern.Trim(), today)]);
             }
         }
 
@@ -136,6 +159,11 @@ public sealed class InvoicingModel(ConfigStore config, NumberService numbers, Ac
             c.Invoicing.ZugferdPdf = Input.ZugferdPdf;
             c.Invoicing.ExpenseCategories = categories;
         });
+        foreach (var r in Ranges)
+        {
+            await numbers.SetNextCounterAsync(r.Range, r.Pattern.Trim(), today, r.Next);
+        }
+
         await log.LogAsync(L["Admin.Invoicing.Log.Changed"], "Invoicing");
         Flash(L["Admin.Invoicing.Saved"]);
         return RedirectToPage();
@@ -146,10 +174,10 @@ public sealed class InvoicingModel(ConfigStore config, NumberService numbers, Ac
         Head(L["Admin.Invoicing.Title"], L["Admin.Invoicing.Sub"], (L["Admin.Settings"], null), (L["Admin.Invoicing.Title"], null));
         ViewData["Width"] = "narrow";
         var today = Fmt.Today(clock);
-        InvoiceExample = NumberPattern.Problem(Input.InvoiceNumberPattern) is null ? NumberPattern.Format(Input.InvoiceNumberPattern, today, 42) : "–";
-        CustomerExample = NumberPattern.Problem(Input.CustomerNumberPattern) is null ? NumberPattern.Format(Input.CustomerNumberPattern, today, 7) : "–";
-        QuoteExample = NumberPattern.Problem(Input.QuoteNumberPattern) is null ? NumberPattern.Format(Input.QuoteNumberPattern, today, 12) : "–";
-        ExpenseExample = NumberPattern.Problem(Input.ExpenseNumberPattern) is null ? NumberPattern.Format(Input.ExpenseNumberPattern, today, 3) : "–";
         NextInvoice = await numbers.PeekInvoiceNumberAsync(today);
+        foreach (var r in Ranges)
+        {
+            NextNumbers[r.NextKey] = NumberPattern.Problem(r.Pattern) is null ? NumberPattern.Format(r.Pattern.Trim(), today, Math.Max(1, r.Next)) : "–";
+        }
     }
 }

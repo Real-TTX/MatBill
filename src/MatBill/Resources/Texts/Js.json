@@ -17,6 +17,8 @@
   "Js.Editor.NewCustomer": { "en": "Create new customer “{0}”", "de": "Neuen Kunden „{0}“ anlegen" },
   "Js.Editor.NoCustomers": { "en": "No customers yet: type a name to create one.", "de": "Noch keine Kunden: tippe einen Namen, um einen anzulegen." },
   "Js.Editor.CustomerCreated": { "en": "Customer “{0}” created.", "de": "Kunde „{0}“ angelegt." },
+  "Js.Lookup.None": { "en": "Nothing found. Try fewer or other words.", "de": "Nichts gefunden. Versuch es mit weniger oder anderen Wörtern." },
+  "Js.Lookup.Count": { "en": "{0} of {1}", "de": "{0} von {1}" },
   "Js.Editor.RestoreWhen": { "en": "{0}, {1}", "de": "{0}, {1} Uhr" },
   "Js.Editor.Restored": { "en": "The unsaved input is back. Save to keep it.", "de": "Die ungespeicherten Eingaben sind wieder da. Speichere, um sie zu behalten." },
 

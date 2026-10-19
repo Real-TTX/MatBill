@@ -132,6 +132,30 @@ async function confirmDialog(page) {
   check(await page.locator('.mb-dates li').count() > 0, 'the series shows its next dates');
   await shot(page, 'series');
 
+  console.log('The detail search');
+  await page.goto(base + '/Invoices/Edit');
+  await page.click('[data-lookup-open="customers"]');
+  const found = page.locator('[data-lookup-list] .mat-item__main');
+  await found.first().waitFor({ timeout: 3000 });
+  check(await page.locator('#mb-lookup').evaluate(d => d.open), 'the search button opens the dialog at the side');
+  check(/\d+ von \d+/.test(await page.locator('[data-lookup-count]').innerText()), 'the dialog says how many it found');
+  await page.fill('#mb-lookup-city', 'Heidelberg');
+  await page.waitForFunction(() => document.querySelectorAll('[data-lookup-list] .mat-item__main').length === 1, null, { timeout: 3000 });
+  check((await found.first().innerText()).includes('Müller'), 'the filter for the city narrows it down');
+  await shot(page, 'editor-lookup');
+  await found.first().click();
+  check((await page.inputValue('#Input_RecipientCity')) === 'Heidelberg', 'a customer from the dialog fills the address');
+  await page.locator('[data-line] [data-lookup-open="products"]').first().click();
+  await found.first().waitFor({ timeout: 3000 });
+  await found.first().click();
+  check((await page.locator('[data-line] [data-field="UnitPrice"]').first().inputValue()) !== '', 'a product from the dialog fills the position');
+  for (const w of [1440, 1280, 1024]) {
+    await page.setViewportSize({ width: w, height: 900 });
+    const sideways = await page.evaluate(() => { const m = document.querySelector('.mat-main'); m.scrollLeft = 40; const s = m.scrollLeft; m.scrollLeft = 0; return s; });
+    check(sideways === 0, 'the editor does not move sideways at ' + w + ' px');
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 });
+
   console.log('The lists');
   for (const [url, file] of [['/Invoices', 'invoices'], ['/Recurring', 'recurring'], ['/Customers', 'customers'], ['/Products', 'products'], ['/Company', 'company'], ['/Branding', 'branding'], ['/Notifications', 'notifications'], ['/Admin/Backup', 'backup'], ['/Admin/Mail', 'mail']]) {
     const response = await page.goto(base + url);

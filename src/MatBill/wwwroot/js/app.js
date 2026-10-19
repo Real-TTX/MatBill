@@ -37,6 +37,28 @@
     });
   }
 
+  function getJson(url) {
+    return fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'fetch' } }).then(function (response) {
+      if (!response.ok) { throw new Error(t('Js.Failed')); }
+      return response.json();
+    });
+  }
+
+  // The customers and products of the pickers come from the database, a few at a time (/api/customers, /api/products).
+  function lookup(kind, params) {
+    var query = new URLSearchParams();
+    Object.keys(params).forEach(function (k) { if (params[k] !== '' && params[k] !== null && params[k] !== undefined) { query.set(k, params[k]); } });
+    return getJson('/api/' + kind + '?' + query.toString());
+  }
+
+  // A customer or a product as one row of a picker: the name, what tells it apart, and the price.
+  function customerItem(c) {
+    return { name: c.name, desc: [c.number, [c.street, [c.postalCode, c.city].filter(Boolean).join(' ')].filter(Boolean).join(', ')].filter(Boolean).join(' · '), icon: 'building', data: c };
+  }
+  function productItem(p) {
+    return { name: p.name, desc: p.description, end: p.unitPrice + ' €' + (p.unit ? ' / ' + p.unit : ''), icon: 'box', data: p };
+  }
+
   // ================================================================================================ the installed app
 
   // The colour of the status bar follows the theme the person chose in the app (the meta tags follow the system by themselves).
@@ -205,8 +227,6 @@
     var form = editor.closest('form') || $('form', editor);
     var dataEl = $('#mb-editor-data');
     var data = dataEl ? JSON.parse(dataEl.textContent || '{}') : {};
-    var customers = data.customers || [];
-    var products = data.products || [];
     var readOnly = editor.hasAttribute('data-readonly');
     var money = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' });
     var number = function (v, digits) { return new Intl.NumberFormat('de-DE', { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(v); };
@@ -308,11 +328,9 @@
       if (name && !name._combo) {
         name._combo = combo(name, {
           source: function (q) {
-            return filter(products, q, function (p) { return [p.name, p.description || '']; }).slice(0, 8).map(function (p) {
-              return { name: p.name, desc: p.description, end: p.unitPrice + ' €' + (p.unit ? ' / ' + p.unit : ''), icon: 'box', data: p };
-            });
+            return lookup('products', { q: q, take: 8 }).then(function (page) { return page.items.map(productItem); });
           },
-          emptyHint: products.length === 0 ? t('Js.Editor.NoProducts') : null,
+          emptyHint: data.hasProducts === false ? t('Js.Editor.NoProducts') : null,
           onSelect: function (item) { fillLine(line, item.data); },
           onType: function () { var pid = $('[data-field="ProductId"]', line); if (pid) { pid.value = ''; } }
         });
@@ -474,16 +492,14 @@
     if (recipient) {
       combo(recipient, {
         source: function (q) {
-          return filter(customers, q, function (c) { return [c.name, c.number, c.city || '', c.contact || '']; }).slice(0, 8).map(function (c) {
-            return { name: c.name, desc: [c.number, [c.street, [c.postalCode, c.city].filter(Boolean).join(' ')].filter(Boolean).join(', ')].filter(Boolean).join(' · '), icon: 'building', data: c };
-          });
+          return lookup('customers', { q: q, take: 8 }).then(function (page) { return page.items.map(customerItem); });
         },
         create: data.canCreateCustomer === false ? null : function (q) { return t('Js.Editor.NewCustomer', q); },
-        emptyHint: customers.length === 0 ? t('Js.Editor.NoCustomers') : null,
+        emptyHint: data.hasCustomers === false ? t('Js.Editor.NoCustomers') : null,
         onSelect: function (item) { fillRecipient(item.data); },
         onCreate: function (q) {
           return post('/api/customers', { name: q }).then(function (answer) {
-            customers.push(answer.customer);
+            data.hasCustomers = true;
             fillRecipient(answer.customer);
             toast(t('Js.Editor.CustomerCreated', answer.customer.name), 'success');
           }).catch(function (err) { toast(err.message); });
@@ -493,6 +509,93 @@
           if (newHint) { newHint.hidden = !recipient.value.trim() || data.requireCustomer === true; }
         }
       });
+    }
+
+    // ---- the detail search: a dialog from the side that pages through customers or products, with filters; a choice fills the recipient or the position
+    var finder = $('[data-lookup-dialog]');
+    if (finder) {
+      var fq = $('[data-lookup-q]', finder);
+      var flist = $('[data-lookup-list]', finder);
+      var fmore = $('[data-lookup-more]', finder);
+      var fcount = $('[data-lookup-count]', finder);
+      var fstate = { kind: 'customers', line: null, skip: 0, seq: 0, timer: null };
+
+      var params = function () {
+        var p = { q: fq.value.trim() };
+        $$('[data-lookup-only="' + fstate.kind + '"] [data-lookup-filter]', finder).forEach(function (el) { p[el.getAttribute('data-lookup-filter')] = el.value; });
+        return p;
+      };
+
+      var row = function (item) {
+        var li = doc.createElement('li'); li.className = 'mat-item';
+        var b = doc.createElement('button'); b.type = 'button'; b.className = 'mat-item__main';
+        b.innerHTML = '<span class="mat-item__lead"><svg class="mat-icon" aria-hidden="true" focusable="false"><use href="#mat-i-' + item.icon + '"></use></svg></span>';
+        var body = doc.createElement('span'); body.className = 'mat-item__body';
+        var title = doc.createElement('span'); title.className = 'mat-item__title'; title.textContent = item.name; body.appendChild(title);
+        if (item.desc) { var text = doc.createElement('span'); text.className = 'mat-item__text'; text.textContent = item.desc; body.appendChild(text); }
+        b.appendChild(body);
+        if (item.end) { var end = doc.createElement('span'); end.className = 'mat-item__end mb-lookup__end'; end.textContent = item.end; b.appendChild(end); }
+        b.addEventListener('click', function () { pickFound(item.data); });
+        li.appendChild(b);
+        return li;
+      };
+
+      var search = function (more) {
+        var mine = ++fstate.seq;
+        var p = params(); p.skip = more ? fstate.skip : 0; p.take = 20;
+        finder.classList.add('is-busy');
+        lookup(fstate.kind, p).then(function (page) {
+          if (mine !== fstate.seq) { return; }
+          if (!more) { flist.innerHTML = ''; fstate.skip = 0; }
+          page.items.map(fstate.kind === 'customers' ? customerItem : productItem).forEach(function (item) { flist.appendChild(row(item)); });
+          fstate.skip += page.items.length;
+          fmore.hidden = fstate.skip >= page.total;
+          fcount.textContent = page.total === 0 ? t('Js.Lookup.None') : t('Js.Lookup.Count', fstate.skip, page.total);
+        }).catch(function (err) {
+          if (mine === fstate.seq) { fcount.textContent = err.message; }
+        }).then(function () {
+          if (mine === fstate.seq) { finder.classList.remove('is-busy'); }
+        });
+      };
+      var searchSoon = function () { clearTimeout(fstate.timer); fstate.timer = setTimeout(function () { search(false); }, 200); };
+
+      // The dialog gives the focus back to what opened it when it closes: after a choice that is the next field to fill.
+      var pickFound = function (found) {
+        if (fstate.kind === 'customers') {
+          fillRecipient(found);
+          finder._matOpener = $('[name="Input.RecipientContact"]', editor) || recipient;
+        } else {
+          var line = fstate.line && fstate.line.parentNode === body ? fstate.line : addLine(null, false);
+          fillLine(line, found);
+          recalc();
+          markDirty();
+          finder._matOpener = $('[data-field="Quantity"]', line);
+        }
+        if (window.MatUi && window.MatUi.dialog) { window.MatUi.dialog.close(finder); } else { finder.close(); }
+      };
+
+      editor.addEventListener('click', function (e) {
+        var opener = e.target.closest && e.target.closest('[data-lookup-open]');
+        if (!opener) { return; }
+        e.preventDefault();
+        fstate.kind = opener.getAttribute('data-lookup-open') === 'products' ? 'products' : 'customers';
+        fstate.line = opener.closest('[data-line]');
+        $('[data-lookup-title]', finder).textContent = finder.getAttribute('data-title-' + fstate.kind);
+        $$('[data-lookup-only]', finder).forEach(function (el) { el.hidden = el.getAttribute('data-lookup-only') !== fstate.kind; });
+        // what is typed in the field and not chosen yet is the first search
+        var field = fstate.kind === 'customers' ? recipient : fstate.line && $('[data-field="Name"]', fstate.line);
+        var picked = fstate.kind === 'customers' ? customerId : fstate.line && $('[data-field="ProductId"]', fstate.line);
+        fq.value = field && !(picked && picked.value) ? field.value.trim() : '';
+        flist.innerHTML = '';
+        fcount.textContent = '';
+        fmore.hidden = true;
+        if (window.MatUi && window.MatUi.dialog) { window.MatUi.dialog.open(finder, opener); } else { finder.showModal(); }
+        search(false);
+      });
+      fq.addEventListener('input', searchSoon);
+      fq.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); search(false); } });
+      $$('[data-lookup-filter]', finder).forEach(function (el) { el.addEventListener('input', searchSoon); el.addEventListener('change', searchSoon); });
+      fmore.addEventListener('click', function () { search(true); });
     }
 
     // ---- unsaved work: a warning before leaving, and a copy in this browser that survives a reload or a lost connection
@@ -564,16 +667,6 @@
 
   function fold(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
 
-  function filter(items, query, fields) {
-    var q = fold(query).trim();
-    if (!q) { return items.slice(); }
-    var words = q.split(/\s+/);
-    return items.filter(function (item) {
-      var hay = fold(fields(item).join(' '));
-      return words.every(function (w) { return hay.indexOf(w) !== -1; });
-    }).sort(function (a, b) { return (fold(fields(a)[0]).indexOf(q) === 0 ? 0 : 1) - (fold(fields(b)[0]).indexOf(q) === 0 ? 0 : 1); });
-  }
-
   var comboCount = 0;
   function combo(input, o) {
     var wrap = input.closest('.mb-combo') || input.parentNode;
@@ -591,10 +684,22 @@
     var items = [];
     var active = -1;
     var typed = false;
+    var seq = 0;
+    var timer = null;
+    var pick = false;
 
-    function render() {
+    // The source answers at once (an array) or later (a promise from the database): while one types it is asked after a short pause, an older answer never wins.
+    function render(delay) {
       var q = input.value.trim();
-      items = o.source(q);
+      var mine = ++seq;
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        Promise.resolve(o.source(q)).then(function (found) { if (mine === seq) { show(found, q); } }).catch(function () { if (mine === seq) { close(); } });
+      }, delay || 0);
+    }
+
+    function show(found, q) {
+      items = found.slice();
       var exact = items.some(function (i) { return fold(i.name) === fold(q); });
       if (o.create && q && !exact) { items.push({ create: true, name: o.create(q), query: q, icon: 'plus' }); }
       list.innerHTML = '';
@@ -619,6 +724,7 @@
       });
       active = -1;
       open(true);
+      if (pick) { pick = false; highlight(0); }
     }
 
     function open(on) { list.hidden = !on; input.setAttribute('aria-expanded', on ? 'true' : 'false'); if (!on) { input.removeAttribute('aria-activedescendant'); } }
@@ -642,11 +748,11 @@
       if (o.onSelect) { o.onSelect(item); }
     }
 
-    input.addEventListener('input', function () { typed = true; if (o.onType) { o.onType(); } render(); });
+    input.addEventListener('input', function () { typed = true; if (o.onType) { o.onType(); } render(150); });
     input.addEventListener('focus', function () { if (!input.value.trim() || typed) { render(); } });
-    input.addEventListener('blur', function () { setTimeout(close, 120); });
+    input.addEventListener('blur', function () { setTimeout(function () { seq++; close(); }, 120); });
     input.addEventListener('keydown', function (e) {
-      if (e.key === 'ArrowDown') { e.preventDefault(); if (list.hidden) { render(); } highlight(active + 1); }
+      if (e.key === 'ArrowDown') { e.preventDefault(); if (list.hidden) { pick = true; render(); } else { highlight(active + 1); } }
       else if (e.key === 'ArrowUp') { e.preventDefault(); if (!list.hidden) { highlight(active - 1); } }
       else if (e.key === 'Enter') { if (!list.hidden && active >= 0) { e.preventDefault(); choose(active); } }
       else if (e.key === 'Escape') { if (!list.hidden) { e.preventDefault(); e.stopPropagation(); close(); } }

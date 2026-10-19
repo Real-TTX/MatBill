@@ -54,8 +54,11 @@
             <div class="mb-doc__address">
                 <div class="mb-field mb-combo">
                     <label class="mb-label" for="Input_RecipientName">@L["Editor.Recipient"]</label>
+                    <div class="mb-combo__row">
                     <input class="mb-in mb-in--strong" id="Input_RecipientName" name="Input.RecipientName" value="@input.RecipientName" placeholder="@L["Editor.Recipient.Placeholder"]" autocomplete="off" maxlength="200"
                            aria-describedby="Input_RecipientName-error" aria-invalid="@(ViewData.ModelState["Input.RecipientName"]?.Errors.Count > 0 ? "true" : null)" />
+                    <button type="button" class="mb-lookup-btn" data-lookup-open="customers" data-tip="@L["Editor.Lookup.Customers"]" aria-label="@L["Editor.Lookup.Customers"]">@Ui.Icon("search")</button>
+                    </div>
                     <span class="mat-error" id="Input_RecipientName-error" aria-live="polite">@ViewData.ModelState["Input.RecipientName"]?.Errors.FirstOrDefault()?.ErrorMessage</span>
                 </div>
                 <p class="mat-hint" data-new-customer-hint hidden>@(template ? L["Editor.Recipient.FromList"] : L["Editor.Recipient.New"])</p>
@@ -185,3 +188,45 @@
         </div>
     </footer>
 </article>
+
+@* The detail search beside the paper (a dialog from the side): customers or products, searched by the database page by page; a choice fills the recipient or the position.
+   Its fields belong to no form (form="mb-lookup-none"), so they are never posted and Enter does not send the document. *@
+<dialog class="mat-dialog mat-dialog--end" id="mb-lookup" aria-labelledby="mb-lookup-title" data-lookup-dialog
+        data-title-customers="@L["Editor.Lookup.Customers"]" data-title-products="@L["Editor.Lookup.Products"]">
+    <div class="mat-dialog__form">
+        <div class="mat-dialog__head">
+            @Ui.Icon("search")
+            <h2 class="mat-dialog__title" id="mb-lookup-title" data-lookup-title>@L["Editor.Lookup.Customers"]</h2>
+            <button type="button" class="mat-btn mat-btn--ghost mat-btn--icon mat-dialog__close" data-dialog-close aria-label="@L["Common.Close"]">@Ui.Icon("x")</button>
+        </div>
+        <div class="mat-dialog__body mat-form mb-lookup">
+            <div class="mat-field">
+                <label class="mat-label" for="mb-lookup-q">@L["Editor.Lookup.Search"]</label>
+                <input class="mat-input" type="search" id="mb-lookup-q" form="mb-lookup-none" autocomplete="off" data-lookup-q />
+            </div>
+            <div class="mb-lookup__filters">
+                <div class="mat-field" data-lookup-only="customers">
+                    <label class="mat-label" for="mb-lookup-city">@L["Editor.Lookup.City"]</label>
+                    <input class="mat-input" id="mb-lookup-city" form="mb-lookup-none" autocomplete="off" data-lookup-filter="city" />
+                </div>
+                <div class="mat-field" data-lookup-only="customers">
+                    <label class="mat-label" for="mb-lookup-ckind">@L["Editor.Lookup.Kind"]</label>
+                    <select class="mat-select" id="mb-lookup-ckind" form="mb-lookup-none" data-lookup-filter="kind">
+                        <option value="">@L["Common.All"]</option>
+                        @foreach (var k in Enum.GetValues<CustomerKind>()) { <option value="@k">@Labels.Of(k)</option> }
+                    </select>
+                </div>
+                <div class="mat-field" data-lookup-only="products">
+                    <label class="mat-label" for="mb-lookup-pkind">@L["Editor.Lookup.Kind"]</label>
+                    <select class="mat-select" id="mb-lookup-pkind" form="mb-lookup-none" data-lookup-filter="kind">
+                        <option value="">@L["Common.All"]</option>
+                        @foreach (var k in Enum.GetValues<ProductKind>()) { <option value="@k">@Labels.Of(k)</option> }
+                    </select>
+                </div>
+            </div>
+            <p class="mat-hint" data-lookup-count aria-live="polite"></p>
+            <ul class="mat-itemlist mb-lookup__list" data-lookup-list></ul>
+            <button type="button" class="mat-btn mat-btn--secondary" data-lookup-more hidden>@Ui.Icon("chevron-down")<span>@L["Editor.Lookup.More"]</span></button>
+        </div>
+    </div>
+</dialog>

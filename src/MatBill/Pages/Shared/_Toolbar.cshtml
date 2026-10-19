@@ -71,13 +71,30 @@
                 {
                     <div class="mat-field">
                         <label class="mat-label" for="@id-f-@f.Name">@f.Label</label>
-                        <select class="mat-select" id="@id-f-@f.Name" name="@f.Name" form="@form">
-                            <option value="">@L["Common.All"]</option>
-                            @foreach (var o in f.Options)
-                            {
-                                <option value="@o.Value" selected="@(f.Selected == o.Value)">@o.Label</option>
-                            }
-                        </select>
+                        @if (f.Options.Count > 8)
+                        {
+                            @* many options (customers): a select with a search field in its panel *@
+                            <div class="mat-picker" data-picker="select" data-search data-placeholder="@L["Common.All"]">
+                                <input class="mat-picker__input" id="@id-f-@f.Name" name="@f.Name" form="@form" value="@f.Selected" />
+                                <div class="mat-picker__options">
+                                    <button type="button" class="mat-picker__option" data-value=""><span class="mat-picker__text"><span class="mat-picker__name">@L["Common.All"]</span></span></button>
+                                    @foreach (var o in f.Options)
+                                    {
+                                        <button type="button" class="mat-picker__option" data-value="@o.Value"><span class="mat-picker__text"><span class="mat-picker__name">@o.Label</span></span></button>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <select class="mat-select" id="@id-f-@f.Name" name="@f.Name" form="@form">
+                                <option value="">@L["Common.All"]</option>
+                                @foreach (var o in f.Options)
+                                {
+                                    <option value="@o.Value" selected="@(f.Selected == o.Value)">@o.Label</option>
+                                }
+                            </select>
+                        }
                     </div>
                 }
                 @if (Model.SearchActive || Model.SortActive)
