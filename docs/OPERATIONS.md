@@ -68,7 +68,7 @@ Versions: releases `<major>.<minor>.<build>-<date>` (from `main`), `nightly-<bui
 
 - *Einstellungen › Rechnungen › ZUGFeRD-PDF* (on by default): every issued invoice is a PDF/A-3 with the CII XML embedded as `factur-x.xml` (ZUGFeRD 2.3,
   profile EN 16931). The XML alone: `/invoices/{id}/xml`, as XRechnung `/invoices/{id}/xml?xrechnung=1` (links on the invoice page).
-- For a correct e-invoice the company needs name, address, VAT id or tax number, and IBAN (*Branding*); public customers need their Leitweg-ID (*Kunde › Käuferreferenz*).
+- For a correct e-invoice the company needs name, address, VAT id or tax number, and IBAN (*Company*); public customers need their Leitweg-ID (*Kunde › Käuferreferenz*).
 - The files are written with ZUGFeRD-csharp but have not been checked against an official validator (Mustang, KoSIT). Check a sample with the validator of your
   recipient or tax advisor before relying on it. If building the e-invoice fails, the invoice is still issued with a plain PDF and the error is logged.
 

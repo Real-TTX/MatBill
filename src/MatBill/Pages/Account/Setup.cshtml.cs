@@ -72,7 +72,7 @@ public sealed class SetupModel(MbDbContext db, UserService users, SignInService 
         await signIn.StartSessionAsync(HttpContext, admin);
         await log.LogAsync(L["Account.Setup.Title"], "User", admin.Id, L["Account.Setup.Log.Detail"]);
         Flash(L["Account.Setup.Welcome"]);
-        return RedirectToPage("/Branding/Index");
+        return RedirectToPage("/Company/Index");
     }
 
     private string? CheckedPassword() => UserService.CheckPassword(Input.Password, Input.Email);

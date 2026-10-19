@@ -1,0 +1,57 @@
+@page
+@model MatBill.Pages.Company.IndexModel
+
+<div class="mb-split">
+    <form class="mat-form" method="post" novalidate>
+        <mb-summary />
+        <mb-card title="@L["Company.Sender"]" icon="building">
+            <div class="mat-form__grid">
+                <mb-input for="Input.Name" label="@L["Company.Name"]" required="true" full="true" autocomplete="organization" />
+                <mb-input for="Input.NameLine2" label="@L["Company.NameLine2"]" hint="@L["Company.NameLine2.Hint"]" full="true" autocomplete="name" />
+                <mb-input for="Input.Street" label="@L["Company.Street"]" full="true" autocomplete="street-address" />
+                <mb-input for="Input.PostalCode" label="@L["Company.PostalCode"]" inputmode="numeric" autocomplete="postal-code" />
+                <mb-input for="Input.City" label="@L["Company.City"]" autocomplete="address-level2" />
+                <mb-input for="Input.Country" label="@L["Company.Country"]" autocomplete="country-name" />
+                <mb-input for="Input.Email" label="@L["Common.Email"]" type="email" inputmode="email" autocomplete="email" hint="@L["Company.Email.Hint"]" />
+                <mb-input for="Input.Phone" label="@L["Common.Phone"]" type="tel" autocomplete="tel" />
+                <mb-input for="Input.Website" label="@L["Company.Website"]" autocomplete="url" />
+            </div>
+        </mb-card>
+
+        <mb-card title="@L["Company.Tax"]" icon="file-text">
+            @if (Model.MissingTaxNumber)
+            {
+                <div class="mat-alert mat-alert--warning" role="note">@Ui.Icon("alert")<div class="mat-alert__body">@L["Company.TaxNumber.Missing"]</div></div>
+            }
+            <div class="mat-form__grid">
+                <mb-input for="Input.TaxNumber" label="@L["Company.TaxNumber"]" autocomplete="off" />
+                <mb-input for="Input.VatId" label="@L["Company.VatId"]" autocomplete="off" />
+                <mb-input for="Input.Manager" label="@L["Company.Manager"]" hint="@L["Company.Manager.Hint"]" full="true" />
+                <mb-input for="Input.Register" label="@L["Company.Register"]" hint="@L["Company.Register.Hint"]" full="true" />
+                <mb-switch for="Input.SmallBusiness" label="@L["Company.SmallBusiness"]" hint="@L["Company.SmallBusiness.Hint"]" full="true" />
+            </div>
+        </mb-card>
+
+        <mb-card title="@L["Company.Bank"]" icon="credit-card">
+            <div class="mat-form__grid">
+                <mb-input for="Input.BankName" label="@L["Company.BankName"]" />
+                <mb-input for="Input.Iban" label="IBAN" autocomplete="off" />
+                <mb-input for="Input.Bic" label="BIC" autocomplete="off" />
+            </div>
+        </mb-card>
+
+        <mb-buttons back-href="/" />
+    </form>
+
+    <aside aria-label="@L["Company.Preview"]">
+        <div class="mat-card">
+            <div class="mat-card__head">@Ui.Icon("eye")<h2 class="mat-card__title">@L["Company.Preview"]</h2><span class="mat-card__sub">@L["Company.Preview.Sub"]</span></div>
+            <div class="mat-card__body">
+                <div class="mb-brand-preview" data-editor data-readonly data-doc-accent="@Model.Preview.Company.AccentColor">
+                    <partial name="_DocumentView" model="Model.Preview" />
+                </div>
+                <p class="mat-hint"><a href="/Branding">@L["Company.ToBranding"]</a></p>
+            </div>
+        </div>
+    </aside>
+</div>

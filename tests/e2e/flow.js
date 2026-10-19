@@ -46,7 +46,7 @@ async function confirmDialog(page) {
     await page.fill('#Input_PasswordRepeat', password);
     await page.click('form button[type=submit]');
     await page.waitForLoadState('networkidle');
-    check(page.url().includes('/Branding'), 'the setup ends on the branding page');
+    check(page.url().includes('/Company'), 'the setup ends on the company page');
   } else if (page.url().includes('/Account/Login')) {
     await page.fill('#Input_Email', email);
     await page.fill('#Input_Password', password);
@@ -133,7 +133,7 @@ async function confirmDialog(page) {
   await shot(page, 'series');
 
   console.log('The lists');
-  for (const [url, file] of [['/Invoices', 'invoices'], ['/Recurring', 'recurring'], ['/Customers', 'customers'], ['/Products', 'products'], ['/Branding', 'branding'], ['/Notifications', 'notifications'], ['/Admin/Backup', 'backup'], ['/Admin/Mail', 'mail']]) {
+  for (const [url, file] of [['/Invoices', 'invoices'], ['/Recurring', 'recurring'], ['/Customers', 'customers'], ['/Products', 'products'], ['/Company', 'company'], ['/Branding', 'branding'], ['/Notifications', 'notifications'], ['/Admin/Backup', 'backup'], ['/Admin/Mail', 'mail']]) {
     const response = await page.goto(base + url);
     check(response.ok() && await page.locator('h1').count() === 1, url + ' opens');
     await shot(page, file);
@@ -237,7 +237,7 @@ async function confirmDialog(page) {
   // words of the German interface that must not show up in the English one (data like customer names may be German)
   const germanWords = /\b(Speichern|Zurück|Abbrechen|Löschen|Bearbeiten|Übersicht|Einstellungen|Sortierung|Suchen|Neue Rechnung|Rechnungen|Angebote|Ausgaben|Wiederkehrend|Auswertung|Stammdaten|Kunden|Produkte|Zuordnung|Bezahlt|Überfällig|Entwurf|Fällig|Gespeichert|Abmelden|Mein Konto|Benachrichtigungen|Keine|Alle)\b/;
   for (const [url, file] of [['/', 'en-dashboard'], ['/Invoices', 'en-invoices'], ['/Invoices/Edit', 'en-editor'], ['/Invoices/Edit?id=' + id, 'en-invoice'], ['/Quotes', 'en-quotes'], ['/Recurring', 'en-recurring'],
-    ['/Expenses', 'en-expenses'], ['/Banking', 'en-banking'], ['/Export', 'en-report'], ['/Customers', 'en-customers'], ['/Products', 'en-products'], ['/Branding', 'en-branding'],
+    ['/Expenses', 'en-expenses'], ['/Banking', 'en-banking'], ['/Export', 'en-report'], ['/Customers', 'en-customers'], ['/Products', 'en-products'], ['/Company', 'en-company'], ['/Branding', 'en-branding'],
     ['/Notifications', 'en-notifications'], ['/Admin/Invoicing', 'en-settings-invoicing'], ['/Admin/Mail', 'en-settings-mail'], ['/Admin/Banking', 'en-settings-banking'], ['/Admin/Backup', 'en-backup'],
     ['/Admin/Users', 'en-users'], ['/Admin/System', 'en-system'], ['/Account/Profile', 'en-profile'], ['/Account/Security', 'en-security']]) {
     await english.goto(base + url);

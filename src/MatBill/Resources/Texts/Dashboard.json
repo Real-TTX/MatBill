@@ -6,10 +6,10 @@
   "Dashboard.Greeting.Name": { "en": "{0}, {1}", "de": "{0}, {1}" },
 
   "Dashboard.Setup.Title": { "en": "One more step to your first invoice:", "de": "Noch ein Schritt bis zur ersten Rechnung:" },
-  "Dashboard.Setup.AdminBefore": { "en": "Enter the name and address of the company in", "de": "Trage im" },
-  "Dashboard.Setup.AdminLink": { "en": "Branding", "de": "Branding" },
+  "Dashboard.Setup.AdminBefore": { "en": "Enter the name and address of the company under", "de": "Trage unter" },
+  "Dashboard.Setup.AdminLink": { "en": "Company", "de": "Unternehmen" },
   "Dashboard.Setup.AdminAfter": { "en": "– they appear on every invoice. Tax number and bank details can follow.", "de": "Namen und Anschrift deines Unternehmens ein. Sie stehen auf jeder Rechnung; Steuernummer und Bankverbindung können folgen." },
-  "Dashboard.Setup.User": { "en": "An administrator has to enter the name and address of the company in Branding.", "de": "Ein Administrator muss im Branding Namen und Anschrift des Unternehmens eintragen." },
+  "Dashboard.Setup.User": { "en": "An administrator has to enter the name and address of the company under Company.", "de": "Ein Administrator muss unter Unternehmen Namen und Anschrift eintragen." },
 
   "Dashboard.Kpi.Open": { "en": "Open", "de": "Offen" },
   "Dashboard.Kpi.Overdue": { "en": "Overdue", "de": "Überfällig" },

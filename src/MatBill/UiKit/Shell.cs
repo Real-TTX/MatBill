@@ -133,7 +133,7 @@ public sealed class ShellFactory(ICurrentUser user, NavCounts counts, Notificati
         };
         if (user.IsAdmin)
         {
-            groups[3] = groups[3] with { Items = [.. groups[3].Items, new(Text.T("Shell.Nav.Branding"), "/Branding", "palette")] };
+            groups[3] = groups[3] with { Items = [.. groups[3].Items, new(Text.T("Shell.Nav.Company"), "/Company", "building"), new(Text.T("Shell.Nav.Branding"), "/Branding", "palette")] };
         }
 
         return new NavSet("work", Text.T("Shell.Menu.Work"), "file-text", groups);

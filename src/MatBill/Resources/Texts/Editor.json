@@ -11,7 +11,8 @@
   "Editor.Aria.Template": { "en": "Invoice template", "de": "Vorlage der Rechnung" },
   "Editor.Aria.Recipient": { "en": "Recipient", "de": "Empfänger" },
   "Editor.CompanyPlaceholder": { "en": "Your company name", "de": "Ihr Firmenname" },
-  "Editor.BrandingLink": { "en": "Set the logo and sender in Branding", "de": "Logo und Absender im Branding festlegen" },
+  "Editor.BrandingLink": { "en": "Add a logo in Branding", "de": "Logo im Branding hinterlegen" },
+  "Editor.CompanyLink": { "en": "Enter the sender under Company", "de": "Absender unter Unternehmen eintragen" },
 
   "Editor.Recipient": { "en": "Recipient (search a customer or type a new name)", "de": "Empfänger (Kunde suchen oder neuen Namen eingeben)" },
   "Editor.Recipient.Placeholder": { "en": "Choose a customer …", "de": "Kunde auswählen …" },

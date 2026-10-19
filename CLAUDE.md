@@ -26,7 +26,7 @@ Test changes by **rebuilding the container and redeploying the stack**. Wait for
 - `src/MatBill/Localization` (TextCatalog, Languages, ClientTexts) + `Resources/Texts/*.json`: the two languages of the interface.
 - `src/MatBill.Core`: no web types. `Billing/` (InvoiceMath: tax once per rate; Recurrence: dates counted from the anchor; NumberPattern: `{JJJJ}{JJ}{MM}{NNNN}`; Amount: German input), `Security/`,
   `Banking/` (StatementLine + dedup keys, SepaPurpose, CsvStatement: read/guess/map any bank CSV, CamtStatement, Mt940Statement, StatementFormats.Detect, PaymentMatcher).
-- `src/MatBill`: `Pages/` (Invoices, Quotes, Recurring, Expenses, Banking, Export, Customers, Products, Branding, Notifications, Admin, Account, Share, Offline), `Services/` (InvoiceService, QuoteService,
+- `src/MatBill`: `Pages/` (Invoices, Quotes, Recurring, Expenses, Banking, Export, Customers, Products, Company, Branding, Notifications, Admin, Account, Share, Offline), `Services/` (InvoiceService, QuoteService,
   RecurringService + BillingScheduler, ExpenseService, BankingService + MatchingService, EnableBanking (client, BankSyncService, BankingScheduler), ExportService, EInvoice (ZUGFeRD),
   MailService, NumberService, InvoicePdf (QuestPDF), BrandingService, NotificationService, ShareService, DemoData, Backup/), `Data/` (MbDbContext, entities incl. `Finance.cs`, migrations),
   `UiKit/` + `Controls/` (shell, list, table, toolbar, pager, `mb-*` tag helpers), `wwwroot/` (app.css, app.js, sw.js, manifest, icons, `ui/` = MatUi).
@@ -54,7 +54,7 @@ Test changes by **rebuilding the container and redeploying the stack**. Wait for
   Online: Enable Banking (JWT RS256 signed with the app's key, `kid` = app id; the key is stored protected in `BankingConfig`), sync every `SyncHours` by `BankingScheduler`.
 - **Small business** (`CompanyConfig.SmallBusiness`, § 19 UStG; `PageModelBase.SmallBusiness` in pages): documents get `TaxExempt` (no tax rows, no subtotal, the note,
   category E in the e-invoice), the editor hides the tax column (`is-exempt`), products and settings leave out tax rates, expenses count **gross** with no input tax
-  (dashboard, expenses, `ExportService.MonthsAsync`, `Uebersicht.csv`). Tax number and VAT id are optional (Branding warns); the dashboard only asks for name and address.
+  (dashboard, expenses, `ExportService.MonthsAsync`, `Uebersicht.csv`). Tax number and VAT id are optional (the company page warns); the dashboard only asks for name and address.
 - Money: `numeric(18,2)` totals, unit price `numeric(18,4)`, quantity `numeric(18,3)`; positions rounded to cents, tax per rate on the sum (`InvoiceMath`); the editor's
   script repeats the same arithmetic. Amounts in forms are strings in German format, read with `Amount.TryParse`.
 - Database: tables PascalCase, `Id` bigint, audit columns filled by `MbDbContext`, `UpdateState` soft delete (`ISoftDeletable`: User, Customer, Product, Invoice,

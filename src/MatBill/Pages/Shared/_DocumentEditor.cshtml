@@ -34,7 +34,7 @@
             }
             @if (Model.CanEditBranding && (Model.LogoUrl is null || string.IsNullOrWhiteSpace(company.Name)))
             {
-                <a class="mb-doc__brandlink" href="/Branding">@L["Editor.BrandingLink"]</a>
+                <a class="mb-doc__brandlink" href="@(string.IsNullOrWhiteSpace(company.Name) ? "/Company" : "/Branding")">@(string.IsNullOrWhiteSpace(company.Name) ? L["Editor.CompanyLink"] : L["Editor.BrandingLink"])</a>
             }
         </div>
         <address class="mb-doc__sender">

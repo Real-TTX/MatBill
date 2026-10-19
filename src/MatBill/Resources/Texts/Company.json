@@ -1,0 +1,38 @@
+{
+  "Company.Title": { "en": "Company", "de": "Unternehmen" },
+  "Company.Sub": { "en": "Who writes the invoices: sender, tax number, register and bank details.", "de": "Wer die Rechnungen schreibt: Absender, Steuernummer, Register und Bankverbindung." },
+
+  "Company.Sender": { "en": "Sender", "de": "Absender" },
+  "Company.Name": { "en": "Company name", "de": "Name des Unternehmens" },
+  "Company.Name.Required": { "en": "Please enter the name of the company.", "de": "Bitte gib den Namen des Unternehmens ein." },
+  "Company.NameLine2": { "en": "Second name line", "de": "Zweite Namenszeile" },
+  "Company.NameLine2.Hint": { "en": "Optional, under the name in the sender, for example the owner: \"Matthias Schmoldt\".", "de": "Optional, unter dem Namen im Absender, zum Beispiel der Inhaber: „Matthias Schmoldt“." },
+  "Company.Street": { "en": "Street and number", "de": "Straße und Hausnummer" },
+  "Company.PostalCode": { "en": "Postcode", "de": "PLZ" },
+  "Company.City": { "en": "City", "de": "Ort" },
+  "Company.Country": { "en": "Country", "de": "Land" },
+  "Company.Email.Hint": { "en": "Appears in the header; replies to invoice mails go here.", "de": "Steht im Kopf; Antworten auf Rechnungsmails gehen hierhin." },
+  "Company.Email.Invalid": { "en": "That is not an email address.", "de": "Das ist keine E-Mail-Adresse." },
+  "Company.Website": { "en": "Website", "de": "Website" },
+
+  "Company.Tax": { "en": "Tax and register", "de": "Steuer und Register" },
+  "Company.TaxNumber": { "en": "Tax number", "de": "Steuernummer" },
+  "Company.VatId": { "en": "VAT ID", "de": "USt-IdNr." },
+  "Company.TaxNumber.Missing": { "en": "No tax number and no VAT ID yet. That is fine for now; but an invoice over 250 euros has to state one of them (§ 14 UStG), small businesses included. Enter it as soon as the tax office has sent it.", "de": "Noch keine Steuernummer und keine USt-IdNr. Das geht erst einmal; eine Rechnung über 250 Euro muss aber eine davon nennen (§ 14 UStG), auch als Kleinunternehmer. Trag sie ein, sobald das Finanzamt sie geschickt hat." },
+  "Company.Manager": { "en": "Owner or management", "de": "Inhaber oder Geschäftsführung" },
+  "Company.Manager.Hint": { "en": "Printed as written, for example \"Geschäftsführer: Jonas Dierksen\".", "de": "Zum Beispiel „Geschäftsführer: Jonas Dierksen“." },
+  "Company.Register": { "en": "Register entry", "de": "Registereintrag" },
+  "Company.Register.Hint": { "en": "Printed as written, for example \"Amtsgericht München, HRB 12345\".", "de": "Zum Beispiel „Amtsgericht München, HRB 12345“." },
+  "Company.SmallBusiness": { "en": "Small business (§ 19 UStG): charge no VAT", "de": "Kleinunternehmer (§ 19 UStG): keine Umsatzsteuer berechnen" },
+  "Company.SmallBusiness.Hint": { "en": "Invoices and quotes then show no VAT and the note from the invoice settings; expenses count with their gross amount, as input tax cannot be deducted.", "de": "Rechnungen und Angebote weisen dann keine Umsatzsteuer aus und tragen den Hinweis aus den Rechnungseinstellungen; Ausgaben zählen mit dem Bruttobetrag, weil keine Vorsteuer abgezogen werden kann." },
+
+  "Company.Bank": { "en": "Bank details", "de": "Bankverbindung" },
+  "Company.BankName": { "en": "Bank", "de": "Bank" },
+
+  "Company.Preview": { "en": "Preview", "de": "Vorschau" },
+  "Company.Preview.Sub": { "en": "saved state", "de": "gespeicherter Stand" },
+  "Company.ToBranding": { "en": "Logo, colour and greeting: Branding", "de": "Logo, Farbe und Gruß: Branding" },
+
+  "Company.Saved": { "en": "Saved. New invoices show it; issued ones stay as they are.", "de": "Gespeichert. Neue Rechnungen zeigen es, ausgestellte bleiben, wie sie sind." },
+  "Company.Log.Changed": { "en": "Company data changed", "de": "Unternehmensdaten geändert" }
+}

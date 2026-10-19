@@ -123,6 +123,7 @@ builder.Services.AddRazorPages(options =>
 {
     options.Conventions.AuthorizeFolder("/Admin", "Admin");
     options.Conventions.AuthorizeFolder("/Branding", "Admin");
+    options.Conventions.AuthorizeFolder("/Company", "Admin");
     options.Conventions.AuthorizeFolder("/Account", "SignedIn");
     options.Conventions.AllowAnonymousToPage("/Account/Login");
     options.Conventions.AllowAnonymousToPage("/Account/TwoFactor");

@@ -53,7 +53,7 @@ public sealed class PagesTests : IClassFixture<AppFixture>
             "/", "/Invoices", "/Invoices?status=open&sort=amount&dir=desc", "/Invoices?status=overdue", "/Invoices/Edit", $"/Invoices/Edit?customer={customer}",
             $"/Invoices/Edit?id={issued}", $"/Invoices/Edit?id={draft}", $"/Invoices/Send?id={issued}", $"/Invoices/Share?id={issued}",
             "/Recurring", "/Recurring?status=active", "/Recurring/Edit", $"/Recurring/Edit?id={series}", "/Customers", "/Customers?open=true", "/Customers/Edit", $"/Customers/Edit?id={customer}",
-            "/Products", "/Products/Edit", $"/Products/Edit?id={product}", "/Branding", "/Notifications", "/Notifications?unread=true",
+            "/Products", "/Products/Edit", $"/Products/Edit?id={product}", "/Company", "/Branding", "/Notifications", "/Notifications?unread=true",
             "/Admin/Users", "/Admin/Users/Edit", "/Admin/Shares", $"/Admin/Shares/Edit?id={share}", "/Admin/Invoicing", "/Admin/Mail",
             "/Admin/Storage", "/Admin/Backup", "/Admin/Backup/Plans", "/Admin/Backup/Plans/Edit", "/Admin/Backup/Targets", "/Admin/Backup/Targets/Edit", "/Admin/Backup/Restore", "/Admin/Security", "/Admin/Activity",
             "/Admin/System", "/Account/Profile", "/Account/Security", "/Admin/Banking",
@@ -90,7 +90,7 @@ public sealed class PagesTests : IClassFixture<AppFixture>
         await _app.CreateUserAsync("normal@example.test", "Normal-Passwort-2026", Data.Entities.UserRole.User);
 
         using var anonymous = _app.NewClient();
-        foreach (var url in new[] { "/", "/Invoices", "/Recurring", "/Customers", "/Products", "/Branding", "/Admin/Users", "/invoices/1/pdf", "/api/customers/1" })
+        foreach (var url in new[] { "/", "/Invoices", "/Recurring", "/Customers", "/Products", "/Company", "/Branding", "/Admin/Users", "/invoices/1/pdf", "/api/customers/1" })
         {
             var status = (await anonymous.GetAsync(url)).StatusCode;
             Assert.True(status is HttpStatusCode.Redirect or HttpStatusCode.Unauthorized, $"{url} answered {(int)status} to somebody who is not signed in");
@@ -99,7 +99,7 @@ public sealed class PagesTests : IClassFixture<AppFixture>
         using var user = _app.NewClient();
         await AppFixture.LoginAsync(user, "normal@example.test", "Normal-Passwort-2026");
         Assert.Equal(HttpStatusCode.OK, (await user.GetAsync("/Invoices")).StatusCode);
-        foreach (var url in new[] { "/Admin/Users", "/Admin/Backup", "/Admin/Shares", "/Admin/System", "/Admin/Mail", "/Admin/Invoicing", "/Admin/Security", "/Branding" })
+        foreach (var url in new[] { "/Admin/Users", "/Admin/Backup", "/Admin/Shares", "/Admin/System", "/Admin/Mail", "/Admin/Invoicing", "/Admin/Security", "/Company", "/Branding" })
         {
             var status = (await user.GetAsync(url)).StatusCode;
             Assert.NotEqual(HttpStatusCode.OK, status);

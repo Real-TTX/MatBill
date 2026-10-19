@@ -1,6 +1,6 @@
 {
   "Branding.Title": { "en": "Branding", "de": "Branding" },
-  "Branding.Sub": { "en": "How your invoices look: sender, logo, colour, bank and tax number.", "de": "So sehen deine Rechnungen aus: Absender, Logo, Farbe, Bank und Steuernummer." },
+  "Branding.Sub": { "en": "How your invoices look: logo, colour and greeting.", "de": "So sehen deine Rechnungen aus: Logo, Farbe und Gruß." },
 
   "Branding.Logo": { "en": "Logo", "de": "Logo" },
   "Branding.Logo.Current": { "en": "Current logo", "de": "Aktuelles Logo" },
@@ -11,33 +11,6 @@
   "Branding.Logo.New": { "en": "New logo", "de": "Neues Logo" },
   "Branding.Logo.Hint": { "en": "SVG, PNG or JPEG, at most 2 MB. Ideally a wide logo on a transparent background.", "de": "SVG, PNG oder JPEG, höchstens 2 MB. Am besten ein breites Logo auf transparentem Grund." },
 
-  "Branding.Sender": { "en": "Sender", "de": "Absender" },
-  "Branding.Name": { "en": "Company name", "de": "Name des Unternehmens" },
-  "Branding.Name.Required": { "en": "Please enter the name of the company.", "de": "Bitte gib den Namen des Unternehmens ein." },
-  "Branding.NameLine2": { "en": "Second name line", "de": "Zweite Namenszeile" },
-  "Branding.NameLine2.Hint": { "en": "Optional, under the name in the sender, for example the owner: \"Matthias Schmoldt\".", "de": "Optional, unter dem Namen im Absender, zum Beispiel der Inhaber: „Matthias Schmoldt“." },
-  "Branding.Street": { "en": "Street and number", "de": "Straße und Hausnummer" },
-  "Branding.PostalCode": { "en": "Postcode", "de": "PLZ" },
-  "Branding.City": { "en": "City", "de": "Ort" },
-  "Branding.Country": { "en": "Country", "de": "Land" },
-  "Branding.Email.Hint": { "en": "Appears in the header; replies to invoice mails go here.", "de": "Steht im Kopf; Antworten auf Rechnungsmails gehen hierhin." },
-  "Branding.Email.Invalid": { "en": "That is not an email address.", "de": "Das ist keine E-Mail-Adresse." },
-  "Branding.Website": { "en": "Website", "de": "Website" },
-
-  "Branding.Tax": { "en": "Tax and register", "de": "Steuer und Register" },
-  "Branding.TaxNumber": { "en": "Tax number", "de": "Steuernummer" },
-  "Branding.VatId": { "en": "VAT ID", "de": "USt-IdNr." },
-  "Branding.TaxNumber.Missing": { "en": "No tax number and no VAT ID yet. That is fine for now; but an invoice over 250 euros has to state one of them (§ 14 UStG), small businesses included. Enter it as soon as the tax office has sent it.", "de": "Noch keine Steuernummer und keine USt-IdNr. Das geht erst einmal; eine Rechnung über 250 Euro muss aber eine davon nennen (§ 14 UStG), auch als Kleinunternehmer. Trag sie ein, sobald das Finanzamt sie geschickt hat." },
-  "Branding.SmallBusiness.Hint": { "en": "Invoices and quotes then show no VAT and the note from the invoice settings; expenses count with their gross amount, as input tax cannot be deducted.", "de": "Rechnungen und Angebote weisen dann keine Umsatzsteuer aus und tragen den Hinweis aus den Rechnungseinstellungen; Ausgaben zählen mit dem Bruttobetrag, weil keine Vorsteuer abgezogen werden kann." },
-  "Branding.Manager": { "en": "Owner or management", "de": "Inhaber oder Geschäftsführung" },
-  "Branding.Manager.Hint": { "en": "Printed as written, for example \"Geschäftsführer: Jonas Dierksen\".", "de": "Zum Beispiel „Geschäftsführer: Jonas Dierksen“." },
-  "Branding.Register": { "en": "Register entry", "de": "Registereintrag" },
-  "Branding.Register.Hint": { "en": "Printed as written, for example \"Amtsgericht München, HRB 12345\".", "de": "Zum Beispiel „Amtsgericht München, HRB 12345“." },
-  "Branding.SmallBusiness": { "en": "Small business (§ 19 UStG): charge no VAT", "de": "Kleinunternehmer (§ 19 UStG): keine Umsatzsteuer berechnen" },
-
-  "Branding.Bank": { "en": "Bank details", "de": "Bankverbindung" },
-  "Branding.BankName": { "en": "Bank", "de": "Bank" },
-
   "Branding.Design": { "en": "Design", "de": "Gestaltung" },
   "Branding.Accent": { "en": "Document colour", "de": "Farbe des Dokuments" },
   "Branding.Accent.Hint": { "en": "For the total, the line in the footer and the greeting.", "de": "Für den Gesamtbetrag, die Linie im Fuß und den Gruß." },
@@ -47,6 +20,7 @@
 
   "Branding.Preview": { "en": "Preview", "de": "Vorschau" },
   "Branding.Preview.Sub": { "en": "saved state", "de": "gespeicherter Stand" },
+  "Branding.ToCompany": { "en": "Sender, tax and bank: Company", "de": "Absender, Steuer und Bank: Unternehmen" },
 
   "Branding.Saved": { "en": "Saved. New invoices look like this; issued ones stay as they are.", "de": "Gespeichert. Neue Rechnungen sehen so aus, ausgestellte bleiben, wie sie sind." },
   "Branding.LogoRemoved": { "en": "The logo is removed; new invoices show the name.", "de": "Das Logo ist entfernt; auf neuen Rechnungen steht der Name." },

@@ -37,7 +37,7 @@ public sealed class CompanyTests : IClassFixture<AppFixture>
     }
 
     [DatabaseFact]
-    public async Task Branding_saves_without_a_tax_number_and_the_overview_stops_asking()
+    public async Task The_company_saves_without_a_tax_number_and_the_overview_stops_asking()
     {
         await _app.EnsureAdminAsync();
         await WithCompanyAsync(c => { c.Name = ""; c.TaxNumber = null; c.VatId = null; c.Iban = null; }, async () =>
@@ -46,17 +46,17 @@ public sealed class CompanyTests : IClassFixture<AppFixture>
             await AppFixture.LoginAsync(client, "admin@example.com", "Start12345");
             Assert.Contains(De("Dashboard.Setup.Title"), await AppFixture.TextAsync(client, "/"));
 
-            var saved = await AppFixture.PostFormAsync(client, "/Branding", new Dictionary<string, string>
+            var saved = await AppFixture.PostFormAsync(client, "/Company", new Dictionary<string, string>
             {
                 ["Input.Name"] = "Matthix", ["Input.NameLine2"] = "Matthias Schmoldt", ["Input.Street"] = "Weg 1", ["Input.PostalCode"] = "12345", ["Input.City"] = "Stadt",
-                ["Input.AccentColor"] = "#1d4ed8", ["Input.SmallBusiness"] = "false",
+                ["Input.SmallBusiness"] = "false",
             });
             Assert.Equal(HttpStatusCode.Redirect, saved.StatusCode);
             Assert.Equal("Matthias Schmoldt", Config.Current.Company.NameLine2);
             Assert.Equal("Matthix · Matthias Schmoldt · Weg 1 · 12345 Stadt", Config.Current.Company.SenderLine);
 
             Assert.DoesNotContain(De("Dashboard.Setup.Title"), await AppFixture.TextAsync(client, "/"));
-            Assert.Contains(De("Branding.TaxNumber.Missing"), await AppFixture.TextAsync(client, "/Branding"));
+            Assert.Contains(De("Company.TaxNumber.Missing"), await AppFixture.TextAsync(client, "/Company"));
         });
     }
 

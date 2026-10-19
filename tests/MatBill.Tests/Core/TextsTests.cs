@@ -14,7 +14,7 @@ public sealed partial class TextsTests
     [
         "Services/InvoicePdf.cs", "Services/InvoiceDocument.cs", "Services/EInvoice.cs", "Services/ExportService.cs", "Services/DemoData.cs",
         "Services/MailService.cs", "Configuration/AppConfig.cs", "Pages/Shared/_DocumentView.cshtml", "Pages/Shared/_DocumentLine.cshtml",
-        "Pages/Shared/_DocumentEditor.cshtml", "Data/Migrations/", "Resources/Texts/", "wwwroot/ui/",
+        "Pages/Shared/_DocumentEditor.cshtml", "Pages/Shared/SampleDocument.cs", "Data/Migrations/", "Resources/Texts/", "wwwroot/ui/",
     ];
 
     [Fact]

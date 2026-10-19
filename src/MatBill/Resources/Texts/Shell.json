@@ -38,6 +38,7 @@
   "Shell.Nav.Reports": { "en": "Reports", "de": "Auswertung" },
   "Shell.Nav.Customers": { "en": "Customers", "de": "Kunden" },
   "Shell.Nav.Products": { "en": "Products", "de": "Produkte" },
+  "Shell.Nav.Company": { "en": "Company", "de": "Unternehmen" },
   "Shell.Nav.Branding": { "en": "Branding", "de": "Branding" },
   "Shell.Nav.Users": { "en": "Users", "de": "Benutzer" },
   "Shell.Nav.Shares": { "en": "Share links", "de": "Freigaben" },

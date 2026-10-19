@@ -117,11 +117,11 @@ Enable Banking. Eindeutige Zahlungen werden automatisch zugeordnet und die Rechn
 Ein Jahr auf einen Blick, nach Belegdatum (Soll) oder Zahlung (Ist). Der Export packt alle Rechnungen und Belege eines Zeitraums
 mit `Rechnungen.csv`, `Ausgaben.csv`, `Uebersicht.csv` und `Kontoumsaetze.csv` in ein ZIP.
 
-### Stammdaten, Branding, Einstellungen
+### Stammdaten, Unternehmen, Branding, Einstellungen
 
-| Kunden | Branding | Backup |
-|---|---|---|
-| ![Kunden](docs/images/customers.png) | ![Branding mit Vorschau](docs/images/branding.png) | ![Backup](docs/images/backup.png) |
+| Kunden | Unternehmen | Branding | Backup |
+|---|---|---|---|
+| ![Kunden](docs/images/customers.png) | ![Unternehmen mit Vorschau](docs/images/company.png) | ![Branding mit Vorschau](docs/images/branding.png) | ![Backup](docs/images/backup.png) |
 
 ### Englisch und Deutsch
 
@@ -200,7 +200,7 @@ docker compose up -d
 ```
 
 **http://localhost:2505** öffnen: Der erste Besuch legt den **Administrator** an (es gibt kein Standard-Passwort), danach führt
-MatBill ins **Branding** für Firma, Logo, Steuernummer und Bankverbindung. Zum Ausprobieren legt
+MatBill zu **Unternehmen** für Firma, Anschrift, Steuernummer und Bankverbindung. Zum Ausprobieren legt
 *Einstellungen › System › Beispieldaten anlegen* die Firma „MatBill Demo“ mit Logo, Kunden, Angeboten, Rechnungen, Serien,
 Ausgaben und einem Geschäftskonto an.
 
@@ -252,8 +252,9 @@ Fast alles wird in der App eingestellt und landet in `/data/config/app.json`. Um
 
 ### Nach der ersten Anmeldung
 
-- **Branding:** Firma, Anschrift, Logo (SVG/PNG/JPEG), Farbe des Dokuments, Steuernummer/USt-IdNr., Bankverbindung – alles, was auf
-  Rechnung und E-Rechnung gehört
+- **Unternehmen:** Firma mit zweiter Namenszeile (z. B. Inhaber), Anschrift, Steuernummer/USt-IdNr., Register, Kleinunternehmer (§ 19 UStG),
+  Bankverbindung – alles, was auf Rechnung und E-Rechnung gehört
+- **Branding:** Logo (SVG/PNG/JPEG), Farbe des Dokuments, Gruß in Handschrift
 - *Einstellungen › Rechnungen:* Nummernkreise, Zahlungsziel, Texte, Kategorien der Ausgaben, ZUGFeRD an/aus
 - *Einstellungen › E-Mail:* SMTP-Server, Absender, Texte für Rechnung und Angebot, Testmail
 - *Einstellungen › Banking:* Enable Banking (eigene App-ID und Schlüssel), automatische Zuordnung, Abrufintervall
