@@ -74,6 +74,11 @@ public sealed class LookupTests : IClassFixture<AppFixture>
             Assert.True(await numbers.CanContinueAtAsync(NumberService.ExpenseRange, pattern, day, 58));
             Assert.True(await numbers.CanContinueAtAsync(NumberService.ExpenseRange, pattern, day, 100));
 
+            // should the range still arrive at a number that is on a document, it skips it, in the preview and when it takes one
+            await numbers.SetNextCounterAsync(NumberService.ExpenseRange, pattern, day, 57);
+            Assert.Equal("LU-2003-0058", await numbers.PeekAsync(NumberService.ExpenseRange, pattern, day));
+            Assert.Equal("LU-2003-0058", await numbers.NextAsync(NumberService.ExpenseRange, pattern, day));
+
             // a counter set too high can come back as long as nothing was given out in between
             await numbers.SetNextCounterAsync(NumberService.ExpenseRange, pattern, day, 100);
             Assert.True(await numbers.CanContinueAtAsync(NumberService.ExpenseRange, pattern, day, 58));

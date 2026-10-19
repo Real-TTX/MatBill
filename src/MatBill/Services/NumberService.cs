@@ -24,17 +24,8 @@ public sealed class NumberService(MbDbContext db, ConfigStore config)
         => NextAsync(InvoiceRange, config.Current.Invoicing.InvoiceNumberPattern, date, ct);
 
     /// <summary>The next customer number of the range. A number typed by hand may already stand where the range arrives: that one is skipped.</summary>
-    public async Task<string> NextCustomerNumberAsync(DateOnly date, CancellationToken ct = default)
-    {
-        for (var tries = 0; ; tries++)
-        {
-            var number = await NextAsync(CustomerRange, config.Current.Invoicing.CustomerNumberPattern, date, ct);
-            if (tries >= 1000 || !await CustomerNumberTakenAsync(number, ct))
-            {
-                return number;
-            }
-        }
-    }
+    public Task<string> NextCustomerNumberAsync(DateOnly date, CancellationToken ct = default)
+        => NextAsync(CustomerRange, config.Current.Invoicing.CustomerNumberPattern, date, ct);
 
     /// <summary>Whether a customer (also a deleted one, whose number is on old invoices) has the number.</summary>
     public Task<bool> CustomerNumberTakenAsync(string number, CancellationToken ct = default)
@@ -52,7 +43,19 @@ public sealed class NumberService(MbDbContext db, ConfigStore config)
     {
         var period = NumberPattern.PeriodKey(pattern, date);
         var last = await db.NumberSequence.AsNoTracking().Where(s => s.Name == name && s.Period == period).Select(s => (long?)s.LastValue).FirstOrDefaultAsync(ct) ?? 0;
-        return NumberPattern.Format(pattern, date, last + 1);
+        return await FirstFreeAsync(name, pattern, date, last + 1, ct);
+    }
+
+    /// <summary>The number of <paramref name="counter"/>, or of the first counter after it whose number is on no document yet (what <see cref="NextAsync"/> will give).</summary>
+    public async Task<string> FirstFreeAsync(string name, string pattern, DateOnly date, long counter, CancellationToken ct = default)
+    {
+        var number = NumberPattern.Format(pattern, date, counter);
+        for (var tries = 0; tries < MaxSkip && IsKnown(name) && await InUseAsync(name, [number], ct); tries++)
+        {
+            number = NumberPattern.Format(pattern, date, ++counter);
+        }
+
+        return number;
     }
 
     /// <summary>The counter the next number of the period of <paramref name="date"/> gets (1 when the period has none yet).</summary>
@@ -100,8 +103,27 @@ public sealed class NumberService(MbDbContext db, ConfigStore config)
         _ => true,
     };
 
-    /// <summary>The next number of any range (quotes, receipts of expenses ...).</summary>
+    /// <summary>
+    /// The next number of any range (quotes, receipts of expenses ...). A number that is already on a document (typed by hand, or left by an earlier
+    /// pattern) is skipped, so taking a number never fails on it; this leaves no gap, the skipped number exists.
+    /// </summary>
     public async Task<string> NextAsync(string name, string pattern, DateOnly date, CancellationToken ct = default)
+    {
+        for (var tries = 0; ; tries++)
+        {
+            var number = await TakeAsync(name, pattern, date, ct);
+            if (tries >= MaxSkip || !IsKnown(name) || !await InUseAsync(name, [number], ct))
+            {
+                return number;
+            }
+        }
+    }
+
+    private const int MaxSkip = 1000;
+
+    private static bool IsKnown(string name) => name is InvoiceRange or CustomerRange or ExpenseRange or QuoteService.QuoteRange;
+
+    private async Task<string> TakeAsync(string name, string pattern, DateOnly date, CancellationToken ct)
     {
         var period = NumberPattern.PeriodKey(pattern, date);
         var now = DateTime.UtcNow;

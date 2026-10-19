@@ -180,7 +180,7 @@ public sealed class InvoicingModel(ConfigStore config, NumberService numbers, Ac
         NextInvoice = await numbers.PeekInvoiceNumberAsync(today);
         foreach (var r in Ranges)
         {
-            NextNumbers[r.NextKey] = NumberPattern.Problem(r.Pattern) is null ? NumberPattern.Format(r.Pattern.Trim(), today, Math.Max(1, r.Next)) : "–";
+            NextNumbers[r.NextKey] = NumberPattern.Problem(r.Pattern) is null ? await numbers.FirstFreeAsync(r.Range, r.Pattern.Trim(), today, Math.Max(1, r.Next)) : "–";
         }
     }
 }
