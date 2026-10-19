@@ -442,3 +442,10 @@ select.mb-multi { min-height: 7rem; padding-block: var(--mat-space-1); }
 .mb-lookup__end { font-variant-numeric: tabular-nums; white-space: nowrap; }
 [data-lookup-dialog].is-busy .mb-lookup__list { opacity: .6; transition: opacity var(--mat-dur-fast) var(--mat-ease); }
 [data-lookup-more][hidden] { display: none; }
+
+/* ---- Lists (TABLE-02, TABLE-04): a list becomes cards under 720 px and never scrolls sideways above it. A table that is wider than its frame
+   leaves out the columns the phone leaves out (mat-hide-sm), the last one first, until it fits (app.js marks their cells mb-col-off). ---- */
+.mat-table .mb-col-off { display: none; }
+/* The tooltip of a button at the end of a row opens towards the row: centred, it would stand out of the table and let it scroll sideways. */
+.mat-table__actions [data-tip]::after { left: auto; right: 0; transform: translateY(2px); }
+.mat-table__actions [data-tip]:hover::after, .mat-table__actions [data-tip]:focus-visible::after { transform: none; }

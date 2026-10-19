@@ -248,6 +248,18 @@ async function confirmDialog(page) {
     await shot(page, file);
   }
 
+  console.log('Lists fit');
+  for (const w of [1440, 1024, 820]) {
+    await page.setViewportSize({ width: w, height: 900 });
+    for (const url of ['/Invoices', '/Quotes', '/Recurring', '/Customers', '/Products', '/Expenses', '/Banking', '/Admin/Users']) {
+      await page.goto(base + url);
+      await page.waitForTimeout(200);
+      const sideways = await page.evaluate(() => Math.max(0, ...[...document.querySelectorAll('.mat-table-wrap')].map(t => t.scrollWidth - t.clientWidth)));
+      check(sideways === 0, url + ' does not scroll sideways at ' + w + ' px' + (sideways ? ' (' + sideways + ' px)' : ''));
+    }
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 });
+
   console.log('English');
   // My account › Language: the interface turns English, the documents (the paper of an invoice) stay German.
   const en = await browser.newContext({ viewport: { width: 1440, height: 1000 }, locale: 'de-DE', timezoneId: 'Europe/Berlin', storageState: await context.storageState() });
