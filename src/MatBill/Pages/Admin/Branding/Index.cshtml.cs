@@ -33,7 +33,8 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
 
     public string? LogoUrl => Brand.LogoUrl(config.Current.Company);
 
-    public DocumentViewModel Preview { get; private set; } = null!;
+    /// <summary>Changes with every save, so the browser loads the preview again after one.</summary>
+    public string PreviewVersion => System.Text.Json.JsonSerializer.Serialize(config.Current.Company).GetHashCode().ToString(System.Globalization.CultureInfo.InvariantCulture);
 
     public void OnGet()
     {
@@ -70,6 +71,34 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
         return RedirectToPage();
     }
 
+    /// <summary>
+    /// The first page of the sample invoice as the PDF draws it, as a PNG: the preview beside the forms of branding and company. An image scales as a whole,
+    /// where the paper in HTML would set its text anew in a narrow column. Layout, colour and greeting can be tried before they are saved.
+    /// </summary>
+    public async Task<IActionResult> OnGetPreviewAsync(string? layout, string? accent, string? signature)
+    {
+        var copy = System.Text.Json.JsonSerializer.Deserialize<AppConfig>(System.Text.Json.JsonSerializer.Serialize(config.Current))!;
+        if (layout is not null)
+        {
+            copy.Company.Layout = DocumentLayouts.Of(layout);
+        }
+
+        if (InvoicePdf.IsColour(accent))
+        {
+            copy.Company.AccentColor = accent!;
+        }
+
+        if (signature is not null)
+        {
+            copy.Company.Signature = string.IsNullOrWhiteSpace(signature) ? null : signature.Trim()[..Math.Min(40, signature.Trim().Length)];
+        }
+
+        var sample = SampleDocument.Of(copy, null);
+        var png = InvoicePdf.RenderImages(sample.Doc, sample.Company, await branding.GetLogoAsync(HttpContext.RequestAborted), dpi: 144).First();
+        Response.Headers.CacheControl = "private, no-store";
+        return File(png, "image/png");
+    }
+
     public async Task<IActionResult> OnPostRemoveLogoAsync()
     {
         branding.RemoveLogo();
@@ -82,6 +111,5 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
     {
         Head(L["Branding.Title"], L["Branding.Sub"], (L["Admin.Settings"], null), (L["Branding.Title"], null));
         ViewData["Width"] = "wide";
-        Preview = SampleDocument.Of(config.Current, LogoUrl);
     }
 }

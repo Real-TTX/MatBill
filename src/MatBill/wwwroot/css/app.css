@@ -441,7 +441,10 @@ select.mb-in { appearance: none; -webkit-appearance: none; cursor: pointer; text
 
 /* ---- Branding: the preview beside the form ---- */
 .mb-brand-preview { overflow: hidden; border: 1px solid var(--mat-border); border-radius: var(--mat-radius); background: var(--mat-bg-2); padding: var(--mat-space-3); }
-.mb-brand-preview .mb-paper { min-height: 0; zoom: .62; }
+/* the preview is the first page of the PDF as an image (Branding?handler=Preview): it scales as a whole */
+.mb-brand-preview img { display: block; width: 100%; height: auto; background: #fff; transition: opacity var(--mat-dur-fast) var(--mat-ease); }
+.mb-brand-preview img.is-loading { opacity: .55; }
+.mb-brand-preview a { display: block; cursor: zoom-in; }
 .mb-logo-current { display: flex; align-items: center; gap: var(--mat-space-4); flex-wrap: wrap; }
 .mb-logo-current img { max-height: 56px; max-width: 220px; padding: var(--mat-space-2); border: 1px solid var(--mat-border); border-radius: var(--mat-radius); background: var(--mat-surface); }
 .mb-swatch { width: 1.25rem; height: 1.25rem; border-radius: 50%; border: 1px solid var(--mat-border); }

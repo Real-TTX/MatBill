@@ -56,6 +56,13 @@ public sealed class CompanyTests : IClassFixture<AppFixture>
             Assert.Equal("Matthix · Matthias Schmoldt · Weg 1 · 12345 Stadt", Config.Current.Company.SenderLine);
 
             Assert.DoesNotContain(De("Dashboard.Setup.Title"), await AppFixture.TextAsync(client, "/"));
+
+            // the preview is the first page of the PDF as an image, also for a layout that is only being tried
+            var preview = await client.GetAsync("/Admin/Branding?handler=Preview&layout=centered&accent=%23b4235f&signature=Ciao");
+            Assert.Equal(HttpStatusCode.OK, preview.StatusCode);
+            Assert.Equal("image/png", preview.Content.Headers.ContentType?.MediaType);
+            Assert.True((await preview.Content.ReadAsByteArrayAsync()).Length > 10_000);
+            Assert.Equal(DocumentLayouts.Classic, DocumentLayouts.Of(Config.Current.Company.Layout));
             Assert.Contains(De("Company.TaxNumber.Missing"), await AppFixture.TextAsync(client, "/Admin/Company"));
         });
     }

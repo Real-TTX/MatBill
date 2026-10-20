@@ -31,7 +31,7 @@ Test changes by **rebuilding the container and redeploying the stack**. Wait for
   MailService, NumberService, InvoicePdf (QuestPDF), BrandingService, NotificationService, ShareService, DemoData, Backup/), `Data/` (MbDbContext, entities incl. `Finance.cs`, migrations),
   `UiKit/` + `Controls/` (shell, list, table, toolbar, pager, `mb-*` tag helpers), `wwwroot/` (app.css, app.js, sw.js, manifest, icons, `ui/` = MatUi).
 - The editor: `Pages/Shared/_DocumentEditor.cshtml` (+ `_DocumentLine`) is the editable paper for invoices, quotes and series templates (`DocumentEditorModel`, `EditorMode`);
-  `_DocumentView` is the read-only paper (issued invoices, share links, branding preview), drawn from `InvoiceDocument`, the same model as the PDF.
+  `_DocumentView` is the read-only paper (issued invoices, share links), drawn from `InvoiceDocument`, the same model as the PDF.
   The pickers never get all customers/products: `GET /api/customers` and `/api/products` (`Services/Lookup.cs`: every word in a field, paged) answer the suggestions
   and the detail search (`#mb-lookup`, a `mat-dialog--end`). The side column of the editor depends on the width of the editor (`@container`), not of the window.
 - Number ranges: `NumberService.CanContinueAtAsync` / `SetNextCounterAsync` set the next counter of the current period (forward always, back only over unused numbers).
@@ -73,7 +73,7 @@ Test changes by **rebuilding the container and redeploying the stack**. Wait for
 - Mobile: check 390 px; editor fields are 16 px on touch screens; safe areas come from MatUi tokens.
 - The accent is blue `#1d4ed8` (`[data-app="matbill"]` in `app.css`; theme-color metas follow `--mat-glass`). The document colour of a company is `CompanyConfig.AccentColor`.
 - **WYSIWYG:** the paper (`.mb-paper` in `app.css`, block "The paper is the PDF") uses the font (Lato, `wwwroot/fonts`, OFL) and the sizes (pt) and distances (mm) of `InvoicePdf`; change both together.
-  The head has three layouts (`CompanyConfig.Layout`, `DocumentLayouts`), drawn the same in `InvoicePdf.Head` and the `mb-doc__head--*` classes. `InvoicePdf.RenderImages` gives the pages as PNG for comparing.
+  The head has three layouts (`CompanyConfig.Layout`, `DocumentLayouts`), drawn the same in `InvoicePdf.Head` and the `mb-doc__head--*` classes. `InvoicePdf.RenderImages` gives the pages as PNG: the preview of branding and company is such an image (`/Admin/Branding?handler=Preview`, with layout/accent/signature to try), never the HTML paper squeezed into a column.
 - PWA: `sw.js` is registered as `/sw.js?v=<version>-<sprite hash>` (a build is a new worker). Static files cache-first, pages network-first with a kept copy marked
   `data-offline-copy`; never cached: POST, `/api`, `/Account`, `/s/`, PDFs. Logout and the sign-in page clear the kept pages.
 - Formatting: request culture invariant; text a person reads goes through `Fmt` (the UI language: de-DE or en-GB), documents through `DocFmt` (always de-DE).

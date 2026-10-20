@@ -23,7 +23,9 @@
   "Branding.Signature.Hint": { "en": "Appears at the bottom right, for example \"Danke!\". Empty: no greeting.", "de": "Steht unten rechts, zum Beispiel „Danke!“. Leer: kein Gruß." },
 
   "Branding.Preview": { "en": "Preview", "de": "Vorschau" },
-  "Branding.Preview.Sub": { "en": "saved state", "de": "gespeicherter Stand" },
+  "Branding.Preview.Sub": { "en": "the first page of the PDF", "de": "die erste Seite des PDF" },
+  "Branding.Preview.Alt": { "en": "A sample invoice as the PDF shows it", "de": "Eine Musterrechnung, wie das PDF sie zeigt" },
+  "Branding.Preview.Open": { "en": "Open the preview at full size", "de": "Vorschau in voller Größe öffnen" },
   "Branding.ToCompany": { "en": "Sender, tax and bank: Company", "de": "Absender, Steuer und Bank: Unternehmen" },
 
   "Branding.Saved": { "en": "Saved. New invoices look like this; issued ones stay as they are.", "de": "Gespeichert. Neue Rechnungen sehen so aus, ausgestellte bleiben, wie sie sind." },

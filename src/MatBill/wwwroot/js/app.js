@@ -785,13 +785,32 @@
 
   // ================================================================================================ the layout of the head
 
-  // The branding page shows a layout in its preview as soon as it is chosen, before it is saved.
-  $$('input[name="Input.Layout"]').forEach(function (radio) {
-    radio.addEventListener('change', function () {
-      var head = $('[data-layout-preview] .mb-doc__head');
-      if (head && radio.checked) { head.className = head.className.replace(/mb-doc__head--[a-z]+/, 'mb-doc__head--' + radio.value); }
+  // The preview is the first page of the PDF as an image. On the branding page it follows the layout, the colour and the greeting before they are saved.
+  var previewImg = $('[data-preview-img]');
+  var layoutRadios = $$('input[name="Input.Layout"]');
+  if (previewImg && layoutRadios.length) {
+    var previewTimer = null;
+    var refreshPreview = function () {
+      clearTimeout(previewTimer);
+      previewTimer = setTimeout(function () {
+        var chosen = layoutRadios.filter(function (r) { return r.checked; })[0];
+        var accent = $('#Input_AccentColor');
+        var signature = $('#Input_Signature');
+        var query = new URLSearchParams({ handler: 'Preview', layout: chosen ? chosen.value : '', accent: accent ? accent.value : '', signature: signature ? signature.value : '', v: String(Date.now()) });
+        previewImg.classList.add('is-loading');
+        previewImg.src = '/Admin/Branding?' + query.toString();
+        var link = previewImg.closest('[data-preview-link]');
+        if (link) { link.href = previewImg.src; }
+      }, 350);
+    };
+    previewImg.addEventListener('load', function () { previewImg.classList.remove('is-loading'); });
+    previewImg.addEventListener('error', function () { previewImg.classList.remove('is-loading'); });
+    layoutRadios.forEach(function (r) { r.addEventListener('change', refreshPreview); });
+    ['#Input_AccentColor', '#Input_Signature'].forEach(function (sel) {
+      var el = $(sel);
+      if (el) { el.addEventListener('input', refreshPreview); el.addEventListener('change', refreshPreview); }
     });
-  });
+  }
 
   // ================================================================================================ lists that fit
 

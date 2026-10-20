@@ -81,7 +81,8 @@ public sealed class IndexModel(ConfigStore config, ActivityLogger log) : PageMod
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
-    public DocumentViewModel Preview { get; private set; } = null!;
+    /// <summary>Changes with every save, so the browser loads the preview again after one.</summary>
+    public string PreviewVersion => System.Text.Json.JsonSerializer.Serialize(config.Current.Company).GetHashCode().ToString(System.Globalization.CultureInfo.InvariantCulture);
 
     /// <summary>Neither tax number nor VAT id: allowed (a new business may not have one yet), but an invoice over 250 euros needs one (§ 14 (4) UStG).</summary>
     public bool MissingTaxNumber => string.IsNullOrWhiteSpace(config.Current.Company.TaxNumber) && string.IsNullOrWhiteSpace(config.Current.Company.VatId);
@@ -135,6 +136,5 @@ public sealed class IndexModel(ConfigStore config, ActivityLogger log) : PageMod
     {
         Head(L["Company.Title"], L["Company.Sub"], (L["Admin.Settings"], null), (L["Company.Title"], null));
         ViewData["Width"] = "wide";
-        Preview = SampleDocument.Of(config.Current, Brand.LogoUrl(config.Current.Company));
     }
 }

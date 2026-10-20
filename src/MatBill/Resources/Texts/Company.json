@@ -30,7 +30,7 @@
   "Company.BankName": { "en": "Bank", "de": "Bank" },
 
   "Company.Preview": { "en": "Preview", "de": "Vorschau" },
-  "Company.Preview.Sub": { "en": "saved state", "de": "gespeicherter Stand" },
+  "Company.Preview.Sub": { "en": "the first page of the PDF", "de": "die erste Seite des PDF" },
   "Company.ToBranding": { "en": "Logo, colour and greeting: Branding", "de": "Logo, Farbe und Gruß: Branding" },
 
   "Company.Saved": { "en": "Saved. New invoices show it; issued ones stay as they are.", "de": "Gespeichert. Neue Rechnungen zeigen es, ausgestellte bleiben, wie sie sind." },
