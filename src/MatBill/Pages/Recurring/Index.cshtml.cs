@@ -34,7 +34,6 @@ public sealed class IndexModel(MbDbContext db, ConfigStore config, TimeProvider 
     {
         Head(L["Recurring.Title"], L["Recurring.Sub"], (L["Recurring.Crumb"], null));
         var exempt = config.Current.Company.SmallBusiness;
-        var customers = await db.Customer.AsNoTracking().OrderBy(c => c.Name).Select(c => new { c.Id, c.Name }).Take(500).ToListAsync();
 
         var spec = new ListSpec<RecurringInvoice>
         {
@@ -61,7 +60,7 @@ public sealed class IndexModel(MbDbContext db, ConfigStore config, TimeProvider 
                     _ => q.Where(s => s.LastError != null && s.Status == RecurringStatus.Active),
                 }),
                 new FilterSpec<RecurringInvoice>("interval", L["Recurring.Field.Interval"], ListBuilder.EnumOptions<RecurrenceInterval>(Labels.Of), (q, v) => q.Where(s => s.Interval == Enum.Parse<RecurrenceInterval>(v))),
-                new FilterSpec<RecurringInvoice>("customer", L["Invoices.Customer"], [.. customers.Select(c => new FilterOption(c.Id.ToString(), c.Name))], (q, v) => long.TryParse(v, out var id) ? q.Where(s => s.CustomerId == id) : q),
+                new FilterSpec<RecurringInvoice>("customer", L["Invoices.Customer"], [], (q, v) => long.TryParse(v, out var id) ? q.Where(s => s.CustomerId == id) : q, Search: "customers", Resolve: Lookup.CustomerName(db)),
             ],
             Sorts = new Dictionary<string, (string, Func<IQueryable<RecurringInvoice>, bool, IOrderedQueryable<RecurringInvoice>>)>
             {

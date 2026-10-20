@@ -5,8 +5,8 @@ namespace MatBill.UiKit;
 
 public sealed record FilterOption(string Value, string Label);
 
-/// <summary>One filter of the filter dialog: a select with an "All" option.</summary>
-public sealed record FilterField(string Name, string Label, IReadOnlyList<FilterOption> Options, string? Selected);
+/// <summary>A filter as the toolbar draws it; <see cref="Search"/>: a field that asks the server (see <see cref="FilterSpec{T}"/>), <see cref="SelectedLabel"/> the name of the chosen value.</summary>
+public sealed record FilterField(string Name, string Label, IReadOnlyList<FilterOption> Options, string? Selected, string? Search = null, string? SelectedLabel = null);
 
 public sealed record SortOption(string Value, string Label);
 

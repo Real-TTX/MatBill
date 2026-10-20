@@ -12,6 +12,7 @@
   "Lists.Toolbar.RemoveFilter": { "en": "Remove filter {0}", "de": "Filter {0} entfernen" },
   "Lists.Toolbar.KeepHint": { "en": "The search and the sort order are kept.", "de": "Die Suche und die Sortierung bleiben erhalten." },
   "Lists.Toolbar.Apply": { "en": "Apply", "de": "Anwenden" },
+  "Lists.Toolbar.SearchAll": { "en": "All (type to search)", "de": "Alle (tippen zum Suchen)" },
   "Lists.Toolbar.ResetAll": { "en": "Reset all", "de": "Alles zurücksetzen" },
   "Lists.Toolbar.SortBy": { "en": "Sort by", "de": "Sortieren nach" },
   "Lists.Toolbar.Order": { "en": "Order", "de": "Reihenfolge" },

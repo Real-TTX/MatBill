@@ -45,7 +45,7 @@
         }
         @foreach (var f in Model.Filters.Where(f => !string.IsNullOrEmpty(f.Selected)))
         {
-            <span class="mat-chip">@f.Label: @(f.Options.FirstOrDefault(o => o.Value == f.Selected)?.Label ?? f.Selected)<a class="mat-chip__x" href="@Model.UrlWithout(f.Name)" aria-label="@L["Lists.Toolbar.RemoveFilter", f.Label]">@Ui.Icon("x")</a></span>
+            <span class="mat-chip">@f.Label: @(f.SelectedLabel ?? f.Options.FirstOrDefault(o => o.Value == f.Selected)?.Label ?? f.Selected)<a class="mat-chip__x" href="@Model.UrlWithout(f.Name)" aria-label="@L["Lists.Toolbar.RemoveFilter", f.Label]">@Ui.Icon("x")</a></span>
         }
     </div>
 }
@@ -71,7 +71,17 @@
                 {
                     <div class="mat-field">
                         <label class="mat-label" for="@id-f-@f.Name">@f.Label</label>
-                        @if (f.Options.Count > 8)
+                        @if (f.Search is not null)
+                        {
+                            @* data that grows (customers): a field that asks the server while one types; the hidden input carries the chosen id *@
+                            <div class="mb-remote" data-remote-select="@f.Search">
+                                <input type="hidden" name="@f.Name" form="@form" value="@f.Selected" data-remote-value />
+                                <div class="mb-combo">
+                                    <input class="mat-input" id="@id-f-@f.Name" type="search" value="@f.SelectedLabel" placeholder="@L["Lists.Toolbar.SearchAll"]" autocomplete="off" data-remote-text />
+                                </div>
+                            </div>
+                        }
+                        else if (f.Options.Count > 8)
                         {
                             @* many options (customers): a select with a search field in its panel *@
                             <div class="mat-picker" data-picker="select" data-search data-placeholder="@L["Common.All"]">

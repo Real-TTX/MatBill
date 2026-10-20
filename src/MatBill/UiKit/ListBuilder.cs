@@ -2,8 +2,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MatBill.UiKit;
 
-/// <summary>One filter of a list: its options and what it does to the query.</summary>
-public sealed record FilterSpec<T>(string Name, string Label, IReadOnlyList<FilterOption> Options, Func<IQueryable<T>, string, IQueryable<T>> Apply);
+/// <summary>
+/// One filter of a list: its options and what it does to the query. A filter over data that grows (customers) has no options: <paramref name="Search"/> names what
+/// its field asks while one types ("customers": /api/customers), and <paramref name="Resolve"/> gives the name of a chosen value (null: no such value), so a
+/// page never carries all of them.
+/// </summary>
+public sealed record FilterSpec<T>(string Name, string Label, IReadOnlyList<FilterOption> Options, Func<IQueryable<T>, string, IQueryable<T>> Apply,
+    string? Search = null, Func<string, Task<string?>>? Resolve = null);
 
 /// <summary>What a list page says about its list; <see cref="ListBuilder.RunAsync"/> turns it into the toolbar, the pager and the rows of the page.</summary>
 public sealed class ListSpec<T>
@@ -54,13 +59,21 @@ public static class ListBuilder
         }
 
         var selected = new Dictionary<string, string?>();
+        var labels = new Dictionary<string, string>();
         foreach (var filter in spec.Filters)
         {
             var value = ListQuery.Text(request, filter.Name);
-            if (value is not null && filter.Options.Any(o => o.Value == value))
+            if (value is null)
+            {
+                continue;
+            }
+
+            var known = filter.Resolve is { } resolve ? await resolve(value) : filter.Options.FirstOrDefault(o => o.Value == value)?.Label;
+            if (known is not null)
             {
                 query = filter.Apply(query, value);
                 selected[filter.Name] = value;
+                labels[filter.Name] = known;
             }
         }
 
@@ -88,7 +101,7 @@ public static class ListBuilder
             Noun = spec.Noun,
             Search = search,
             SearchPlaceholder = spec.SearchPlaceholder,
-            Filters = [.. spec.Filters.Select(f => new FilterField(f.Name, f.Label, f.Options, selected.GetValueOrDefault(f.Name)))],
+            Filters = [.. spec.Filters.Select(f => new FilterField(f.Name, f.Label, f.Options, selected.GetValueOrDefault(f.Name), f.Search, labels.GetValueOrDefault(f.Name)))],
             SortOptions = [.. spec.Sorts.Select(s => new SortOption(s.Key, s.Value.Label))],
             Sort = sort,
             Descending = descending,

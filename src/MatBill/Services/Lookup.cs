@@ -64,6 +64,10 @@ public static class Lookup
         return new LookupPage<ProductJson>([.. items.Select(ProductJson.Of)], total);
     }
 
+    /// <summary>The name of a customer by its id as a list filter shows it (null: no such customer), for a customer filter that searches (<see cref="UiKit.FilterSpec{T}"/>).</summary>
+    public static Func<string, Task<string?>> CustomerName(MbDbContext db)
+        => async value => long.TryParse(value, out var id) ? await db.Customer.AsNoTracking().Where(c => c.Id == id).Select(c => c.Name).FirstOrDefaultAsync() : null;
+
     private static string[] Words(string? query)
         => (query ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Take(6).ToArray();
 

@@ -315,6 +315,8 @@ select.mb-in { appearance: none; -webkit-appearance: none; cursor: pointer; text
   font-family: var(--mat-font); font-size: 14px; line-height: 1.4; text-align: left; font-weight: 400;
 }
 .mb-combo__list[hidden] { display: none; }
+/* in a dialog (the filter of a list) the suggestions are as wide as the field: the dialog never scrolls sideways */
+.mat-dialog .mb-combo__list { width: 100%; max-width: none; }
 .mb-combo__option { display: flex; align-items: flex-start; gap: var(--mat-space-3); padding: var(--mat-space-2) var(--mat-space-3); border-radius: var(--mat-radius-sm); cursor: pointer; min-height: 40px; }
 .mb-combo__option .mat-icon { flex: none; margin-top: 3px; color: var(--mat-text-faint); }
 .mb-combo__option.is-active, .mb-combo__option:hover { background: var(--mat-accent-soft); }

@@ -33,7 +33,6 @@ public sealed class IndexModel(MbDbContext db, TimeProvider clock) : PageModelBa
         Head(L["Invoices.Title"], L["Invoices.Sub"], (L["Invoices.Title"], null));
         var today = Fmt.Today(clock);
         var years = await db.Invoice.Select(i => i.InvoiceDate.Year).Distinct().OrderByDescending(y => y).ToListAsync();
-        var customers = await db.Customer.AsNoTracking().OrderBy(c => c.Name).Select(c => new { c.Id, c.Name }).Take(500).ToListAsync();
 
         var spec = new ListSpec<Invoice>
         {
@@ -64,7 +63,7 @@ public sealed class IndexModel(MbDbContext db, TimeProvider clock) : PageModelBa
                     _ => q.Where(i => i.Status == InvoiceStatus.Cancelled),
                 }),
                 new FilterSpec<Invoice>("year", L["Invoices.Filter.Year"], [.. years.Select(y => new FilterOption(y.ToString(), y.ToString()))], (q, v) => int.TryParse(v, out var y) ? q.Where(i => i.InvoiceDate.Year == y) : q),
-                new FilterSpec<Invoice>("customer", L["Invoices.Customer"], [.. customers.Select(c => new FilterOption(c.Id.ToString(), c.Name))], (q, v) => long.TryParse(v, out var id) ? q.Where(i => i.CustomerId == id) : q),
+                new FilterSpec<Invoice>("customer", L["Invoices.Customer"], [], (q, v) => long.TryParse(v, out var id) ? q.Where(i => i.CustomerId == id) : q, Search: "customers", Resolve: Lookup.CustomerName(db)),
                 new FilterSpec<Invoice>("origin", L["Invoices.Filter.Origin"], [new("series", L["Invoices.Origin.Series"]), new("single", L["Invoices.Origin.Single"])],
                     (q, v) => v == "series" ? q.Where(i => i.RecurringInvoiceId != null) : q.Where(i => i.RecurringInvoiceId == null)),
             ],

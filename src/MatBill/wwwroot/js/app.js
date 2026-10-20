@@ -888,6 +888,25 @@
     tableWraps.forEach(function (wrap) { fitting.observe(wrap); });
   }
 
+  // ================================================================================================ filters that search
+
+  // A filter over data that grows (customers) is a field with suggestions from the server (/api/customers), never a select with all of them:
+  // the hidden input carries the chosen id; typing clears it, so an emptied field means "all".
+  $$('[data-remote-select]').forEach(function (box) {
+    var kind = box.getAttribute('data-remote-select');
+    var text = $('[data-remote-text]', box);
+    var value = $('[data-remote-value]', box);
+    if (!text || !value) { return; }
+    combo(text, {
+      source: function (q) {
+        return lookup(kind, { q: q, take: 12 }).then(function (page) { return page.items.map(kind === 'products' ? productItem : customerItem); });
+      },
+      onSelect: function (item) { value.value = item.data.id; text.value = item.data.name; },
+      onType: function () { value.value = ''; }
+    });
+    text.addEventListener('search', function () { if (!text.value) { value.value = ''; } });
+  });
+
   // ================================================================================================ uploads
 
   // Receipts that are dropped (or chosen, or pasted) on a drop zone with data-upload-autosubmit go up at once.

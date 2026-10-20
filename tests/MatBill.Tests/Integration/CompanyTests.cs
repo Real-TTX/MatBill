@@ -119,6 +119,13 @@ public sealed class CompanyTests : IClassFixture<AppFixture>
         using var client = _app.NewClient();
         await AppFixture.LoginAsync(client, "admin@example.com", "Start12345");
 
+        // the customer filter of the list carries no list of customers: a field that searches, the chosen one named in its chip
+        var filtered = await AppFixture.TextAsync(client, $"/Invoices?customer={customer.Id}");
+        Assert.Contains("data-remote-select=\"customers\"", filtered);
+        Assert.Contains($"value=\"{customer.Id}\" data-remote-value", filtered);
+        Assert.Contains($": {customer.Name}", filtered);
+        Assert.DoesNotContain("<option value=\"" + customer.Id + "\"", filtered);
+
         var link = $"/Customers/Edit?id={customer.Id}&tab=invoices";
         Assert.Contains(link, await AppFixture.TextAsync(client, "/Invoices?q=Tablink"));
         Assert.Contains(link, await AppFixture.TextAsync(client, $"/Invoices/Edit?id={invoice.Id}"));
