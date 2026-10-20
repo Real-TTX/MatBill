@@ -298,6 +298,12 @@ select.mb-in { appearance: none; -webkit-appearance: none; cursor: pointer; text
 .mb-editor[data-view="document"] .mb-doc .mat-picker__trigger { min-height: 0; padding-block: 0; line-height: inherit; }
 /* "An" names the recipient for screen readers; the paper (the PDF) does not print it. */
 .mb-editor[data-view="document"] .mb-doc__to { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); }
+/* From 900 px on the paper keeps the A4 width of the PDF and is made smaller as a whole where there is less room, instead of setting its text anew
+   (app.js writes --mb-paper-zoom). What opens over the paper (suggestions, the menu of a position, the date picker) keeps its own size: it undoes the zoom. */
+@media (min-width: 900px) {
+  .mb-editor:not([data-view="form"]) .mb-paper, .mb-paper--view { width: 210mm; max-width: none; zoom: var(--mb-paper-zoom, 1); }
+  .mb-paper :is(.mb-combo__list, .mb-line__menu, .mat-picker__panel) { zoom: calc(1 / var(--mb-paper-zoom, 1)); }
+}
 
 /* ---- the suggestions under a field (customers, products) ---- */
 .mb-combo { position: relative; }

@@ -812,6 +812,27 @@
     });
   }
 
+  // ================================================================================================ the paper keeps its A4 width
+
+  // From 900 px on, the paper is as wide as an A4 page (210 mm) and made smaller as a whole when its column is narrower: the same picture as the PDF,
+  // never the text set anew. Under 900 px (a phone) the paper has a layout of its own and is not zoomed. The CSS reads --mb-paper-zoom.
+  var a4 = 210 * 96 / 25.4;
+  var widePaper = window.matchMedia('(min-width: 900px)');
+  function fitPaper(paper) {
+    var host = paper.parentElement;
+    var zoom = widePaper.matches && host ? Math.min(1, host.clientWidth / a4) : 1;
+    paper.style.setProperty('--mb-paper-zoom', zoom.toFixed(4));
+  }
+  var papers = $$('.mb-paper');
+  if (papers.length) {
+    papers.forEach(fitPaper);
+    if (window.ResizeObserver) {
+      var paperObserver = new ResizeObserver(function () { papers.forEach(fitPaper); });
+      papers.forEach(function (paper) { if (paper.parentElement) { paperObserver.observe(paper.parentElement); } });
+    }
+    if (widePaper.addEventListener) { widePaper.addEventListener('change', function () { papers.forEach(fitPaper); }); }
+  }
+
   // ================================================================================================ lists that fit
 
   // A list never scrolls sideways (TABLE-02): when a table is wider than its frame, the columns the phone leaves out (mat-hide-sm) go, the last one

@@ -33,7 +33,7 @@ Test changes by **rebuilding the container and redeploying the stack**. Wait for
 - The editor: `Pages/Shared/_DocumentEditor.cshtml` (+ `_DocumentLine`) is the editable paper for invoices, quotes and series templates (`DocumentEditorModel`, `EditorMode`);
   `_DocumentView` is the read-only paper (issued invoices, share links), drawn from `InvoiceDocument`, the same model as the PDF.
   The pickers never get all customers/products: `GET /api/customers` and `/api/products` (`Services/Lookup.cs`: every word in a field, paged) answer the suggestions
-  and the detail search (`#mb-lookup`, a `mat-dialog--end`). The side column of the editor depends on the width of the editor (`@container`), not of the window.
+  and the detail search (`#mb-lookup`, a `mat-dialog--end`). The side column of the editor depends on the width of the editor (`@container`), not of the window. From 900 px the paper keeps 210 mm and is zoomed as a whole (`--mb-paper-zoom` from `app.js`); what opens over it undoes the zoom.
 - Number ranges: `NumberService.CanContinueAtAsync` / `SetNextCounterAsync` set the next counter of the current period (forward always, back only over unused numbers).
 - `tests/MatBill.Tests` (Core unit tests, Integration against PostgreSQL), `tests/e2e/flow.js` (Playwright).
 

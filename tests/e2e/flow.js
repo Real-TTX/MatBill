@@ -151,8 +151,11 @@ async function confirmDialog(page) {
   check((await page.locator('[data-line] [data-field="UnitPrice"]').first().inputValue()) !== '', 'a product from the dialog fills the position');
   for (const w of [1440, 1280, 1024]) {
     await page.setViewportSize({ width: w, height: 900 });
+    await page.waitForTimeout(250);
     const sideways = await page.evaluate(() => { const m = document.querySelector('.mat-main'); m.scrollLeft = 40; const s = m.scrollLeft; m.scrollLeft = 0; return s; });
     check(sideways === 0, 'the editor does not move sideways at ' + w + ' px');
+    const paper = await page.evaluate(() => { const p = document.querySelector('.mb-paper'); return { layout: getComputedStyle(p).width, visual: Math.round(p.getBoundingClientRect().width), host: p.parentElement.clientWidth }; });
+    check(paper.layout.startsWith('793') && paper.visual <= paper.host + 1, 'the paper keeps its A4 width and is made smaller at ' + w + ' px (' + paper.visual + ' of ' + paper.host + ' px)');
   }
   await page.setViewportSize({ width: 1440, height: 1000 });
 
