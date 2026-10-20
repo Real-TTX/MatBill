@@ -12,10 +12,14 @@
   "Branding.Logo.Hint": { "en": "SVG, PNG or JPEG, at most 2 MB. Ideally a wide logo on a transparent background.", "de": "SVG, PNG oder JPEG, höchstens 2 MB. Am besten ein breites Logo auf transparentem Grund." },
 
   "Branding.Design": { "en": "Design", "de": "Gestaltung" },
+  "Branding.Layout": { "en": "Layout of the head", "de": "Aufbau des Kopfs" },
+  "Branding.Layout.classic": { "en": "Logo left, sender right", "de": "Logo links, Absender rechts" },
+  "Branding.Layout.centered": { "en": "Logo centred, sender below in one line", "de": "Logo mittig, Absender darunter in einer Zeile" },
+  "Branding.Layout.right": { "en": "Sender left, logo right", "de": "Absender links, Logo rechts" },
   "Branding.Accent": { "en": "Document colour", "de": "Farbe des Dokuments" },
   "Branding.Accent.Hint": { "en": "For the total, the line in the footer and the greeting.", "de": "Für den Gesamtbetrag, die Linie im Fuß und den Gruß." },
   "Branding.Accent.Invalid": { "en": "A colour like #1d4ed8.", "de": "Eine Farbe wie #1d4ed8." },
-  "Branding.Signature": { "en": "Handwritten greeting", "de": "Gruß in Handschrift" },
+  "Branding.Signature": { "en": "Greeting", "de": "Gruß" },
   "Branding.Signature.Hint": { "en": "Appears at the bottom right, for example \"Danke!\". Empty: no greeting.", "de": "Steht unten rechts, zum Beispiel „Danke!“. Leer: kein Gruß." },
 
   "Branding.Preview": { "en": "Preview", "de": "Vorschau" },

@@ -20,6 +20,9 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
         [StringLength(40)]
         [Display(Name = "Branding.Signature")]
         public string? Signature { get; set; }
+
+        [Display(Name = "Branding.Layout")]
+        public string Layout { get; set; } = DocumentLayouts.Classic;
     }
 
     [BindProperty]
@@ -35,7 +38,7 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
     public void OnGet()
     {
         var c = config.Current.Company;
-        Input = new InputModel { AccentColor = c.AccentColor, Signature = c.Signature };
+        Input = new InputModel { AccentColor = c.AccentColor, Signature = c.Signature, Layout = DocumentLayouts.Of(c.Layout) };
         Prepare();
     }
 
@@ -60,6 +63,7 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
         {
             c.Company.AccentColor = Input.AccentColor.ToLowerInvariant();
             c.Company.Signature = string.IsNullOrWhiteSpace(Input.Signature) ? null : Input.Signature.Trim();
+            c.Company.Layout = DocumentLayouts.Of(Input.Layout);
         });
         await log.LogAsync(L["Branding.Log.Changed"], "Company");
         Flash(L["Branding.Saved"]);

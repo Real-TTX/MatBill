@@ -1,5 +1,6 @@
 using System.Globalization;
 using MatBill.Configuration;
+using MatBill.Core.Billing;
 using MatBill.Data;
 using MatBill.Data.Entities;
 using MatBill.Localization;
@@ -303,6 +304,37 @@ app.MapGet("/api/products", async (HttpContext http, MbDbContext db) =>
     var r = http.Request.Query;
     var kind = Enum.TryParse<ProductKind>(r["kind"].ToString(), ignoreCase: true, out var k) ? k : (ProductKind?)null;
     return Results.Ok(await Lookup.ProductsAsync(db, r["q"], kind, IntOf(r["skip"], 0), IntOf(r["take"], 8), http.RequestAborted));
+});
+
+// A position of the editor becomes a product (the picker of a position, or "Save as product" in its menu): name, description, unit, price and tax rate as typed.
+app.MapPost("/api/products", async (HttpContext http, IAntiforgery antiforgery, MbDbContext db, ConfigStore config, ActivityLogger log) =>
+{
+    await antiforgery.ValidateRequestAsync(http);
+    var form = http.Request.Form;
+    var name = form["name"].ToString().Trim();
+    if (name.Length is 0 or > 200)
+    {
+        return Results.BadRequest(new { error = Text.T("Products.Name.Required") });
+    }
+
+    if (await db.Product.AnyAsync(p => p.IsActive && p.Name.ToLower() == name.ToLower()))
+    {
+        return Results.BadRequest(new { error = Text.T("Products.Exists", name) });
+    }
+
+    static string? Clean(string value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    var product = new Product
+    {
+        Name = name,
+        Description = Clean(form["description"].ToString()),
+        Unit = Clean(form["unit"].ToString()),
+        UnitPrice = Amount.TryParse(form["unitPrice"].ToString(), out var price) ? Math.Round(price, 4) : 0m,
+        TaxRate = Amount.TryParse(form["taxRate"].ToString(), out var rate) && rate is >= 0 and <= 100 ? rate : config.Current.Invoicing.DefaultTaxRate,
+    };
+    db.Product.Add(product);
+    await db.SaveChangesAsync();
+    await log.LogAsync(Text.T("Products.Log.Created"), nameof(Product), product.Id, product.Name);
+    return Results.Ok(new { product = ProductJson.Of(product) });
 });
 
 app.MapGet("/api/customers/{id:long}", async (long id, MbDbContext db) =>

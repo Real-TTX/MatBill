@@ -23,6 +23,13 @@ public static class InvoicePdf
 
     /// <summary>The PDF; with <paramref name="pdfA"/> it is PDF/A-3b, the archive format that a ZUGFeRD e-invoice is made of (<see cref="EInvoice"/> adds the XML).</summary>
     public static byte[] Render(InvoiceDocument doc, CompanyConfig company, LogoImage? logo, bool pdfA = false)
+        => Build(doc, company, logo, pdfA).GeneratePdf();
+
+    /// <summary>The pages as PNG images (<paramref name="dpi"/> 96: an A4 page is 794 pixels wide, the width of the paper in the editor).</summary>
+    public static IEnumerable<byte[]> RenderImages(InvoiceDocument doc, CompanyConfig company, LogoImage? logo, int dpi = 96)
+        => Build(doc, company, logo, false).GenerateImages(new ImageGenerationSettings { ImageFormat = ImageFormat.Png, RasterDpi = dpi });
+
+    private static IDocument Build(InvoiceDocument doc, CompanyConfig company, LogoImage? logo, bool pdfA)
     {
         var accent = IsColour(company.AccentColor) ? company.AccentColor : "#1d4ed8";
         return Document.Create(container => container.Page(page =>
@@ -36,7 +43,8 @@ public static class InvoicePdf
 
             if (doc.Stamp is { } stamp)
             {
-                page.Foreground().AlignCenter().AlignMiddle().Rotate(-30).Text(stamp).FontSize(84).Bold().FontColor("#eef0f4");
+                // behind the content, never over it: the text stays readable, and the stamp is as light as on the paper in the editor
+                page.Background().AlignCenter().AlignMiddle().Rotate(-30).Text(stamp).FontSize(64).Bold().FontColor("#f1f2f5");
             }
 
             page.Content().Column(col =>
@@ -82,44 +90,95 @@ public static class InvoicePdf
             page.Footer().Element(c => Footer(c, company, accent));
         }))
         .WithMetadata(new DocumentMetadata { Title = $"{doc.Title} {doc.Number}".Trim(), Author = company.Name, Subject = doc.Title, Creator = "MatBill", Language = "de-DE" })
-        .WithSettings(pdfA ? new DocumentSettings { PDFA_Conformance = PDFA_Conformance.PDFA_3B } : new DocumentSettings())
-        .GeneratePdf();
+        .WithSettings(pdfA ? new DocumentSettings { PDFA_Conformance = PDFA_Conformance.PDFA_3B } : new DocumentSettings());
     }
 
+    /// <summary>The head in the layout of the company (<see cref="DocumentLayouts"/>); _DocumentView and _DocumentEditor draw the same.</summary>
     private static void Head(IContainer container, CompanyConfig company, LogoImage? logo)
-        => container.Row(row =>
+    {
+        var lines = new[] { company.NameLine2, company.Street, Join(" ", company.PostalCode, company.City), company.Email, company.Phone, company.Website }
+            .Where(l => !string.IsNullOrWhiteSpace(l)).Select(l => l!).ToList();
+        switch (DocumentLayouts.Of(company.Layout))
         {
-            row.RelativeItem().AlignLeft().AlignTop().Element(c =>
-            {
-                if (logo is not null)
+            case DocumentLayouts.Centered:
+                // the logo in the middle, the sender in one line under it
+                container.Column(col =>
                 {
-                    var box = c.Height(16, Unit.Millimetre).MaxWidth(70, Unit.Millimetre).AlignLeft();
-                    if (logo.IsSvg)
+                    col.Item().AlignCenter().Element(c => Logo(c, company, logo, center: true));
+                    col.Item().PaddingTop(3, Unit.Millimetre).AlignCenter().Text(t =>
                     {
-                        box.Svg(Encoding.UTF8.GetString(logo.Bytes)).FitArea();
-                    }
-                    else
-                    {
-                        box.Image(logo.Bytes).FitArea();
-                    }
-                }
-                else
-                {
-                    c.Text(string.IsNullOrWhiteSpace(company.Name) ? " " : company.Name).FontSize(22).Bold();
-                }
-            });
+                        t.AlignCenter();
+                        t.Span(company.Name).SemiBold().FontSize(8.5f);
+                        foreach (var line in lines)
+                        {
+                            t.Span(" · " + line).FontColor("#374151").FontSize(8.5f);
+                        }
+                    });
+                });
+                break;
 
-            row.ConstantItem(62, Unit.Millimetre).AlignRight().Column(col =>
-            {
-                col.Item().AlignRight().Text(company.Name).SemiBold();
-                foreach (var line in new[] { company.NameLine2, company.Street, Join(" ", company.PostalCode, company.City), company.Email, company.Phone, company.Website })
+            case DocumentLayouts.Right:
+                container.Row(row =>
                 {
-                    if (!string.IsNullOrWhiteSpace(line))
-                    {
-                        col.Item().AlignRight().Text(line).FontColor("#374151");
-                    }
-                }
-            });
+                    row.ConstantItem(62, Unit.Millimetre).Element(c => Sender(c, company, lines, right: false));
+                    row.RelativeItem().AlignRight().AlignTop().Element(c => Logo(c, company, logo, center: false, right: true));
+                });
+                break;
+
+            default:
+                container.Row(row =>
+                {
+                    row.RelativeItem().AlignLeft().AlignTop().Element(c => Logo(c, company, logo, center: false));
+                    row.ConstantItem(62, Unit.Millimetre).Element(c => Sender(c, company, lines, right: true));
+                });
+                break;
+        }
+    }
+
+    private static void Logo(IContainer c, CompanyConfig company, LogoImage? logo, bool center, bool right = false)
+    {
+        if (logo is null)
+        {
+            var text = c.Text(string.IsNullOrWhiteSpace(company.Name) ? " " : company.Name);
+            text.FontSize(22).Bold();
+            if (center)
+            {
+                text.AlignCenter();
+            }
+            else if (right)
+            {
+                text.AlignRight();
+            }
+
+            return;
+        }
+
+        var box = c.Height(16, Unit.Millimetre).MaxWidth(70, Unit.Millimetre);
+        box = center ? box.AlignCenter() : right ? box.AlignRight() : box.AlignLeft();
+        if (logo.IsSvg)
+        {
+            box.Svg(Encoding.UTF8.GetString(logo.Bytes)).FitArea();
+        }
+        else
+        {
+            box.Image(logo.Bytes).FitArea();
+        }
+    }
+
+    private static void Sender(IContainer c, CompanyConfig company, List<string> lines, bool right)
+        => c.Column(col =>
+        {
+            var name = col.Item().Text(company.Name).SemiBold();
+            foreach (var line in lines)
+            {
+                var item = col.Item();
+                (right ? item.AlignRight() : item.AlignLeft()).Text(line).FontColor("#374151");
+            }
+
+            if (right)
+            {
+                name.AlignRight();
+            }
         });
 
     private static void AddressAndFacts(IContainer container, InvoiceDocument doc, CompanyConfig company)

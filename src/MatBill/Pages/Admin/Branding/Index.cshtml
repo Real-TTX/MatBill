@@ -1,5 +1,8 @@
 @page
 @model MatBill.Pages.Admin.Branding.IndexModel
+@{
+    var layouts = MatBill.Configuration.DocumentLayouts.All.Select(l => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem(L["Branding.Layout." + l].Value, l)).ToList();
+}
 
 <div class="mb-split">
     <form class="mat-form" method="post" enctype="multipart/form-data" novalidate>
@@ -26,6 +29,7 @@
 
         <mb-card title="@L["Branding.Design"]" icon="palette">
             <div class="mat-form__grid">
+                <mb-radios for="Input.Layout" label="@L["Branding.Layout"]" items="layouts" full="true" />
                 <div class="mat-field">
                     <label class="mat-label" for="Input_AccentColor">@L["Branding.Accent"]</label>
                     <div class="mat-picker" data-picker="colour"><input class="mat-picker__input" id="Input_AccentColor" name="Input.AccentColor" value="@Model.Input.AccentColor" /></div>
@@ -43,7 +47,7 @@
         <div class="mat-card">
             <div class="mat-card__head">@Ui.Icon("eye")<h2 class="mat-card__title">@L["Branding.Preview"]</h2><span class="mat-card__sub">@L["Branding.Preview.Sub"]</span></div>
             <div class="mat-card__body">
-                <div class="mb-brand-preview" data-editor data-readonly data-doc-accent="@Model.Preview.Company.AccentColor">
+                <div class="mb-brand-preview" data-layout-preview data-editor data-readonly data-doc-accent="@Model.Preview.Company.AccentColor">
                     <partial name="_DocumentView" model="Model.Preview" />
                 </div>
                 <p class="mat-hint"><a href="/Admin/Company">@L["Branding.ToCompany"]</a></p>

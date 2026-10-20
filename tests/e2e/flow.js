@@ -109,7 +109,7 @@ async function confirmDialog(page) {
   await shot(page, 'editor-form');
   await page.click('[data-view-set="document"]');
 
-  await page.locator('button', { hasText: 'Speichern' }).first().click();
+  await page.getByRole('button', { name: 'Speichern', exact: true }).first().click();
   await page.waitForURL(/Invoices\/Edit\?id=\d+/, { timeout: 15000 });
   check(await page.locator('[data-line]').count() === 2, 'the draft is saved with its two positions');
   const id = new URL(page.url()).searchParams.get('id');
@@ -212,7 +212,7 @@ async function confirmDialog(page) {
   console.log('Banking');
   await page.goto(base + '/Banking/Accounts/Edit');
   await page.fill('#Input_Name', 'Testkonto');
-  await page.locator('button', { hasText: 'Speichern' }).first().click();
+  await page.getByRole('button', { name: 'Speichern', exact: true }).first().click();
   await page.waitForURL(/Banking\/Import/, { timeout: 15000 });
   const open = await page.request.get(base + '/Invoices?status=open');
   const openHtml = await open.text();

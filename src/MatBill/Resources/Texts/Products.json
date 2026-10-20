@@ -45,6 +45,7 @@
   "Products.Saved": { "en": "Product saved.", "de": "Produkt gespeichert." },
   "Products.Deleted": { "en": "Product deleted. Invoices that contain it stay unchanged.", "de": "Produkt gelöscht. Rechnungen, die es enthalten, bleiben unverändert." },
   "Products.Log.Created": { "en": "Product created", "de": "Produkt angelegt" },
+  "Products.Exists": { "en": "There is already a product “{0}”: choose it in the list.", "de": "Ein Produkt „{0}“ gibt es schon: wähl es in der Liste." },
   "Products.Log.Changed": { "en": "Product changed", "de": "Produkt geändert" },
   "Products.Log.Deleted": { "en": "Product deleted", "de": "Produkt gelöscht" }
 }

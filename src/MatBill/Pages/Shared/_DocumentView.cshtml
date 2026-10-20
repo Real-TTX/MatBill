@@ -8,12 +8,12 @@
     var d = Model.Doc;
     var company = Model.Company;
     var showTax = d.Totals.Taxes.Count > 1;
-    var senderLines = new[] { company.NameLine2, company.Street, string.Join(" ", new[] { company.PostalCode, company.City }.Where(s => !string.IsNullOrWhiteSpace(s))), company.Email, company.Website }
+    var senderLines = new[] { company.NameLine2, company.Street, string.Join(" ", new[] { company.PostalCode, company.City }.Where(s => !string.IsNullOrWhiteSpace(s))), company.Email, company.Phone, company.Website }
         .Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
     var stamp = d.Stamp;
 }
 <article class="mb-paper mb-paper--view mb-doc @(showTax ? "has-tax" : "") @(d.IsCancelled ? "is-cancelled" : d.IsDraft ? "is-draft" : "")" data-stamp="@stamp" aria-label="@d.Title @d.Number">
-    <header class="mb-doc__head">
+    <header class="mb-doc__head mb-doc__head--@MatBill.Configuration.DocumentLayouts.Of(company.Layout)">
         <div class="mb-doc__logo">
             @if (Model.LogoUrl is not null)
             {
@@ -25,11 +25,7 @@
             }
         </div>
         <address class="mb-doc__sender">
-            <strong>@company.Name</strong>
-            @foreach (var line in senderLines)
-            {
-                <br />@line
-            }
+            <strong>@company.Name</strong>@foreach (var line in senderLines) { <span>@line</span> }
         </address>
     </header>
 

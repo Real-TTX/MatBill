@@ -16,13 +16,15 @@
     var rates = InvoiceMath.CommonTaxRates;
     var lines = input.Lines.ToList();
     var blank = new LineInput { Quantity = "1", TaxRate = Amount.Quantity(Model.Invoicing.DefaultTaxRate) };
-    var senderLines = new[] { company.NameLine2, company.Street, string.Join(" ", new[] { company.PostalCode, company.City }.Where(s => !string.IsNullOrWhiteSpace(s))), company.Email, company.Website }
+    var senderLines = new[] { company.NameLine2, company.Street, string.Join(" ", new[] { company.PostalCode, company.City }.Where(s => !string.IsNullOrWhiteSpace(s))), company.Email, company.Phone, company.Website }
         .Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
     var termDays = $"<span data-term-days>{input.PaymentTermDays ?? Model.Invoicing.PaymentTermDays}</span>";
+    // the paper says what it means: 1 Tag, 14 Tage, and for 0 days an invoice is due at once
+    string DaysUnit(int days) => days == 1 ? "Tag" : days == 0 && !quote ? "Tage (sofort)" : "Tage";
 }
 
 <article class="mb-paper mb-doc @(Model.Stamp is null ? "" : "is-draft") @(Model.TaxExempt ? "is-exempt" : "")" data-stamp="@Model.Stamp" aria-label="@(template ? L["Editor.Aria.Template"] : quote ? L["Editor.Aria.Quote"] : L["Editor.Aria.Invoice"])">
-    <header class="mb-doc__head">
+    <header class="mb-doc__head mb-doc__head--@MatBill.Configuration.DocumentLayouts.Of(company.Layout)">
         <div class="mb-doc__logo">
             @if (Model.LogoUrl is not null)
             {
@@ -38,18 +40,14 @@
             }
         </div>
         <address class="mb-doc__sender">
-            <strong>@company.Name</strong>
-            @foreach (var line in senderLines)
-            {
-                <br />@line
-            }
+            <strong>@company.Name</strong>@foreach (var line in senderLines) { <span>@line</span> }
         </address>
     </header>
 
     <div class="mb-doc__top">
         <section class="mb-doc__part mb-doc__recipient" aria-labelledby="doc-to">
             <div class="mb-doc__senderline">@company.SenderLine</div>
-            <span class="mb-doc__caption" id="doc-to">An</span>
+            <span class="mb-doc__caption mb-doc__to" id="doc-to">An</span>
             <input type="hidden" name="Input.CustomerId" value="@input.CustomerId" />
             <div class="mb-doc__address">
                 <div class="mb-field mb-combo">
@@ -113,7 +111,7 @@
                 }
                 <div>
                     <dt><label for="Input_PaymentTermDays">@(quote ? "Gültigkeit" : "Zahlungsziel")</label></dt>
-                    <dd><span class="mb-doc__inline"><input class="mb-in mb-in--num mb-in--days" type="number" min="0" max="365" step="1" inputmode="numeric" id="Input_PaymentTermDays" name="Input.PaymentTermDays" value="@(input.PaymentTermDays ?? (quote ? Model.Invoicing.QuoteValidityDays : Model.Invoicing.PaymentTermDays))" /> Tage</span></dd>
+                    <dd><span class="mb-doc__inline"><input class="mb-in mb-in--num mb-in--days" type="number" min="0" max="365" step="1" inputmode="numeric" id="Input_PaymentTermDays" name="Input.PaymentTermDays" value="@(input.PaymentTermDays ?? (quote ? Model.Invoicing.QuoteValidityDays : Model.Invoicing.PaymentTermDays))" /> <span data-days-unit data-one="Tag" data-many="Tage" data-zero="@(quote ? "Tage" : "Tage (sofort)")">@DaysUnit(input.PaymentTermDays ?? (quote ? Model.Invoicing.QuoteValidityDays : Model.Invoicing.PaymentTermDays))</span></span></dd>
                 </div>
                 @if (!template)
                 {

@@ -72,6 +72,8 @@ Test changes by **rebuilding the container and redeploying the stack**. Wait for
   to negative, delete spaced apart (`mb-buttons`, `mat-btn-row`). Dependent fields with `show-if` (MatUi `data-show-if`). Several controls of one kind per page: ids derive from the control id.
 - Mobile: check 390 px; editor fields are 16 px on touch screens; safe areas come from MatUi tokens.
 - The accent is blue `#1d4ed8` (`[data-app="matbill"]` in `app.css`; theme-color metas follow `--mat-glass`). The document colour of a company is `CompanyConfig.AccentColor`.
+- **WYSIWYG:** the paper (`.mb-paper` in `app.css`, block "The paper is the PDF") uses the font (Lato, `wwwroot/fonts`, OFL) and the sizes (pt) and distances (mm) of `InvoicePdf`; change both together.
+  The head has three layouts (`CompanyConfig.Layout`, `DocumentLayouts`), drawn the same in `InvoicePdf.Head` and the `mb-doc__head--*` classes. `InvoicePdf.RenderImages` gives the pages as PNG for comparing.
 - PWA: `sw.js` is registered as `/sw.js?v=<version>-<sprite hash>` (a build is a new worker). Static files cache-first, pages network-first with a kept copy marked
   `data-offline-copy`; never cached: POST, `/api`, `/Account`, `/s/`, PDFs. Logout and the sign-in page clear the kept pages.
 - Formatting: request culture invariant; text a person reads goes through `Fmt` (the UI language: de-DE or en-GB), documents through `DocFmt` (always de-DE).

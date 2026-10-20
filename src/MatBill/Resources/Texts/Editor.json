@@ -70,5 +70,6 @@
   "Editor.Line.Up": { "en": "Move up", "de": "Nach oben" },
   "Editor.Line.Down": { "en": "Move down", "de": "Nach unten" },
   "Editor.Line.Duplicate": { "en": "Duplicate", "de": "Duplizieren" },
+  "Editor.Line.SaveProduct": { "en": "Save as product", "de": "Als Produkt speichern" },
   "Editor.Line.Remove": { "en": "Remove", "de": "Entfernen" }
 }

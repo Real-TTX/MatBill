@@ -148,11 +148,25 @@ public enum DocumentKind
 /// The placeholders of the texts of an invoice, a quote and a mail: {Days}, {DueDate}, {ValidUntil}, {Number}, {Customer}, {Amount}, {Date}, {Company}.
 /// The German names of earlier versions ({Tage}, {Faellig}, {Gueltig}, {Nummer}, {Kunde}, {Betrag}, {Datum}, {Firma}) still work.
 /// </summary>
-public static class Texts
+public static partial class Texts
 {
     /// <summary>The payment terms with the days and the due date filled in.</summary>
     public static string? Expand(string? text, int days, DateOnly? due)
-        => Fill(text, ("Days", "Tage", days.ToString(DocFmt.Culture)), ("DueDate", "Faellig", DocFmt.Date(due)));
+        => Fill(days == 0 ? Immediately(text) : days == 1 ? OneDay(text) : text, ("Days", "Tage", days.ToString(DocFmt.Culture)), ("DueDate", "Faellig", DocFmt.Date(due)));
+
+    /// <summary>Due at once: "innerhalb von {Days} Tagen" becomes "sofort" ("within {Days} days": "immediately"), not "innerhalb von 0 Tagen".</summary>
+    private static string? Immediately(string? text)
+        => text is null ? null : ImmediatelyRegex().Replace(text, m => m.Value.StartsWith("within", StringComparison.OrdinalIgnoreCase) ? "immediately" : "sofort");
+
+    /// <summary>"innerhalb von 1 Tagen" is "innerhalb von 1 Tag".</summary>
+    private static string? OneDay(string? text)
+        => text is null ? null : OneDayRegex().Replace(text, m => m.Groups[1].Value + (m.Groups[2].Value.StartsWith('d') ? "day" : "Tag"));
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"(?:innerhalb von|binnen|within)\s+\{(?:Days|Tage)\}\s+(?:Tagen|Tage|days)", System.Text.RegularExpressions.RegexOptions.IgnoreCase)]
+    private static partial System.Text.RegularExpressions.Regex ImmediatelyRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"(\{(?:Days|Tage)\}\s+)(Tagen|Tage|days)\b")]
+    private static partial System.Text.RegularExpressions.Regex OneDayRegex();
 
     /// <summary>The terms of a quote with the last day filled in.</summary>
     public static string? ExpandQuote(string? text, DateOnly validUntil) => Fill(text, ("ValidUntil", "Gueltig", DocFmt.Date(validUntil)));

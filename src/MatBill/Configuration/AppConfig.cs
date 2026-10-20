@@ -81,6 +81,10 @@ public sealed class CompanyConfig
     /// <summary>A line under the payment terms, in the handwriting of the document ("Danke!"); empty shows nothing.</summary>
     public string? Signature { get; set; } = "Danke!";
 
+    /// <summary>The head of the document: <see cref="DocumentLayouts.Classic"/> (logo left, sender right), <see cref="DocumentLayouts.Centered"/> (logo centred above
+    /// the sender in one line) or <see cref="DocumentLayouts.Right"/> (sender left, logo right). The same in the editor, the view and the PDF.</summary>
+    public string Layout { get; set; } = DocumentLayouts.Classic;
+
     /// <summary>Small business (§ 19 UStG): no VAT is charged, the invoice says why.</summary>
     public bool SmallBusiness { get; set; }
 
@@ -276,4 +280,18 @@ public sealed class BankingConfig
 
     [JsonIgnore]
     public bool IsOnlineConfigured => !string.IsNullOrWhiteSpace(EnableBankingAppId) && !string.IsNullOrWhiteSpace(EnableBankingKeyProtected);
+}
+
+/// <summary>The layouts of the head of a document (<see cref="CompanyConfig.Layout"/>).</summary>
+public static class DocumentLayouts
+{
+    public const string Classic = "classic";
+
+    public const string Centered = "centered";
+
+    public const string Right = "right";
+
+    public static readonly string[] All = [Classic, Centered, Right];
+
+    public static string Of(string? layout) => All.Contains(layout) ? layout! : Classic;
 }

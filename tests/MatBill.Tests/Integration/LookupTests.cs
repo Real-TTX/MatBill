@@ -47,6 +47,13 @@ public sealed class LookupTests : IClassFixture<AppFixture>
         Assert.DoesNotContain("Suchkunde 07", editor);
         Assert.Contains("data-lookup-dialog", editor);
 
+        // a position becomes a product, once
+        var created = await AppFixture.PostFormAsync(client, "/Invoices/Edit", new Dictionary<string, string> { ["name"] = "Lookup-Workshop", ["unitPrice"] = "480,00", ["unit"] = "Tag", ["taxRate"] = "19" }, "/api/products");
+        Assert.Equal(HttpStatusCode.OK, created.StatusCode);
+        Assert.Equal("Lookup-Workshop", (await PageAsync(client, "/api/products?q=lookup-workshop")).Names.Single());
+        var again = await AppFixture.PostFormAsync(client, "/Invoices/Edit", new Dictionary<string, string> { ["name"] = "lookup-workshop" }, "/api/products");
+        Assert.Equal(HttpStatusCode.BadRequest, again.StatusCode);
+
         // without signing in there is nothing to find
         using var anonymous = _app.NewClient();
         Assert.NotEqual(HttpStatusCode.OK, (await anonymous.GetAsync("/api/customers?q=lookup")).StatusCode);

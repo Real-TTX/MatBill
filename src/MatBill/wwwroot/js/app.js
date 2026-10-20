@@ -328,13 +328,31 @@
       if (name && !name._combo) {
         name._combo = combo(name, {
           source: function (q) {
-            return lookup('products', { q: q, take: 8 }).then(function (page) { return page.items.map(productItem); });
+            return lookup('products', { q: q, take: 12 }).then(function (page) { return page.items.map(productItem); });
           },
           emptyHint: data.hasProducts === false ? t('Js.Editor.NoProducts') : null,
+          create: function (q) { return t('Js.Editor.NewProduct', q); },
+          onCreate: function (q) { saveProduct(line, q); },
           onSelect: function (item) { fillLine(line, item.data); },
           onType: function () { var pid = $('[data-field="ProductId"]', line); if (pid) { pid.value = ''; } }
         });
       }
+    }
+
+    // A position becomes a product with what it holds (name, description, unit, price, tax rate); the position is linked to it.
+    function saveProduct(line, name) {
+      var value = function (field) { var el = $('[data-field="' + field + '"]', line); return el ? el.value : ''; };
+      var title = (name || value('Name')).trim();
+      if (!title) { toast(t('Js.Editor.ProductNeedsName')); return; }
+      post('/api/products', { name: title, description: value('Description'), unit: value('Unit'), unitPrice: value('UnitPrice'), taxRate: value('TaxRate') }).then(function (answer) {
+        var pid = $('[data-field="ProductId"]', line);
+        if (pid) { pid.value = answer.product.id; }
+        var n = $('[data-field="Name"]', line);
+        if (n) { n.value = answer.product.name; }
+        data.hasProducts = true;
+        markDirty();
+        toast(t('Js.Editor.ProductCreated', answer.product.name), 'success');
+      }).catch(function (err) { toast(err.message); });
     }
 
     function fillLine(line, p) {
@@ -383,6 +401,8 @@
         body.insertBefore(line, line.previousElementSibling); renumber(); markDirty(); $('[data-line-more]', line).focus();
       } else if (what === 'down' && line.nextElementSibling) {
         body.insertBefore(line.nextElementSibling, line); renumber(); markDirty(); $('[data-line-more]', line).focus();
+      } else if (what === 'product') {
+        saveProduct(line);
       } else if (what === 'copy') {
         var copy = addLine(line, false);
         $$('[data-field]', line).forEach(function (src) { var dst = $('[data-field="' + src.getAttribute('data-field') + '"]', copy); if (dst) { dst.value = src.value; } });
@@ -453,6 +473,8 @@
       var d = new Date(+m[1], +m[2] - 1, +m[3] + Math.max(0, n));
       out.textContent = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
       $$('[data-term-days]', editor).forEach(function (el) { el.textContent = String(Math.max(0, n)); });
+      var unit = $('[data-days-unit]', editor);
+      if (unit) { unit.textContent = unit.getAttribute(n === 1 ? 'data-one' : n <= 0 ? 'data-zero' : 'data-many'); }
     }
 
     editor.addEventListener('input', function (e) {
@@ -492,7 +514,7 @@
     if (recipient) {
       combo(recipient, {
         source: function (q) {
-          return lookup('customers', { q: q, take: 8 }).then(function (page) { return page.items.map(customerItem); });
+          return lookup('customers', { q: q, take: 12 }).then(function (page) { return page.items.map(customerItem); });
         },
         create: data.canCreateCustomer === false ? null : function (q) { return t('Js.Editor.NewCustomer', q); },
         emptyHint: data.hasCustomers === false ? t('Js.Editor.NoCustomers') : null,
@@ -760,6 +782,16 @@
     });
     return { close: close, render: render };
   }
+
+  // ================================================================================================ the layout of the head
+
+  // The branding page shows a layout in its preview as soon as it is chosen, before it is saved.
+  $$('input[name="Input.Layout"]').forEach(function (radio) {
+    radio.addEventListener('change', function () {
+      var head = $('[data-layout-preview] .mb-doc__head');
+      if (head && radio.checked) { head.className = head.className.replace(/mb-doc__head--[a-z]+/, 'mb-doc__head--' + radio.value); }
+    });
+  });
 
   // ================================================================================================ lists that fit
 
