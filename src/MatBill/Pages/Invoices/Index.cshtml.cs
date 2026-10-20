@@ -94,7 +94,7 @@ public sealed class IndexModel(MbDbContext db, TimeProvider clock) : PageModelBa
         Table = TableModel.Of("invoice-table", L["Invoices.Title"], result.Items,
         [
             (new TableColumn(L["Invoices.Number"]), i => Ui.NameWithSub(i.Number ?? draft, $"/Invoices/Edit?id={i.Id}", i.RecurringInvoiceId is null ? null : fromSeries)),
-            (new TableColumn(L["Invoices.Customer"]), i => Ui.Text(i.RecipientName)),
+            (new TableColumn(L["Invoices.Customer"]), i => i.CustomerId is { } cid ? Ui.Link(i.RecipientName ?? "", $"/Customers/Edit?id={cid}&tab=invoices") : Ui.Text(i.RecipientName)),
             (new TableColumn(L["Common.Date"], HideOnPhone: true), i => Ui.Text(Fmt.Date(i.InvoiceDate))),
             (new TableColumn(L["Invoices.Col.Due"], HideOnPhone: true), i => i.Status == InvoiceStatus.Open ? Ui.Text(Fmt.Due(i.DueDate, today)) : Ui.None()),
             (new TableColumn(L["Common.Amount"], Numeric: true), i => Ui.Money(i.GrossTotal)),

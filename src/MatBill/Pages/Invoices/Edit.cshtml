@@ -151,7 +151,7 @@
                             {
                                 <dt>@L["Invoices.Edit.CancelledAt"]</dt><dd>@Fmt.Moment(invoice.CancelledDate)@(invoice.CancelReason is null ? "" : $" · {invoice.CancelReason}")</dd>
                             }
-                            <dt>@L["Invoices.Customer"]</dt><dd>@if (invoice.Customer is not null) { <a href="/Customers/Edit?id=@invoice.Customer.Id">@invoice.Customer.Name</a> } else { @invoice.RecipientName }</dd>
+                            <dt>@L["Invoices.Customer"]</dt><dd>@if (invoice.Customer is not null) { <a href="/Customers/Edit?id=@invoice.Customer.Id&amp;tab=invoices">@invoice.Customer.Name</a> } else { @invoice.RecipientName }</dd>
                             @if (invoice.CancelsInvoiceId is { } cancelled)
                             {
                                 <dt>@L["Invoices.Edit.Cancels"]</dt><dd><a href="/Invoices/Edit?id=@cancelled">@L["Invoices.Invoice", invoice.CancelsNumber ?? ""]</a></dd>

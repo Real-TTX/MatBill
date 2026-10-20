@@ -85,7 +85,7 @@ public sealed class IndexModel(MbDbContext db, TimeProvider clock) : PageModelBa
         Table = TableModel.Of("quote-table", L["Quotes.Title"], result.Items,
         [
             (new TableColumn(L["Quotes.Column.Number"]), q => Ui.NameWithSub(q.Number ?? draft, $"/Quotes/Edit?id={q.Id}", null)),
-            (new TableColumn(L["Quotes.Column.Customer"]), q => Ui.Text(q.RecipientName)),
+            (new TableColumn(L["Quotes.Column.Customer"]), q => q.CustomerId is { } cid ? Ui.Link(q.RecipientName ?? "", $"/Customers/Edit?id={cid}") : Ui.Text(q.RecipientName)),
             (new TableColumn(L["Common.Date"], HideOnPhone: true), q => Ui.Text(Fmt.Date(q.QuoteDate))),
             (new TableColumn(L["Quotes.Column.ValidUntil"], HideOnPhone: true), q => q.IsDraft ? Ui.None() : Ui.Text(Fmt.Date(q.ValidUntil))),
             (new TableColumn(L["Common.Amount"], Numeric: true), q => Ui.Money(q.GrossTotal)),

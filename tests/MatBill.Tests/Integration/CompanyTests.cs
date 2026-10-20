@@ -112,6 +112,24 @@ public sealed class CompanyTests : IClassFixture<AppFixture>
     }
 
     [DatabaseFact]
+    public async Task The_invoice_list_leads_to_the_invoices_of_the_customer()
+    {
+        await _app.EnsureAdminAsync();
+        var (customer, invoice, _) = await _app.CreateInvoiceWithPdfAsync("Tablink", 80m);
+        using var client = _app.NewClient();
+        await AppFixture.LoginAsync(client, "admin@example.com", "Start12345");
+
+        var link = $"/Customers/Edit?id={customer.Id}&tab=invoices";
+        Assert.Contains(link, await AppFixture.TextAsync(client, "/Invoices?q=Tablink"));
+        Assert.Contains(link, await AppFixture.TextAsync(client, $"/Invoices/Edit?id={invoice.Id}"));
+
+        var page = await AppFixture.TextAsync(client, link);
+        Assert.Matches("id=\"customer-tab-invoices\" aria-controls=\"customer-panel-invoices\" aria-selected=\"true\"", page);
+        Assert.Contains("name=\"Tab\" value=\"invoices\"", page);
+        Assert.Contains(invoice.Number!, page);
+    }
+
+    [DatabaseFact]
     public async Task A_small_business_shows_no_tax_and_counts_expenses_gross()
     {
         await _app.EnsureAdminAsync();

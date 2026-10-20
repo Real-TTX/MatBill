@@ -154,7 +154,7 @@
                         {
                             <tr>
                                 <td data-label="@number"><a href="/Invoices/Edit?id=@i.Id">@(i.Number ?? Labels.Of(InvoiceStatus.Draft))</a></td>
-                                <td data-label="@customer">@i.RecipientName</td>
+                                <td data-label="@customer">@if (i.CustomerId is { } cid) { <a href="/Customers/Edit?id=@cid&amp;tab=invoices">@i.RecipientName</a> } else { @i.RecipientName }</td>
                                 <td data-label="@date" class="mat-hide-sm">@Fmt.Date(i.InvoiceDate)</td>
                                 <td data-label="@amount" class="mat-num">@Ui.Money(i.GrossTotal)</td>
                                 <td data-label="@status">@Labels.Pill(i, Model.Today)</td>

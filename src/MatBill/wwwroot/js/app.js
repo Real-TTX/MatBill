@@ -833,6 +833,24 @@
     if (widePaper.addEventListener) { widePaper.addEventListener('change', function () { papers.forEach(fitPaper); }); }
   }
 
+  // ================================================================================================ the open tab is kept
+
+  // A tab with data-tab: the address (?tab=) and the form (data-tab-field) know which one is open, so a reload, the way back and a save keep it.
+  function keepTab(group) {
+    var tab = $('[role=tab][aria-selected="true"][data-tab]', group);
+    if (!tab) { return; }
+    var key = tab.getAttribute('data-tab');
+    var field = $('[data-tab-field]');
+    if (field) { field.value = key; }
+    var url = new URL(window.location.href);
+    if (url.searchParams.get('tab') !== key) { url.searchParams.set('tab', key); history.replaceState(history.state, '', url.toString()); }
+  }
+  $$('[data-tabs]').forEach(function (group) {
+    if (!$('[data-tab]', group)) { return; }
+    group.addEventListener('click', function () { setTimeout(function () { keepTab(group); }, 0); });
+    group.addEventListener('keyup', function () { keepTab(group); });
+  });
+
   // ================================================================================================ lists that fit
 
   // A list never scrolls sideways (TABLE-02): when a table is wider than its frame, the columns the phone leaves out (mat-hide-sm) go, the last one

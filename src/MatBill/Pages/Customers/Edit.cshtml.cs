@@ -64,6 +64,10 @@ public sealed class EditModel(MbDbContext db, NumberService numbers, Configurati
     [BindProperty(SupportsGet = true)]
     public long? Id { get; set; }
 
+    /// <summary>The tab to open (?tab=invoices from a list of invoices); the form posts the open one back, so it stays open after a save.</summary>
+    [BindProperty(SupportsGet = true)]
+    public string? Tab { get; set; }
+
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
@@ -155,7 +159,7 @@ public sealed class EditModel(MbDbContext db, NumberService numbers, Configurati
         await db.SaveChangesAsync();
         await log.LogAsync(Id is null ? L["Customers.Log.Created"] : L["Customers.Log.Changed"], nameof(Customer), customer.Id, customer.Name);
         Flash(Id is null ? L["Customers.Created", customer.Name, customer.Number] : L["Customers.Saved"]);
-        return RedirectToPage(new { id = customer.Id });
+        return RedirectToPage(new { id = customer.Id, tab = Tab is "address" or "billing" or "invoices" ? Tab : null });
     }
 
     public async Task<IActionResult> OnPostDeleteAsync()
@@ -193,7 +197,9 @@ public sealed class EditModel(MbDbContext db, NumberService numbers, Configurati
             ("address", ["Street", "PostalCode", "City", "Country"]),
             ("billing", ["PaymentTermDays", "VatId", "BuyerReference", "Note"]),
         };
-        ActiveTab = tabs.FirstOrDefault(t => t.Fields.Any(f => ModelState.GetFieldValidationState("Input." + f) == Microsoft.AspNetCore.Mvc.ModelBinding.ModelValidationState.Invalid)).Tab ?? "general";
+        var known = Customer is null ? new[] { "general", "address", "billing" } : ["general", "address", "billing", "invoices"];
+        ActiveTab = tabs.FirstOrDefault(t => t.Fields.Any(f => ModelState.GetFieldValidationState("Input." + f) == Microsoft.AspNetCore.Mvc.ModelBinding.ModelValidationState.Invalid)).Tab
+            ?? (known.Contains(Tab) ? Tab! : "general");
         if (Customer is null)
         {
             if (CanChooseNumber)
