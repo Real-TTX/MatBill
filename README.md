@@ -259,8 +259,8 @@ Fast alles wird in der App eingestellt und landet in `/data/config/app.json`. Um
 ### Nach der ersten Anmeldung
 
 - *Einstellungen › Unternehmen:* Firma mit zweiter Namenszeile (z. B. Inhaber), Anschrift, Steuernummer/USt-IdNr., Register, Kleinunternehmer (§ 19 UStG),
-  Bankverbindung – alles, was auf Rechnung und E-Rechnung gehört
-- *Einstellungen › Branding:* Logo (SVG/PNG/JPEG), Farbe des Dokuments, Aufbau des Kopfs (Logo links, mittig oder rechts), Gruß
+  Bankverbindung (auch eine zweite) – alles, was auf Rechnung und E-Rechnung gehört
+- *Einstellungen › Branding:* Logo (SVG/PNG/JPEG), Farbe des Dokuments, Position des Logos (links, mittig, rechts), Fußzeile frei mit Platzhaltern, Gruß
 - *Einstellungen › Rechnungen:* Nummernkreise (nächster Zähler setzbar, Kundennummer auf Wunsch frei wählbar), Zahlungsziel, Texte, Kategorien der Ausgaben, ZUGFeRD an/aus
 - *Einstellungen › E-Mail:* SMTP-Server, Absender, Texte für Rechnung und Angebot, Testmail
 - *Einstellungen › Banking:* Enable Banking (eigene App-ID und Schlüssel), automatische Zuordnung, Abrufintervall

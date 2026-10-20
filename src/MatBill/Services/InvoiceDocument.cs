@@ -148,6 +148,88 @@ public enum DocumentKind
 /// The placeholders of the texts of an invoice, a quote and a mail: {Days}, {DueDate}, {ValidUntil}, {Number}, {Customer}, {Amount}, {Date}, {Company}.
 /// The German names of earlier versions ({Tage}, {Faellig}, {Gueltig}, {Nummer}, {Kunde}, {Betrag}, {Datum}, {Firma}) still work.
 /// </summary>
+/// <summary>
+/// The footer of every document: the company with its address, how to reach it, the bank, tax and register, each a column of lines (an empty column is left
+/// out). This is the one place where the paper shows the full address: the head carries the logo, the window of the envelope the short sender line (DIN 5008).
+/// InvoicePdf and the paper of the editor draw these columns.
+/// </summary>
+public static partial class DocumentFooter
+{
+    /// <summary>The columns the footer can have: Branding shows as many fields.</summary>
+    public const int MaxColumns = 4;
+
+    /// <summary>The placeholders of a footer written by hand and what they stand for.</summary>
+    public static IReadOnlyList<(string Name, Func<CompanyConfig, string?> Value)> Placeholders { get; } =
+    [
+        ("Name", c => c.Name), ("NameLine2", c => c.NameLine2), ("Street", c => c.Street), ("PostalCode", c => c.PostalCode), ("City", c => c.City),
+        ("Country", c => c.Country), ("Manager", c => c.Manager), ("Phone", c => c.Phone), ("Email", c => c.Email), ("Website", c => c.Website),
+        ("BankName", c => c.BankName), ("Iban", c => c.Iban), ("Bic", c => c.Bic), ("AccountHolder", c => c.AccountHolder),
+        ("Bank2Name", c => c.Bank2Name), ("Bank2Iban", c => c.Bank2Iban), ("Bank2Bic", c => c.Bank2Bic),
+        ("TaxNumber", c => c.TaxNumber), ("VatId", c => c.VatId), ("Register", c => c.Register),
+    ];
+
+    /// <summary>How much of the width a column gets: as much as its longest line needs (within bounds), so an IBAN stays on one line where a short column has room to give.</summary>
+    public static int Weight(List<string> column) => Math.Clamp(column.Count == 0 ? 10 : column.Max(l => l.Length), 10, 48);
+
+    public static List<List<string>> Columns(CompanyConfig company)
+        => company.FooterColumns.Any(c => !string.IsNullOrWhiteSpace(c)) ? Written(company) : Automatic(company);
+
+    /// <summary>The footer from the company data: address, contact, bank (a second account under the first), tax and register.</summary>
+    private static List<List<string>> Automatic(CompanyConfig company)
+    {
+        static List<string> Lines(params string?[] lines) => [.. lines.Where(l => !string.IsNullOrWhiteSpace(l)).Select(l => l!.Trim())];
+        static string? Labelled(string label, string? value) => string.IsNullOrWhiteSpace(value) ? null : label + " " + value.Trim();
+        var place = string.Join(" ", new[] { company.PostalCode, company.City }.Where(s => !string.IsNullOrWhiteSpace(s)));
+        return new List<List<string>>
+        {
+            Lines(company.Name, company.NameLine2, company.Street, place, company.Manager),
+            Lines(Labelled("Tel.", company.Phone), company.Email, company.Website),
+            Lines(company.BankName, Labelled("IBAN", company.Iban), Labelled("BIC", company.Bic), Labelled("Kontoinhaber:", company.AccountHolder),
+                company.Bank2Name, Labelled("IBAN", company.Bank2Iban), Labelled("BIC", company.Bank2Bic)),
+            Lines(Labelled("Steuernummer", company.TaxNumber), Labelled("USt-IdNr.", company.VatId), company.Register),
+        }.Where(c => c.Count > 0).ToList();
+    }
+
+    /// <summary>
+    /// The footer as written in Branding: one column per field, one line per line, the placeholders filled in. A line whose placeholders are all empty is left
+    /// out ("IBAN {Bank2Iban}" without a second account), so one text fits companies with and without every detail.
+    /// </summary>
+    private static List<List<string>> Written(CompanyConfig company)
+    {
+        var columns = new List<List<string>>();
+        foreach (var text in company.FooterColumns.Take(MaxColumns))
+        {
+            var lines = new List<string>();
+            foreach (var raw in (text ?? "").Split('\n'))
+            {
+                var line = raw.TrimEnd('\r');
+                var tokens = PlaceholderRegex().Matches(line).Select(m => m.Groups[1].Value).ToList();
+                var values = tokens.Select(t => Placeholders.FirstOrDefault(p => p.Name.Equals(t, StringComparison.OrdinalIgnoreCase)).Value?.Invoke(company)).ToList();
+                if (tokens.Count > 0 && values.All(string.IsNullOrWhiteSpace))
+                {
+                    continue;
+                }
+
+                var filled = PlaceholderRegex().Replace(line, m => Placeholders.FirstOrDefault(p => p.Name.Equals(m.Groups[1].Value, StringComparison.OrdinalIgnoreCase)).Value?.Invoke(company)?.Trim() ?? m.Value).Trim();
+                if (filled.Length > 0)
+                {
+                    lines.Add(filled);
+                }
+            }
+
+            if (lines.Count > 0)
+            {
+                columns.Add(lines);
+            }
+        }
+
+        return columns;
+    }
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"\{([A-Za-z0-9]+)\}")]
+    private static partial System.Text.RegularExpressions.Regex PlaceholderRegex();
+}
+
 public static partial class Texts
 {
     /// <summary>The payment terms with the days and the due date filled in.</summary>

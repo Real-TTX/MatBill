@@ -113,6 +113,10 @@ public static class EInvoice
             {
                 d.SetPaymentMeans(PaymentMeansTypeCodes.SEPACreditTransfer, "Überweisung");
                 d.AddCreditorFinancialAccount(company.Iban.Replace(" ", "", StringComparison.Ordinal), company.Bic, bankName: company.BankName, name: company.AccountHolder ?? company.Name);
+                if (!string.IsNullOrWhiteSpace(company.Bank2Iban))
+                {
+                    d.AddCreditorFinancialAccount(company.Bank2Iban.Replace(" ", "", StringComparison.Ordinal), company.Bank2Bic, bankName: company.Bank2Name, name: company.AccountHolder ?? company.Name);
+                }
             }
         }
 

@@ -93,46 +93,12 @@ public static class InvoicePdf
         .WithSettings(pdfA ? new DocumentSettings { PDFA_Conformance = PDFA_Conformance.PDFA_3B } : new DocumentSettings());
     }
 
-    /// <summary>The head in the layout of the company (<see cref="DocumentLayouts"/>); _DocumentView and _DocumentEditor draw the same.</summary>
+    /// <summary>The head: the logo (or the name) left, in the middle or right (<see cref="DocumentLayouts"/>). The address is in the footer, the short sender line
+    /// in the window of the envelope; _DocumentView and _DocumentEditor draw the same.</summary>
     private static void Head(IContainer container, CompanyConfig company, LogoImage? logo)
     {
-        var lines = new[] { company.NameLine2, company.Street, Join(" ", company.PostalCode, company.City), company.Email, company.Phone, company.Website }
-            .Where(l => !string.IsNullOrWhiteSpace(l)).Select(l => l!).ToList();
-        switch (DocumentLayouts.Of(company.Layout))
-        {
-            case DocumentLayouts.Centered:
-                // the logo in the middle, the sender in one line under it
-                container.Column(col =>
-                {
-                    col.Item().AlignCenter().Element(c => Logo(c, company, logo, center: true));
-                    col.Item().PaddingTop(3, Unit.Millimetre).AlignCenter().Text(t =>
-                    {
-                        t.AlignCenter();
-                        t.Span(company.Name).SemiBold().FontSize(8.5f);
-                        foreach (var line in lines)
-                        {
-                            t.Span(" · " + line).FontColor("#374151").FontSize(8.5f);
-                        }
-                    });
-                });
-                break;
-
-            case DocumentLayouts.Right:
-                container.Row(row =>
-                {
-                    row.ConstantItem(62, Unit.Millimetre).Element(c => Sender(c, company, lines, right: false));
-                    row.RelativeItem().AlignRight().AlignTop().Element(c => Logo(c, company, logo, center: false, right: true));
-                });
-                break;
-
-            default:
-                container.Row(row =>
-                {
-                    row.RelativeItem().AlignLeft().AlignTop().Element(c => Logo(c, company, logo, center: false));
-                    row.ConstantItem(62, Unit.Millimetre).Element(c => Sender(c, company, lines, right: true));
-                });
-                break;
-        }
+        var layout = DocumentLayouts.Of(company.Layout);
+        Logo(container, company, logo, center: layout == DocumentLayouts.Centered, right: layout == DocumentLayouts.Right);
     }
 
     private static void Logo(IContainer c, CompanyConfig company, LogoImage? logo, bool center, bool right = false)
@@ -164,22 +130,6 @@ public static class InvoicePdf
             box.Image(logo.Bytes).FitArea();
         }
     }
-
-    private static void Sender(IContainer c, CompanyConfig company, List<string> lines, bool right)
-        => c.Column(col =>
-        {
-            var name = col.Item().Text(company.Name).SemiBold();
-            foreach (var line in lines)
-            {
-                var item = col.Item();
-                (right ? item.AlignRight() : item.AlignLeft()).Text(line).FontColor("#374151");
-            }
-
-            if (right)
-            {
-                name.AlignRight();
-            }
-        });
 
     private static void AddressAndFacts(IContainer container, InvoiceDocument doc, CompanyConfig company)
         => container.Row(row =>
@@ -331,46 +281,40 @@ public static class InvoicePdf
             r.AutoItem().Text(value);
         });
 
+    /// <summary>The footer on every page: the columns of <see cref="DocumentFooter"/> side by side, the page number under the last one.</summary>
     private static void Footer(IContainer container, CompanyConfig company, string accent)
         => container.Column(col =>
         {
             col.Item().Width(12, Unit.Millimetre).Height(0.8f, Unit.Millimetre).Background(accent);
-            col.Item().PaddingTop(2, Unit.Millimetre).DefaultTextStyle(x => x.FontSize(7.5f).FontColor(Muted).LineHeight(1.3f)).Row(row =>
+            var columns = DocumentFooter.Columns(company);
+            col.Item().PaddingTop(2, Unit.Millimetre).DefaultTextStyle(x => x.FontSize(7f).FontColor(Muted).LineHeight(1.3f)).Row(row =>
             {
-                row.RelativeItem().Column(c =>
+                row.Spacing(3, Unit.Millimetre);
+                for (var i = 0; i < columns.Count; i++)
                 {
-                    c.Item().Text(company.SenderLine);
-                    Optional(c, company.Manager);
-                    Optional(c, company.Register);
-                });
-                row.RelativeItem().Column(c =>
-                {
-                    Optional(c, company.BankName);
-                    Optional(c, string.IsNullOrWhiteSpace(company.Iban) ? null : "IBAN " + company.Iban);
-                    Optional(c, string.IsNullOrWhiteSpace(company.Bic) ? null : "BIC " + company.Bic);
-                });
-                row.RelativeItem().Column(c =>
-                {
-                    Optional(c, string.IsNullOrWhiteSpace(company.TaxNumber) ? null : "Steuernummer " + company.TaxNumber);
-                    Optional(c, string.IsNullOrWhiteSpace(company.VatId) ? null : "USt-IdNr. " + company.VatId);
-                    c.Item().Text(t =>
+                    var lines = columns[i];
+                    var last = i == columns.Count - 1;
+                    row.RelativeItem(DocumentFooter.Weight(lines)).Column(c =>
                     {
-                        t.Span("Seite ");
-                        t.CurrentPageNumber();
-                        t.Span(" von ");
-                        t.TotalPages();
+                        foreach (var line in lines)
+                        {
+                            c.Item().Text(line);
+                        }
+
+                        if (last)
+                        {
+                            c.Item().Text(t =>
+                            {
+                                t.Span("Seite ");
+                                t.CurrentPageNumber();
+                                t.Span(" von ");
+                                t.TotalPages();
+                            });
+                        }
                     });
-                });
+                }
             });
         });
-
-    private static void Optional(ColumnDescriptor col, string? text)
-    {
-        if (!string.IsNullOrWhiteSpace(text))
-        {
-            col.Item().Text(text);
-        }
-    }
 
     private static string Join(string separator, params string?[] parts) => string.Join(separator, parts.Where(p => !string.IsNullOrWhiteSpace(p)));
 

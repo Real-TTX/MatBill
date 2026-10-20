@@ -72,6 +72,13 @@ public sealed class CompanyConfig
 
     public string? AccountHolder { get; set; }
 
+    /// <summary>A second bank account (optional): in the footer under the first one and in the e-invoice as a second account.</summary>
+    public string? Bank2Name { get; set; }
+
+    public string? Bank2Iban { get; set; }
+
+    public string? Bank2Bic { get; set; }
+
     /// <summary>The colour of headings and the total on the document ("#1d4ed8").</summary>
     public string AccentColor { get; set; } = "#1d4ed8";
 
@@ -84,6 +91,10 @@ public sealed class CompanyConfig
     /// <summary>The head of the document: <see cref="DocumentLayouts.Classic"/> (logo left, sender right), <see cref="DocumentLayouts.Centered"/> (logo centred above
     /// the sender in one line) or <see cref="DocumentLayouts.Right"/> (sender left, logo right). The same in the editor, the view and the PDF.</summary>
     public string Layout { get; set; } = DocumentLayouts.Classic;
+
+    /// <summary>The columns of the footer as written in Branding, with placeholders ({Name}, {Iban} ...; <see cref="Services.DocumentFooter"/>).
+    /// All empty: the footer is made from the company data.</summary>
+    public List<string> FooterColumns { get; set; } = [];
 
     /// <summary>Small business (§ 19 UStG): no VAT is charged, the invoice says why.</summary>
     public bool SmallBusiness { get; set; }

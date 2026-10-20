@@ -40,6 +40,17 @@
             </div>
         </mb-card>
 
+        <mb-card title="@L["Branding.Footer"]" icon="file-text">
+            <p class="mat-muted">@L["Branding.Footer.Text"]</p>
+            <div class="mat-form__grid">
+                <mb-textarea for="Input.Footer[0]" label="@L["Branding.Footer.Column", 1]" rows="6" placeholder="{Name}&#10;{NameLine2}&#10;{Street}&#10;{PostalCode} {City}&#10;{Manager}" data-footer-input />
+                <mb-textarea for="Input.Footer[1]" label="@L["Branding.Footer.Column", 2]" rows="6" placeholder="Tel. {Phone}&#10;{Email}&#10;{Website}" data-footer-input />
+                <mb-textarea for="Input.Footer[2]" label="@L["Branding.Footer.Column", 3]" rows="6" placeholder="{BankName}&#10;IBAN {Iban}&#10;BIC {Bic}&#10;{Bank2Name}&#10;IBAN {Bank2Iban}&#10;BIC {Bank2Bic}" data-footer-input />
+                <mb-textarea for="Input.Footer[3]" label="@L["Branding.Footer.Column", 4]" rows="6" placeholder="Steuernummer {TaxNumber}&#10;USt-IdNr. {VatId}&#10;{Register}" data-footer-input />
+            </div>
+            <p class="mat-hint">@L["Branding.Footer.Placeholders"] <code>@string.Join(" ", DocumentFooter.Placeholders.Select(p => "{" + p.Name + "}"))</code></p>
+        </mb-card>
+
         <mb-buttons back-href="/" />
     </form>
 

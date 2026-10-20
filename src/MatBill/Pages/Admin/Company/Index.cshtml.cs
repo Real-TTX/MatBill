@@ -75,6 +75,16 @@ public sealed class IndexModel(ConfigStore config, ActivityLogger log) : PageMod
         [StringLength(15)]
         public string? Bic { get; set; }
 
+        [StringLength(100)]
+        [Display(Name = "Company.Bank2Name")]
+        public string? Bank2Name { get; set; }
+
+        [StringLength(40)]
+        public string? Bank2Iban { get; set; }
+
+        [StringLength(15)]
+        public string? Bank2Bic { get; set; }
+
         public bool SmallBusiness { get; set; }
     }
 
@@ -93,7 +103,7 @@ public sealed class IndexModel(ConfigStore config, ActivityLogger log) : PageMod
         Input = new InputModel
         {
             Name = c.Name, NameLine2 = c.NameLine2, Manager = c.Manager, Street = c.Street, PostalCode = c.PostalCode, City = c.City, Country = c.Country, Email = c.Email, Phone = c.Phone,
-            Website = c.Website, TaxNumber = c.TaxNumber, VatId = c.VatId, Register = c.Register, BankName = c.BankName, Iban = c.Iban, Bic = c.Bic, SmallBusiness = c.SmallBusiness,
+            Website = c.Website, TaxNumber = c.TaxNumber, VatId = c.VatId, Register = c.Register, BankName = c.BankName, Iban = c.Iban, Bic = c.Bic, Bank2Name = c.Bank2Name, Bank2Iban = c.Bank2Iban, Bank2Bic = c.Bank2Bic, SmallBusiness = c.SmallBusiness,
         };
         Prepare();
     }
@@ -125,6 +135,9 @@ public sealed class IndexModel(ConfigStore config, ActivityLogger log) : PageMod
             c.Company.BankName = Clean(Input.BankName);
             c.Company.Iban = Clean(Input.Iban)?.ToUpperInvariant();
             c.Company.Bic = Clean(Input.Bic)?.ToUpperInvariant();
+            c.Company.Bank2Name = Clean(Input.Bank2Name);
+            c.Company.Bank2Iban = Clean(Input.Bank2Iban)?.ToUpperInvariant();
+            c.Company.Bank2Bic = Clean(Input.Bank2Bic)?.ToUpperInvariant();
             c.Company.SmallBusiness = Input.SmallBusiness;
         });
         await log.LogAsync(L["Company.Log.Changed"], "Company");

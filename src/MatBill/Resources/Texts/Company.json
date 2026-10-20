@@ -28,6 +28,10 @@
 
   "Company.Bank": { "en": "Bank details", "de": "Bankverbindung" },
   "Company.BankName": { "en": "Bank", "de": "Bank" },
+  "Company.Bank2Name": { "en": "Second bank (optional)", "de": "Zweite Bank (optional)" },
+  "Company.Bank2Iban": { "en": "Second IBAN", "de": "Zweite IBAN" },
+  "Company.Bank2Bic": { "en": "Second BIC", "de": "Zweite BIC" },
+  "Company.Bank2.Hint": { "en": "Shown in the footer under the first account and named in the e-invoice.", "de": "Steht im Fuß unter der ersten Verbindung und wird in der E-Rechnung genannt." },
 
   "Company.Preview": { "en": "Preview", "de": "Vorschau" },
   "Company.Preview.Sub": { "en": "the first page of the PDF", "de": "die erste Seite des PDF" },

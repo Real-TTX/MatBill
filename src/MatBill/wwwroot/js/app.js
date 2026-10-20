@@ -640,7 +640,19 @@
       clearTimeout(saveTimer);
       saveTimer = setTimeout(function () { try { localStorage.setItem(key, JSON.stringify(snapshot())); } catch (e) { /* full or blocked: the warning still works */ } }, 600);
     }
-    window.addEventListener('beforeunload', function (e) { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+    // Leaving with unsaved input asks in a dialog of MatUi (the browser's own "leave the page?" is never shown): a link inside the app waits for the answer.
+    // Closing the tab or reloading asks nothing; the copy in this browser (above) brings the input back the next time the document is opened.
+    doc.addEventListener('click', function (e) {
+      if (!dirty || e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) { return; }
+      var link = e.target.closest && e.target.closest('a[href]');
+      if (!link || link.target === '_blank' || link.hasAttribute('download') || link.closest('[data-lookup-dialog]')) { return; }
+      var url = new URL(link.href, window.location.href);
+      if (url.origin !== window.location.origin || (url.pathname === window.location.pathname && url.search === window.location.search && url.hash)) { return; }
+      e.preventDefault();
+      var leave = function () { dirty = false; window.location.href = url.toString(); };
+      if (!window.MatUi || !window.MatUi.confirm) { leave(); return; }
+      window.MatUi.confirm(t('Js.Editor.Leave'), { title: t('Js.Editor.Leave.Title'), ok: t('Js.Editor.Leave.Ok'), danger: true }).then(function (answer) { if (answer === 'ok' || answer === true) { leave(); } });
+    }, true);
     form.addEventListener('submit', function (e) {
       if (e.defaultPrevented) { return; }
       renumber();
@@ -797,6 +809,7 @@
         var accent = $('#Input_AccentColor');
         var signature = $('#Input_Signature');
         var query = new URLSearchParams({ handler: 'Preview', layout: chosen ? chosen.value : '', accent: accent ? accent.value : '', signature: signature ? signature.value : '', v: String(Date.now()) });
+        $$('[data-footer-input]').forEach(function (area) { query.append('footer', area.value); });
         previewImg.classList.add('is-loading');
         previewImg.src = '/Admin/Branding?' + query.toString();
         var link = previewImg.closest('[data-preview-link]');
@@ -806,11 +819,15 @@
     previewImg.addEventListener('load', function () { previewImg.classList.remove('is-loading'); });
     previewImg.addEventListener('error', function () { previewImg.classList.remove('is-loading'); });
     layoutRadios.forEach(function (r) { r.addEventListener('change', refreshPreview); });
+    $$('[data-footer-input]').forEach(function (area) { area.addEventListener('input', refreshPreview); });
     ['#Input_AccentColor', '#Input_Signature'].forEach(function (sel) {
       var el = $(sel);
       if (el) { el.addEventListener('input', refreshPreview); el.addEventListener('change', refreshPreview); }
     });
   }
+
+  // The columns of the footer share the width as in the PDF: by the longest line of each (data-weight, DocumentFooter.Weight).
+  $$('.mb-doc__footcols > [data-weight]').forEach(function (column) { column.style.flexGrow = column.getAttribute('data-weight'); });
 
   // ================================================================================================ the paper keeps its A4 width
 

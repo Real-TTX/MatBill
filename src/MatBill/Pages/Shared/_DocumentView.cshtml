@@ -8,8 +8,6 @@
     var d = Model.Doc;
     var company = Model.Company;
     var showTax = d.Totals.Taxes.Count > 1;
-    var senderLines = new[] { company.NameLine2, company.Street, string.Join(" ", new[] { company.PostalCode, company.City }.Where(s => !string.IsNullOrWhiteSpace(s))), company.Email, company.Phone, company.Website }
-        .Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
     var stamp = d.Stamp;
 }
 <article class="mb-paper mb-paper--view mb-doc @(showTax ? "has-tax" : "") @(d.IsCancelled ? "is-cancelled" : d.IsDraft ? "is-draft" : "")" data-stamp="@stamp" aria-label="@d.Title @d.Number">
@@ -24,9 +22,6 @@
                 <div class="mb-doc__company">@company.Name</div>
             }
         </div>
-        <address class="mb-doc__sender">
-            <strong>@company.Name</strong>@foreach (var line in senderLines) { <span>@line</span> }
-        </address>
     </header>
 
     <div class="mb-doc__top">
@@ -131,9 +126,10 @@
 
     <footer class="mb-doc__foot">
         <div class="mb-doc__footcols">
-            <p>@company.SenderLine@if (!string.IsNullOrWhiteSpace(company.Manager)) { <br />@company.Manager }@if (!string.IsNullOrWhiteSpace(company.Register)) { <br />@company.Register }</p>
-            <p>@company.BankName@if (!string.IsNullOrWhiteSpace(company.Iban)) { <br />@("IBAN " + company.Iban) }@if (!string.IsNullOrWhiteSpace(company.Bic)) { <br />@("BIC " + company.Bic) }</p>
-            <p>@if (!string.IsNullOrWhiteSpace(company.TaxNumber)) { @("Steuernummer " + company.TaxNumber)<br /> }@if (!string.IsNullOrWhiteSpace(company.VatId)) { @("USt-IdNr. " + company.VatId) }</p>
+            @foreach (var column in DocumentFooter.Columns(company))
+            {
+                <p data-weight="@DocumentFooter.Weight(column)">@for (var n = 0; n < column.Count; n++) { if (n > 0) { <br /> } @column[n] }</p>
+            }
         </div>
     </footer>
 </article>

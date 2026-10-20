@@ -23,6 +23,9 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
 
         [Display(Name = "Branding.Layout")]
         public string Layout { get; set; } = DocumentLayouts.Classic;
+
+        /// <summary>The columns of the footer with placeholders; all empty: made from the company data.</summary>
+        public string?[] Footer { get; set; } = new string?[DocumentFooter.MaxColumns];
     }
 
     [BindProperty]
@@ -39,7 +42,7 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
     public void OnGet()
     {
         var c = config.Current.Company;
-        Input = new InputModel { AccentColor = c.AccentColor, Signature = c.Signature, Layout = DocumentLayouts.Of(c.Layout) };
+        Input = new InputModel { AccentColor = c.AccentColor, Signature = c.Signature, Layout = DocumentLayouts.Of(c.Layout), Footer = [.. Enumerable.Range(0, DocumentFooter.MaxColumns).Select(i => c.FooterColumns.ElementAtOrDefault(i))] };
         Prepare();
     }
 
@@ -65,6 +68,7 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
             c.Company.AccentColor = Input.AccentColor.ToLowerInvariant();
             c.Company.Signature = string.IsNullOrWhiteSpace(Input.Signature) ? null : Input.Signature.Trim();
             c.Company.Layout = DocumentLayouts.Of(Input.Layout);
+            c.Company.FooterColumns = FooterOf(Input.Footer);
         });
         await log.LogAsync(L["Branding.Log.Changed"], "Company");
         Flash(L["Branding.Saved"]);
@@ -75,7 +79,7 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
     /// The first page of the sample invoice as the PDF draws it, as a PNG: the preview beside the forms of branding and company. An image scales as a whole,
     /// where the paper in HTML would set its text anew in a narrow column. Layout, colour and greeting can be tried before they are saved.
     /// </summary>
-    public async Task<IActionResult> OnGetPreviewAsync(string? layout, string? accent, string? signature)
+    public async Task<IActionResult> OnGetPreviewAsync(string? layout, string? accent, string? signature, string?[]? footer)
     {
         var copy = System.Text.Json.JsonSerializer.Deserialize<AppConfig>(System.Text.Json.JsonSerializer.Serialize(config.Current))!;
         if (layout is not null)
@@ -93,10 +97,22 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
             copy.Company.Signature = string.IsNullOrWhiteSpace(signature) ? null : signature.Trim()[..Math.Min(40, signature.Trim().Length)];
         }
 
+        if (footer is { Length: > 0 })
+        {
+            copy.Company.FooterColumns = FooterOf(footer);
+        }
+
         var sample = SampleDocument.Of(copy, null);
         var png = InvoicePdf.RenderImages(sample.Doc, sample.Company, await branding.GetLogoAsync(HttpContext.RequestAborted), dpi: 144).First();
         Response.Headers.CacheControl = "private, no-store";
         return File(png, "image/png");
+    }
+
+    /// <summary>The columns as they are kept: at most four, each trimmed and at most 600 characters; when all are empty, none (the footer is made automatically).</summary>
+    private static List<string> FooterOf(string?[]? columns)
+    {
+        var list = (columns ?? []).Take(DocumentFooter.MaxColumns).Select(c => (c ?? "").ReplaceLineEndings("\n").Trim()).Select(c => c.Length > 600 ? c[..600] : c).ToList();
+        return list.All(c => c.Length == 0) ? [] : list;
     }
 
     public async Task<IActionResult> OnPostRemoveLogoAsync()

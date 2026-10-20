@@ -70,10 +70,13 @@ Test changes by **rebuilding the container and redeploying the stack**. Wait for
   `app.js`; the editor's data is a `<script type="application/json" id="mb-editor-data">` block (never executed). Icons from the sprite (`Ui.Icon`; own icons in `ui/mb-icons.svg`).
 - Lists: toolbar above (search, filter, sort), table, pager directly below, actions below on the left. A list never scrolls sideways: `app.js` hides `mat-hide-sm` columns, the last first, while a table is wider than its frame; tooltips of row buttons open to the left. CRUD = list + separate edit page. Buttons in one row from positive
   to negative, delete spaced apart (`mb-buttons`, `mat-btn-row`). Dependent fields with `show-if` (MatUi `data-show-if`). Several controls of one kind per page: ids derive from the control id.
+- Dialogs: confirmations and messages are MatUi (`data-confirm`, `MatUi.confirm`, `MatUi.toast`), never `confirm()`/`alert()` of the browser; leaving the editor with
+  unsaved input asks with `MatUi.confirm` (no `beforeunload`: the copy in localStorage brings the input back).
 - Mobile: check 390 px; editor fields are 16 px on touch screens; safe areas come from MatUi tokens.
 - The accent is blue `#1d4ed8` (`[data-app="matbill"]` in `app.css`; theme-color metas follow `--mat-glass`). The document colour of a company is `CompanyConfig.AccentColor`.
 - **WYSIWYG:** the paper (`.mb-paper` in `app.css`, block "The paper is the PDF") uses the font (Lato, `wwwroot/fonts`, OFL) and the sizes (pt) and distances (mm) of `InvoicePdf`; change both together.
-  The head has three layouts (`CompanyConfig.Layout`, `DocumentLayouts`), drawn the same in `InvoicePdf.Head` and the `mb-doc__head--*` classes. `InvoicePdf.RenderImages` gives the pages as PNG: the preview of branding and company is such an image (`/Admin/Branding?handler=Preview`, with layout/accent/signature to try), never the HTML paper squeezed into a column.
+  The head is the logo only (left, middle, right: `CompanyConfig.Layout`, `DocumentLayouts`); the full address is in the footer (`DocumentFooter`: from the company data,
+  or written in Branding with placeholders, a line whose placeholders are all empty is left out), the short sender line in the window (DIN 5008). `InvoicePdf.RenderImages` gives the pages as PNG: the preview of branding and company is such an image (`/Admin/Branding?handler=Preview`, with layout/accent/signature to try), never the HTML paper squeezed into a column.
 - PWA: `sw.js` is registered as `/sw.js?v=<version>-<sprite hash>` (a build is a new worker). Static files cache-first, pages network-first with a kept copy marked
   `data-offline-copy`; never cached: POST, `/api`, `/Account`, `/s/`, PDFs. Logout and the sign-in page clear the kept pages.
 - Formatting: request culture invariant; text a person reads goes through `Fmt` (the UI language: de-DE or en-GB), documents through `DocFmt` (always de-DE).

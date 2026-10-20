@@ -248,17 +248,17 @@ select.mb-in { appearance: none; -webkit-appearance: none; cursor: pointer; text
 .mb-doc__sender { flex: none; width: 62mm; font-size: inherit; line-height: inherit; color: color-mix(in srgb, var(--mat-text) 85%, transparent); }
 .mb-doc__sender strong { color: var(--mat-text); }
 .mb-doc__sender > strong, .mb-doc__sender > span { display: block; }
-/* the layouts of the head (CompanyConfig.Layout), as InvoicePdf.Head draws them */
-.mb-doc__head--right { flex-direction: row-reverse; }
-.mb-doc__head--right .mb-doc__sender { text-align: left; }
-.mb-doc__head--right .mb-doc__logo { text-align: right; }
-.mb-doc__head--right .mb-doc__logo img { margin-left: auto; object-position: right center; }
-.mb-doc__head--centered { flex-direction: column; align-items: center; gap: 3mm; }
+/* the layouts of the head (CompanyConfig.Layout), as InvoicePdf.Head draws them: the logo left, in the middle or right; the address is in the footer */
+.mb-doc__head--classic { justify-content: flex-start; }
+.mb-doc__head--centered { justify-content: center; }
 .mb-doc__head--centered .mb-doc__logo { text-align: center; }
 .mb-doc__head--centered .mb-doc__logo img { margin-inline: auto; object-position: center; }
-.mb-doc__head--centered .mb-doc__sender { width: 100%; text-align: center; font-size: 8.5pt; }
-.mb-doc__head--centered .mb-doc__sender > strong, .mb-doc__head--centered .mb-doc__sender > span { display: inline; }
-.mb-doc__head--centered .mb-doc__sender > span::before { content: " · "; }
+.mb-doc__head--right { justify-content: flex-end; }
+.mb-doc__head--right .mb-doc__logo { text-align: right; }
+.mb-doc__head--right .mb-doc__logo img { margin-left: auto; object-position: right center; }
+/* the footer: the columns of DocumentFooter side by side, equally wide, as in the PDF */
+.mb-doc__footcols { display: flex; gap: 3mm; }
+.mb-doc__footcols > p { flex: 1 1 0; min-width: 0; }
 .mb-doc__top { margin-top: 12mm; gap: 10mm; }
 .mb-doc__senderline { font-size: 7pt; margin-bottom: 3pt; color: var(--mat-text-muted); }
 .mb-doc__address { gap: 0; }
@@ -282,9 +282,9 @@ select.mb-in { appearance: none; -webkit-appearance: none; cursor: pointer; text
 .mb-doc__terms .mb-doc__caption { font-size: inherit; margin-bottom: 2pt; }
 .mb-doc__closing { margin-top: 8mm; }
 .mb-doc__signature { font-family: "MB Lato", var(--mat-font); font-style: italic; font-size: 16pt; transform: none; }
-.mb-doc__foot { padding-top: 8mm; gap: 2mm; font-size: 7.5pt; line-height: 1.3; }
+.mb-doc__foot { padding-top: 8mm; gap: 2mm; font-size: 7pt; line-height: 1.3; }
 .mb-doc__foot::before { width: 12mm; height: .8mm; border-radius: 0; }
-.mb-doc__footcols { gap: 4mm; }
+.mb-doc__footcols { gap: 3mm; }
 /* the columns of the positions are those of the PDF (5 : 1.6 : 1.9 : 1 : 1.9); the tools of a position stand in the margin beside it */
 .mb-lines__head, .mb-line, .mb-paper--view .mb-lines__head, .mb-paper--view .mb-line, .mb-doc.is-exempt .mb-lines__head, .mb-doc.is-exempt .mb-line { grid-template-columns: minmax(0, 5fr) minmax(0, 1.6fr) minmax(0, 1.9fr) minmax(0, 1.9fr); gap: 0 2mm; }
 :where(.mb-paper:not(.mb-paper--view):not(.is-exempt)) .mb-lines__head, :where(.mb-paper:not(.mb-paper--view):not(.is-exempt)) .mb-line, .mb-paper--view.has-tax .mb-lines__head, .mb-paper--view.has-tax .mb-line { grid-template-columns: minmax(0, 5fr) minmax(0, 1.6fr) minmax(0, 1.9fr) minmax(0, 1fr) minmax(0, 1.9fr); }
@@ -404,7 +404,7 @@ select.mb-in { appearance: none; -webkit-appearance: none; cursor: pointer; text
   .mb-doc__sender { text-align: left; }
   .mb-doc__logo { max-width: 100%; }
   .mb-doc__top { grid-template-columns: minmax(0, 1fr); gap: var(--mat-space-5); }
-  .mb-doc__footcols { grid-template-columns: minmax(0, 1fr); gap: var(--mat-space-2); }
+  .mb-doc__footcols { flex-direction: column; gap: var(--mat-space-2); }
   .mb-lines__head { display: none; }
   .mb-line, .mb-paper--view .mb-line, .mb-paper--view.has-tax .mb-line { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--mat-space-2) var(--mat-space-3); padding-inline: 0; }
   .mb-line__what { grid-column: 1 / -1; }
