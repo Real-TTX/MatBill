@@ -75,12 +75,16 @@ public sealed class PagesTests : IClassFixture<AppFixture>
         Assert.True(failures.Count == 0, "Pages that failed: " + string.Join(", ", failures));
 
         // the PDFs: the stored one of an issued invoice, a fresh one of a draft, the preview of a series
-        foreach (var url in new[] { $"/invoices/{issued}/pdf", $"/invoices/{draft}/pdf", $"/recurring/{series}/preview" })
+        foreach (var url in new[] { $"/invoices/{issued}/pdf", $"/invoices/{draft}/pdf", $"/recurring/{series}/preview.pdf" })
         {
             var pdf = await client.GetAsync(url);
             Assert.Equal(HttpStatusCode.OK, pdf.StatusCode);
             Assert.Equal("application/pdf", pdf.Content.Headers.ContentType?.MediaType);
         }
+
+        // the preview of the next invoice of a series, inside the app: its first page as an image
+        var page = await client.GetAsync($"/recurring/{series}/preview/1");
+        Assert.Equal("image/png", page.Content.Headers.ContentType?.MediaType);
     }
 
     [DatabaseFact]

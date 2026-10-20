@@ -128,6 +128,10 @@ public sealed class QuoteService(MbDbContext db, ConfigStore config, NumberServi
     public async Task<byte[]> RenderAsync(Quote quote, CancellationToken ct = default)
         => InvoicePdf.Render(InvoiceDocument.Of(quote, config.Current.Invoicing), config.Current.Company, await branding.GetLogoAsync(ct));
 
+    /// <summary>The pages as they look now as PNG images: the preview inside the app.</summary>
+    public async Task<List<byte[]>> RenderPagesAsync(Quote quote, CancellationToken ct = default)
+        => [.. InvoicePdf.RenderImages(InvoiceDocument.Of(quote, config.Current.Invoicing), config.Current.Company, await branding.GetLogoAsync(ct), dpi: 110)];
+
     public async Task<byte[]> PdfAsync(Quote quote, CancellationToken ct = default)
     {
         if (!quote.IsDraft && quote.PdfFileId is { } fileId)

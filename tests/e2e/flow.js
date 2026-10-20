@@ -113,6 +113,15 @@ async function confirmDialog(page) {
   await page.waitForURL(/Invoices\/Edit\?id=\d+/, { timeout: 15000 });
   check(await page.locator('[data-line]').count() === 2, 'the draft is saved with its two positions');
   const id = new URL(page.url()).searchParams.get('id');
+  // the preview stays inside the app: a dialog with the pages as images (an installed app has no way back from a PDF in a new window)
+  let popup = false;
+  page.once('popup', () => { popup = true; });
+  await page.locator('[data-pdf-preview]').first().click();
+  await page.waitForFunction(() => document.querySelectorAll('#mb-preview img').length > 0 && [...document.querySelectorAll('#mb-preview img')].every(i => i.complete && i.naturalWidth > 0), null, { timeout: 15000 });
+  check(await page.locator('#mb-preview').evaluate(d => d.open) && !popup, 'the PDF preview opens in a dialog of the app, not in a new window');
+  await shot(page, 'pdf-preview');
+  await page.locator('#mb-preview .mat-dialog__close').click();
+  check(!(await page.locator('#mb-preview').evaluate(d => d.open)), 'the preview closes with its X');
 
   console.log('Issue it');
   await page.locator('button', { hasText: 'Ausstellen' }).first().click();

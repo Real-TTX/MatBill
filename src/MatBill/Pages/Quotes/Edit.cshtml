@@ -48,7 +48,7 @@
                 <button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="Save" asp-route-id="@quote.Id">@Ui.Icon("save")<span>@L["Common.Save"]</span></button>
                 @if (!Model.IsNew)
                 {
-                    <a class="mat-btn mat-btn--ghost" href="/quotes/@quote.Id/pdf" target="_blank" rel="noopener">@Ui.Icon("eye")<span>@L["Quotes.PdfPreview"]</span></a>
+                    <a class="mat-btn mat-btn--ghost" href="/quotes/@quote.Id/pdf?download=1" data-pdf-preview="/quotes/@quote.Id/preview">@Ui.Icon("eye")<span>@L["Quotes.PdfPreview"]</span></a>
                 }
                 <a class="mat-btn mat-btn--ghost" href="/Quotes">@Ui.Icon("back")<span>@L["Common.Back"]</span></a>
                 @if (!Model.IsNew)

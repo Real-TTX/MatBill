@@ -33,7 +33,7 @@
             <mb-input for="Input.Subject" label="@L["Quotes.Send.Subject"]" required="true" full="true" />
             <mb-textarea for="Input.Body" label="@L["Quotes.Send.Body"]" rows="9" required="true" full="true" />
         </div>
-        <p class="mat-hint">@L["Quotes.Send.Attachment"] <a href="/quotes/@Model.Quote.Id/pdf" target="_blank" rel="noopener">@QuoteService.PdfName(Model.Quote)</a></p>
+        <p class="mat-hint">@L["Quotes.Send.Attachment"] <a href="/quotes/@Model.Quote.Id/pdf?download=1">@QuoteService.PdfName(Model.Quote)</a></p>
     </mb-card>
     <div class="mat-btn-row">
         <button type="submit" class="mat-btn mat-btn--primary mb-needs-online" disabled="@(!Model.Configured)">@Ui.Icon("send")<span>@L["Quotes.Send.Send"]</span></button>

@@ -636,6 +636,7 @@
     }
     function markDirty() {
       dirty = true;
+      editor.setAttribute('data-dirty', '');
       if (!key) { return; }
       clearTimeout(saveTimer);
       saveTimer = setTimeout(function () { try { localStorage.setItem(key, JSON.stringify(snapshot())); } catch (e) { /* full or blocked: the warning still works */ } }, 600);
@@ -645,7 +646,7 @@
     doc.addEventListener('click', function (e) {
       if (!dirty || e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) { return; }
       var link = e.target.closest && e.target.closest('a[href]');
-      if (!link || link.target === '_blank' || link.hasAttribute('download') || link.closest('[data-lookup-dialog]')) { return; }
+      if (!link || link.target === '_blank' || link.hasAttribute('download') || link.closest('[data-lookup-dialog], [data-pdf-preview], [data-preview-image], #mb-preview')) { return; }
       var url = new URL(link.href, window.location.href);
       if (url.origin !== window.location.origin || (url.pathname === window.location.pathname && url.search === window.location.search && url.hash)) { return; }
       e.preventDefault();
@@ -867,6 +868,44 @@
     group.addEventListener('click', function () { setTimeout(function () { keepTab(group); }, 0); });
     group.addEventListener('keyup', function () { keepTab(group); });
   });
+
+  // ================================================================================================ the preview inside the app
+
+  // A preview opens in a dialog of the app (#mb-preview, full screen on a phone), never as a PDF in a new window: an installed app (standalone) shows that
+  // without a way back. [data-pdf-preview] names an address that answers { pages, download }, its page n is .../n (a PNG); [data-preview-image] shows its href.
+  var previewDialog = $('#mb-preview');
+  if (previewDialog) {
+    var previewPages = $('[data-preview-pages]', previewDialog);
+    var previewStatus = $('[data-preview-status]', previewDialog);
+    var previewDownload = $('[data-preview-download]', previewDialog);
+    var previewImage = function (src, alt) {
+      var img = doc.createElement('img');
+      img.src = src; img.alt = alt; img.loading = 'lazy'; img.decoding = 'async';
+      previewPages.appendChild(img);
+    };
+    doc.addEventListener('click', function (e) {
+      var link = e.target.closest && e.target.closest('[data-pdf-preview], [data-preview-image]');
+      if (!link || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey) { return; }
+      e.preventDefault();
+      previewPages.innerHTML = '';
+      previewDownload.hidden = true;
+      previewStatus.textContent = t('Js.Preview.Loading');
+      if (window.MatUi && window.MatUi.dialog) { window.MatUi.dialog.open(previewDialog, link); } else { previewDialog.showModal(); }
+      if (link.hasAttribute('data-preview-image')) {
+        previewStatus.textContent = '';
+        previewImage(link.href, t('Js.Preview.Page', 1, 1));
+        return;
+      }
+      var base = link.getAttribute('data-pdf-preview');
+      var unsaved = $('[data-editor][data-dirty]');
+      getJson(base).then(function (info) {
+        previewStatus.textContent = unsaved ? t('Js.Preview.Saved') : '';
+        for (var n = 1; n <= info.pages; n++) { previewImage(base + '/' + n + '?v=' + Date.now(), t('Js.Preview.Page', n, info.pages)); }
+        previewDownload.href = info.download;
+        previewDownload.hidden = false;
+      }).catch(function () { previewStatus.textContent = t('Js.Preview.Failed'); previewDownload.href = link.href; previewDownload.hidden = false; });
+    });
+  }
 
   // ================================================================================================ filters that search
 

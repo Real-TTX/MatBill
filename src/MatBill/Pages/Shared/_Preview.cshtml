@@ -1,0 +1,24 @@
+@*
+    The preview inside the app: the pages of a document as images (drawn by the code of the PDF), with the download beside them. A PDF opened in a new window
+    has no way back in an installed app (standalone), so a preview is never a link with target="_blank". On a phone the dialog fills the screen (DIALOG-03).
+    Opened by app.js for [data-pdf-preview] (an address that answers the number of pages) and [data-preview-image] (one image).
+*@
+<dialog class="mat-dialog mat-dialog--xl mb-preview" id="mb-preview" aria-labelledby="mb-preview-title">
+    <div class="mat-dialog__form">
+        <div class="mat-dialog__head">
+            @Ui.Icon("eye")
+            <h2 class="mat-dialog__title" id="mb-preview-title">@L["Shell.Preview.Title"]</h2>
+            <button type="button" class="mat-btn mat-btn--ghost mat-btn--icon mat-dialog__close" data-dialog-close aria-label="@L["Common.Close"]">@Ui.Icon("x")</button>
+        </div>
+        <div class="mat-dialog__body">
+            <p class="mat-hint" data-preview-status aria-live="polite"></p>
+            <div class="mb-preview__pages" data-preview-pages></div>
+        </div>
+        <div class="mat-dialog__foot">
+            <div class="mat-btn-row mat-btn-row--plain">
+                <a class="mat-btn mat-btn--primary" href="#" download data-preview-download hidden>@Ui.Icon("download")<span>@L["Shell.Preview.Download"]</span></a>
+                <button type="button" class="mat-btn mat-btn--secondary" data-dialog-close>@L["Common.Close"]</button>
+            </div>
+        </div>
+    </div>
+</dialog>

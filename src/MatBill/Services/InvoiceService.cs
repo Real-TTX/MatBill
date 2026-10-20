@@ -295,6 +295,10 @@ public sealed class InvoiceService(MbDbContext db, ConfigStore config, NumberSer
     public async Task<byte[]> RenderAsync(Invoice invoice, CancellationToken ct = default)
         => InvoicePdf.Render(InvoiceDocument.Of(invoice, config.Current.Invoicing), config.Current.Company, await branding.GetLogoAsync(ct));
 
+    /// <summary>The pages as they look now as PNG images: the preview inside the app (a PDF opened in an installed app has no way back).</summary>
+    public async Task<List<byte[]>> RenderPagesAsync(Invoice invoice, CancellationToken ct = default)
+        => [.. InvoicePdf.RenderImages(InvoiceDocument.Of(invoice, config.Current.Invoicing), config.Current.Company, await branding.GetLogoAsync(ct), dpi: 110)];
+
     /// <summary>The PDF of an invoice: the stored one of an issued invoice (it never changes), a fresh one of a draft.</summary>
     public async Task<byte[]> PdfAsync(Invoice invoice, CancellationToken ct = default)
     {

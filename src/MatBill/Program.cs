@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 // The image checks itself (HEALTHCHECK in the Dockerfile): it needs no curl.
 if (args.Contains("--healthcheck"))
@@ -406,7 +407,7 @@ app.MapGet("/expenses/{id:long}/receipt", async (long id, HttpContext http, Expe
 });
 
 // The PDF of the template of a series, as its next invoice would look.
-app.MapGet("/recurring/{id:long}/preview", async (long id, HttpContext http, RecurringService recurring, InvoiceService invoices, ConfigStore cfg) =>
+app.MapGet("/recurring/{id:long}/preview.pdf", async (long id, HttpContext http, RecurringService recurring, InvoiceService invoices, ConfigStore cfg) =>
 {
     var series = await recurring.LoadAsync(id, http.RequestAborted);
     if (series is null)
@@ -417,7 +418,31 @@ app.MapGet("/recurring/{id:long}/preview", async (long id, HttpContext http, Rec
     var preview = RecurringPreview.Of(series, invoices, cfg.Current.Company.SmallBusiness);
     var bytes = await invoices.RenderAsync(preview, http.RequestAborted);
     http.Response.Headers.CacheControl = "private, no-store";
-    return Results.File(bytes, "application/pdf");
+    return Results.File(bytes, "application/pdf", http.Request.Query.ContainsKey("download") ? $"Vorschau_{series.Name}.pdf" : null);
+});
+
+// The preview inside the app (a dialog, never the PDF in a new window: an installed app shows it without a way back): the pages as images, drawn by the code of the
+// PDF. GET .../preview answers how many pages and where the PDF is downloaded, .../preview/{n} is page n as a PNG. Drafts of invoices and quotes, the next invoice of a series.
+app.MapGet("/invoices/{id:long}/preview/{page:int?}", async (long id, int? page, HttpContext http, InvoiceService invoices, IMemoryCache cache) =>
+    await invoices.FindAsync(id, http.RequestAborted) is { IsDraft: true } invoice
+        ? await PreviewAsync(http, cache, $"invoice:{id}:{invoice.UpdateDate.Ticks}", () => invoices.RenderPagesAsync(invoice, http.RequestAborted), $"/invoices/{id}/pdf?download=1", page)
+        : Results.NotFound());
+
+app.MapGet("/quotes/{id:long}/preview/{page:int?}", async (long id, int? page, HttpContext http, QuoteService quotes, IMemoryCache cache) =>
+    await quotes.FindAsync(id, http.RequestAborted) is { IsDraft: true } quote
+        ? await PreviewAsync(http, cache, $"quote:{id}:{quote.UpdateDate.Ticks}", () => quotes.RenderPagesAsync(quote, http.RequestAborted), $"/quotes/{id}/pdf?download=1", page)
+        : Results.NotFound());
+
+app.MapGet("/recurring/{id:long}/preview/{page:int?}", async (long id, int? page, HttpContext http, RecurringService recurring, InvoiceService invoices, ConfigStore cfg, IMemoryCache cache) =>
+{
+    var series = await recurring.LoadAsync(id, http.RequestAborted);
+    if (series is null)
+    {
+        return Results.NotFound();
+    }
+
+    var next = RecurringPreview.Of(series, invoices, cfg.Current.Company.SmallBusiness);
+    return await PreviewAsync(http, cache, $"series:{id}:{series.UpdateDate.Ticks}", () => invoices.RenderPagesAsync(next, http.RequestAborted), $"/recurring/{id}/preview.pdf?download=1", page);
 });
 
 // The logo of the company (the token changes with every upload, so it may be cached for long). An SVG cannot run anything here.
@@ -460,6 +485,23 @@ app.MapRazorPages();
 
 await app.RunAsync();
 return 0;
+
+// The pages of a preview, drawn once and kept two minutes under a key that changes with the document: the count, then one image per request.
+static async Task<IResult> PreviewAsync(HttpContext http, IMemoryCache cache, string key, Func<Task<List<byte[]>>> render, string download, int? page)
+{
+    var pages = (await cache.GetOrCreateAsync("preview:" + key, async entry =>
+    {
+        entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2);
+        return await render();
+    }))!;
+    http.Response.Headers.CacheControl = "private, no-store";
+    if (page is null)
+    {
+        return Results.Ok(new { pages = pages.Count, download });
+    }
+
+    return page is >= 1 && page <= pages.Count ? Results.File(pages[page.Value - 1], "image/png") : Results.NotFound();
+}
 
 static int IntOf(string? value, int fallback) => int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var n) ? n : fallback;
 

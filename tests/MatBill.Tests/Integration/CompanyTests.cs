@@ -112,6 +112,41 @@ public sealed class CompanyTests : IClassFixture<AppFixture>
     }
 
     [DatabaseFact]
+    public async Task The_preview_of_a_draft_is_its_pages_as_images_inside_the_app()
+    {
+        await _app.EnsureAdminAsync();
+        var (customer, issued, _) = await _app.CreateInvoiceWithPdfAsync("Vorschau", 120m);
+        var draftId = await _app.WithScopeAsync(async sp =>
+        {
+            var db = sp.GetRequiredService<MbDbContext>();
+            var invoices = sp.GetRequiredService<InvoiceService>();
+            var draft = invoices.NewDraft(await db.Customer.FindAsync(customer.Id));
+            draft.Lines.Add(new InvoiceLine { Position = 1, Name = "Vorschau-Leistung", Quantity = 1, UnitPrice = 50, TaxRate = 19 });
+            InvoiceService.Recalculate(draft);
+            db.Invoice.Add(draft);
+            await db.SaveChangesAsync();
+            return draft.Id;
+        });
+
+        using var client = _app.NewClient();
+        await AppFixture.LoginAsync(client, "admin@example.com", "Start12345");
+        var editor = await AppFixture.TextAsync(client, $"/Invoices/Edit?id={draftId}");
+        Assert.Contains($"data-pdf-preview=\"/invoices/{draftId}/preview\"", editor);
+        Assert.Contains("id=\"mb-preview\"", editor);
+        Assert.DoesNotContain("target=\"_blank\"", editor);
+
+        using var info = System.Text.Json.JsonDocument.Parse(await client.GetStringAsync($"/invoices/{draftId}/preview"));
+        Assert.Equal(1, info.RootElement.GetProperty("pages").GetInt32());
+        Assert.Equal($"/invoices/{draftId}/pdf?download=1", info.RootElement.GetProperty("download").GetString());
+        var page = await client.GetAsync($"/invoices/{draftId}/preview/1");
+        Assert.Equal("image/png", page.Content.Headers.ContentType?.MediaType);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/invoices/{draftId}/preview/2")).StatusCode);
+
+        // an issued invoice is its stored PDF, not a preview
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/invoices/{issued.Id}/preview")).StatusCode);
+    }
+
+    [DatabaseFact]
     public async Task The_invoice_list_leads_to_the_invoices_of_the_customer()
     {
         await _app.EnsureAdminAsync();

@@ -525,3 +525,8 @@ select.mb-multi { min-height: 7rem; padding-block: var(--mat-space-1); }
 .mb-lookup__end { font-variant-numeric: tabular-nums; white-space: nowrap; }
 [data-lookup-dialog].is-busy .mb-lookup__list { opacity: .6; transition: opacity var(--mat-dur-fast) var(--mat-ease); }
 [data-lookup-more][hidden] { display: none; }
+
+/* ---- The preview inside the app (#mb-preview): the pages of the PDF as images, one under the other ---- */
+.mb-preview__pages { display: grid; gap: var(--mat-space-4); justify-items: center; }
+.mb-preview__pages img { display: block; width: 100%; max-width: 210mm; height: auto; background: #fff; border: 1px solid var(--mat-border); }
+[data-preview-download][hidden] { display: none; }

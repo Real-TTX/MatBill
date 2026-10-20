@@ -78,6 +78,9 @@ Test changes by **rebuilding the container and redeploying the stack**. Wait for
 - **WYSIWYG:** the paper (`.mb-paper` in `app.css`, block "The paper is the PDF") uses the font (Lato, `wwwroot/fonts`, OFL) and the sizes (pt) and distances (mm) of `InvoicePdf`; change both together.
   The head is the logo only (left, middle, right: `CompanyConfig.Layout`, `DocumentLayouts`); the full address is in the footer (`DocumentFooter`: from the company data,
   or written in Branding with placeholders, a line whose placeholders are all empty is left out), the short sender line in the window (DIN 5008). `InvoicePdf.RenderImages` gives the pages as PNG: the preview of branding and company is such an image (`/Admin/Branding?handler=Preview`, with layout/accent/signature to try), never the HTML paper squeezed into a column.
+- Previews never open a PDF or an image in a new window (`target="_blank"`): an installed app (standalone) has no way back from it. They open `#mb-preview`
+  (`_Preview.cshtml`, in the layout; full screen on a phone): `data-pdf-preview="/invoices/{id}/preview"` (answers `{ pages, download }`, page n is `.../preview/{n}`, a PNG
+  drawn by `InvoicePdf.RenderImages`) or `data-preview-image` (its href). A PDF is otherwise a download (`?download=1`).
 - PWA: `sw.js` is registered as `/sw.js?v=<version>-<sprite hash>` (a build is a new worker). Static files cache-first, pages network-first with a kept copy marked
   `data-offline-copy`; never cached: POST, `/api`, `/Account`, `/s/`, PDFs. Logout and the sign-in page clear the kept pages.
 - Formatting: request culture invariant; text a person reads goes through `Fmt` (the UI language: de-DE or en-GB), documents through `DocFmt` (always de-DE).
