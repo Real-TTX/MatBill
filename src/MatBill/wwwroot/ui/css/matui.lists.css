@@ -9,7 +9,7 @@
 .mat-list { display: flex; flex-direction: column; gap: var(--mat-space-4); min-width: 0; }
 .mat-list > .mat-toolbar { order: 0; }
 .mat-list > .mat-chips { order: 1; }
-.mat-list > .mat-table-wrap, .mat-list > .mat-gallery { order: 2; }
+.mat-list > .mat-table-wrap, .mat-list > .mat-gallery, .mat-list > .mat-itemlist { order: 2; }
 .mat-list > .mat-empty { order: 3; }
 .mat-list > .mat-pager { order: 4; }
 .mat-list > .mat-actions { order: 5; }
@@ -41,7 +41,15 @@
 @media (max-width: 480px) {
   .mat-toolbar__btn small { display: none; }
   .mat-toolbar__info { width: 100%; padding: 0 var(--mat-space-2); order: 9; }
-  .mat-toolbar__search { flex-basis: 100%; max-width: none; }
+  /* On a phone a toolbar with a search field is one row, like the search bar of a phone app: the field takes the room and the buttons at its right end
+     are icons only (their name stays for screen readers, the number of filters is a badge on the icon); the count goes under the row. */
+  .mat-toolbar__search { flex: 1 1 0; max-width: none; }
+  .mat-toolbar__search ~ .mat-toolbar__spacer { display: none; }
+  .mat-toolbar:has(> .mat-toolbar__search) .mat-toolbar__btn:has(> .mat-icon) { position: relative; padding: 0; width: var(--mat-btn-height, var(--mat-control-h)); }
+  .mat-toolbar:has(> .mat-toolbar__search) .mat-toolbar__btn:has(> .mat-icon) > span:not(.mat-badge) {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+  .mat-toolbar:has(> .mat-toolbar__search) .mat-toolbar__btn > .mat-badge { position: absolute; top: -4px; right: -4px; box-shadow: 0 0 0 2px var(--mat-surface); }
 }
 
 /* ---- Table ---- */
@@ -93,6 +101,9 @@
 .mat-table__name .mat-muted { font-weight: 400; } /* a part of the name that the group already says: .example.org after app */
 .mat-table__actions { display: flex; justify-content: flex-end; gap: var(--mat-space-1); }
 .mat-table td.mat-table__cell-actions { width: 1%; white-space: nowrap; }
+/* A table that is wider than its frame above 720 px leaves out the columns the phone leaves out (mat-hide-sm), the last one first, until it fits (TABLE-02,
+   the script marks their cells is-col-hidden); it scrolls sideways only with data-table-scroll on the frame (TABLE-04: a table that cannot become cards). */
+.mat-table .is-col-hidden { display: none; }
 
 /* Under 720 px a row becomes a card; every <td> needs data-label for that (RULE TABLE-02). */
 @media (max-width: 720px) {
@@ -101,13 +112,24 @@
   .mat-table tr { padding: var(--mat-table-pad-y, var(--mat-space-3)) var(--mat-table-pad-x, var(--mat-space-4)); border-top: 1px solid var(--mat-border); }
   .mat-table tbody tr:first-child { border-top: 0; }
   .mat-table td { display: flex; align-items: baseline; justify-content: space-between; gap: var(--mat-space-4); padding: var(--mat-space-1) 0; border: 0; text-align: right; }
-  .mat-table td::before { content: attr(data-label); flex: none; color: var(--mat-text-muted); font-size: var(--mat-fs-sm); font-weight: 500; text-align: left; }
+  .mat-table td::before { content: attr(data-label); flex: none; color: var(--mat-text-muted); font-family: var(--mat-font); font-size: var(--mat-fs-sm); font-weight: 500; text-align: left; }
   .mat-table td:not([data-label])::before, .mat-table td[data-label=""]::before { content: none; }
   .mat-table td.mat-table__cell-actions { width: 100%; }
   .mat-table td .mat-table__name { text-align: left; }
   /* The check of a selectable row is the first thing of its card, without a label (it has an accessible name of its own). */
   .mat-table td.mat-table__select { width: 100%; justify-content: flex-start; }
   .mat-table td.mat-table__select::before { content: none; }
+  /* The card of a row with actions reads like a phone list: its first cell (the name) is the title, without its label, and the actions stand at its right
+     end in the same line; the other cells follow under it with their labels. A grouped table and a selectable row keep the plain card. */
+  .mat-table > tbody:not(.mat-group) > tr:has(> td.mat-table__cell-actions):not(:has(> td.mat-table__select)) {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--mat-space-3); align-items: center;
+  }
+  .mat-table > tbody:not(.mat-group) > tr:has(> td.mat-table__cell-actions):not(:has(> td.mat-table__select)) > td { grid-column: 1 / -1; }
+  .mat-table > tbody:not(.mat-group) > tr:has(> td.mat-table__cell-actions):not(:has(> td.mat-table__select)) > td:first-child {
+    grid-column: 1; grid-row: 1; justify-content: flex-start; font-weight: 600; text-align: left;
+  }
+  .mat-table > tbody:not(.mat-group) > tr:has(> td.mat-table__cell-actions):not(:has(> td.mat-table__select)) > td:first-child::before { content: none; }
+  .mat-table > tbody:not(.mat-group) > tr:has(> td.mat-table__cell-actions):not(:has(> td.mat-table__select)) > td.mat-table__cell-actions { grid-column: 2; grid-row: 1; width: auto; padding: 0; }
 }
 
 /* ---- Groups in a table (LIST-16): rows under a heading that opens and closes. The items hang on a line below the heading, and the action that adds one

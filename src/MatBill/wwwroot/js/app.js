@@ -868,26 +868,6 @@
     group.addEventListener('keyup', function () { keepTab(group); });
   });
 
-  // ================================================================================================ lists that fit
-
-  // A list never scrolls sideways (TABLE-02): when a table is wider than its frame, the columns the phone leaves out (mat-hide-sm) go, the last one
-  // first, until it fits; when there is room again they come back. Under 720 px the rows are cards and nothing needs to go.
-  function fitTable(wrap) {
-    var table = $('table.mat-table', wrap);
-    if (!table || !table.tHead) { return; }
-    var heads = Array.prototype.slice.call(table.tHead.rows[0].cells);
-    var optional = heads.map(function (th, i) { return th.classList.contains('mat-hide-sm') ? i : -1; }).filter(function (i) { return i >= 0; }).reverse();
-    $$('.mb-col-off', table).forEach(function (cell) { cell.classList.remove('mb-col-off'); });
-    for (var k = 0; k < optional.length && wrap.scrollWidth > wrap.clientWidth; k++) {
-      Array.prototype.forEach.call(table.rows, function (row) { var cell = row.cells[optional[k]]; if (cell) { cell.classList.add('mb-col-off'); } });
-    }
-  }
-  var tableWraps = $$('.mat-table-wrap');
-  if (tableWraps.length && window.ResizeObserver) {
-    var fitting = new ResizeObserver(function (entries) { entries.forEach(function (e) { fitTable(e.target); }); });
-    tableWraps.forEach(function (wrap) { fitting.observe(wrap); });
-  }
-
   // ================================================================================================ filters that search
 
   // A filter over data that grows (customers) is a field with suggestions from the server (/api/customers), never a select with all of them:
