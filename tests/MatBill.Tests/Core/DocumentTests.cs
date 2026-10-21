@@ -95,6 +95,18 @@ public sealed class DocumentTests
         }
     }
 
+    [Theory]
+    // the word mark of the demo: a list with a quoted name in a double-quoted attribute
+    [InlineData("<svg><text font-family=\"Inter, 'Segoe UI', system-ui, -apple-system, sans-serif\">A</text></svg>", "<svg><text font-family=\"Lato\">A</text></svg>")]
+    [InlineData("<svg><text font-family='Helvetica, Arial, sans-serif'>A</text></svg>", "<svg><text font-family='Lato'>A</text></svg>")]
+    [InlineData("<svg><text style=\"font-family: 'Segoe UI', sans-serif; font-weight: 700\">A</text></svg>", "<svg><text style=\"font-family: Lato; font-weight: 700\">A</text></svg>")]
+    [InlineData("<svg><style>text { font-family: Inter, system-ui }</style><text>A</text></svg>", "<svg><style>text { font-family: Lato}</style><text>A</text></svg>")]
+    // a serif or a monospace list stays, an SVG without any font gets Lato as its default
+    [InlineData("<svg><text font-family=\"Georgia, serif\">A</text></svg>", "<svg><text font-family=\"Georgia, serif\">A</text></svg>")]
+    [InlineData("<svg viewBox=\"0 0 1 1\"><text>A</text></svg>", "<svg font-family=\"Lato\" viewBox=\"0 0 1 1\"><text>A</text></svg>")]
+    public void A_logo_in_svg_that_asks_for_a_sans_serif_font_gets_lato_in_the_pdf(string svg, string expected)
+        => Assert.Equal(expected, InvoicePdf.SvgForPdf(svg));
+
     [Fact]
     public void The_standard_footer_is_its_template_filled_in_and_an_unchanged_template_is_the_standard()
     {

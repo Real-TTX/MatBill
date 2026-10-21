@@ -227,6 +227,12 @@ async function confirmDialog(page) {
   check((await page.inputValue('#Input_Supplier')).length > 0, 'the supplier was read from the e-invoice: ' + await page.inputValue('#Input_Supplier'));
   check((await page.locator('.mat-alert--warning:not(.mb-offline)').innerText()).includes('E-Rechnung'), 'the expense says it came from an e-invoice');
   await shot(page, 'expense');
+  // the expense goes again, so that the expenses of the runs do not pile up (and deleting is tried on the way)
+  const expenseUrl = page.url();
+  await page.locator('.mat-btn--danger[data-confirm]').first().click();
+  await confirmDialog(page);
+  await page.waitForURL(/\/Expenses(\?|$)/, { timeout: 10000 });
+  check((await page.request.get(expenseUrl)).status() === 404, 'the expense from the e-invoice is deleted again');
 
   console.log('Banking');
   // the account of an earlier run is used again, so that the accounts do not pile up with every run

@@ -14,12 +14,39 @@ public sealed record LogoImage(byte[] Bytes, bool IsSvg);
 /// Draws an invoice as an A4 PDF in the layout of the document editor: logo and sender at the top, the address field where a window envelope shows it
 /// (DIN 5008), the facts of the invoice beside it, the positions, the totals, the payment terms and a footer with address, bank and tax numbers on every page.
 /// </summary>
-public static class InvoicePdf
+public static partial class InvoicePdf
 {
     private const string Ink = "#1f2937";
     private const string Muted = "#6b7280";
     private const string Line = "#e5e7eb";
     private const string Soft = "#f5f6f8";
+
+
+    /// <summary>
+    /// The SVG of a logo as the PDF draws it. The text of an SVG is set in the fonts of the system only (not in those of QuestPDF), and the server has none of the
+    /// fonts of a browser: the text of a word mark came out in a serif font in the PDF while the editor showed it without serifs. A list of families that ends in a
+    /// generic sans-serif family becomes Lato, the font of the document, which the container installs as a font of the system (Dockerfile); an SVG that names no
+    /// font gets Lato as its default. A serif or a monospace list stays as it is.
+    /// </summary>
+    public static string SvgForPdf(string svg)
+    {
+        var fixedLists = FontFamilyRegex().Replace(svg, m =>
+        {
+            var value = m.Groups["dq"].Success ? m.Groups["dq"] : m.Groups["sq"].Success ? m.Groups["sq"] : m.Groups["css"];
+            return SansSerifRegex().IsMatch(value.Value) ? m.Value[..(value.Index - m.Index)] + "Lato" + m.Value[(value.Index - m.Index + value.Length)..] : m.Value;
+        });
+        return fixedLists.Contains("font-family", StringComparison.OrdinalIgnoreCase) ? fixedLists : SvgTagRegex().Replace(fixedLists, "<svg font-family=\"Lato\"", 1);
+    }
+
+    // font-family="…" and font-family='…' as an attribute (the value may hold the other quote), font-family: …; in a style
+    [System.Text.RegularExpressions.GeneratedRegex("""font-family\s*(?:=\s*"(?<dq>[^"]*)"|=\s*'(?<sq>[^']*)'|:\s*(?<css>[^;}"<]*))""", System.Text.RegularExpressions.RegexOptions.IgnoreCase)]
+    private static partial System.Text.RegularExpressions.Regex FontFamilyRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"(^|,)\s*['""]?(sans-serif|system-ui|ui-sans-serif|-apple-system|BlinkMacSystemFont)['""]?\s*$", System.Text.RegularExpressions.RegexOptions.IgnoreCase)]
+    private static partial System.Text.RegularExpressions.Regex SansSerifRegex();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"<svg(?=[\s>])", System.Text.RegularExpressions.RegexOptions.IgnoreCase)]
+    private static partial System.Text.RegularExpressions.Regex SvgTagRegex();
 
     /// <summary>The PDF; with <paramref name="pdfA"/> it is PDF/A-3b, the archive format that a ZUGFeRD e-invoice is made of (<see cref="EInvoice"/> adds the XML).</summary>
     public static byte[] Render(InvoiceDocument doc, CompanyConfig company, LogoImage? logo, bool pdfA = false)
@@ -125,7 +152,7 @@ public static class InvoicePdf
         var box = center ? aligned.Height(22, Unit.Millimetre).MaxWidth(90, Unit.Millimetre) : aligned.Height(16, Unit.Millimetre).MaxWidth(70, Unit.Millimetre);
         if (logo.IsSvg)
         {
-            box.Svg(Encoding.UTF8.GetString(logo.Bytes)).FitArea();
+            box.Svg(SvgForPdf(Encoding.UTF8.GetString(logo.Bytes))).FitArea();
         }
         else
         {

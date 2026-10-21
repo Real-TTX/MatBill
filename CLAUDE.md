@@ -115,6 +115,9 @@ Test changes by **rebuilding the container and redeploying the stack**. Wait for
 - Don't insert `\n` with sed into C# files: it becomes a real line break inside string literals.
 - A PageModel property named `File` hides `PageModel.File(...)`; the import page calls its upload `Statement`.
 - Fold names before comparing (`PaymentMatcher.Fold`: ä→ae, ß→ss): banks write "Mueller" for "Müller".
+- The text of an SVG logo in the PDF is set in **system fonts only** (not QuestPDF's): `InvoicePdf.SvgForPdf` turns a sans-serif font list into Lato, and the Dockerfile
+  copies QuestPDF's `LatoFont/` to `/usr/share/fonts` (the renderer does not look in `/usr/local/share/fonts`). On Windows such text uses the Windows fonts.
+- The e2e flow cleans up after itself (it reuses its "Testkonto", deletes the expense it uploads); issued invoices of its runs stay (they cannot be deleted).
 
 ## Git
 

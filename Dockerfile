@@ -30,9 +30,9 @@ RUN BUILD_DATE="${BuildDate:-$(date -u +%Y%m%d)}" && \
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
-# libfontconfig1: the PDF renderer (QuestPDF, Skia) asks fontconfig for fonts; fonts-dejavu-core: a font with every German letter for the invoices.
+# fontconfig: the PDF renderer (QuestPDF, Skia) asks it for fonts (fc-cache below); fonts-dejavu-core: a font with every German letter for the invoices.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libfontconfig1 fonts-dejavu-core \
+    && apt-get install -y --no-install-recommends fontconfig fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 ENV ASPNETCORE_ENVIRONMENT=Production \
@@ -50,6 +50,11 @@ VOLUME ["/data"]
 EXPOSE 2505
 
 COPY --from=build /app/publish .
+# Lato, the font of the documents, also as a font of the system: the text of a logo in SVG is set in system fonts only (InvoicePdf.SvgForPdf names Lato).
+# Beside DejaVu in /usr/share/fonts: the renderer looks there, not in /usr/local/share/fonts.
+RUN mkdir -p /usr/share/fonts/truetype/lato \
+    && cp /app/LatoFont/Lato-*.ttf /usr/share/fonts/truetype/lato/ \
+    && fc-cache -f
 USER $APP_UID
 
 # The app checks itself, so the image needs no extra tools.
