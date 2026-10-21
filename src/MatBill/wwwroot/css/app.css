@@ -261,8 +261,9 @@ select.mb-in { appearance: none; -webkit-appearance: none; cursor: pointer; text
 /* the layouts of the head (CompanyConfig.Layout), as InvoicePdf.Head draws them: the logo left, in the middle or right; the address is in the footer */
 .mb-doc__head--classic { justify-content: flex-start; }
 .mb-doc__head--centered { justify-content: center; }
-.mb-doc__head--centered .mb-doc__logo { text-align: center; }
-.mb-doc__head--centered .mb-doc__logo img { margin-inline: auto; object-position: center; }
+/* in the middle the logo is a letterhead: larger (InvoicePdf.Logo: 22 mm high, up to 90 mm wide), in the middle of the page */
+.mb-doc__head--centered .mb-doc__logo { max-width: 90mm; text-align: center; }
+.mb-doc__head--centered .mb-doc__logo img { height: 22mm; max-height: 22mm; max-width: 90mm; margin-inline: auto; object-position: center; }
 .mb-doc__head--right { justify-content: flex-end; }
 .mb-doc__head--right .mb-doc__logo { text-align: right; }
 .mb-doc__head--right .mb-doc__logo img { margin-left: auto; object-position: right center; }

@@ -119,8 +119,10 @@ public static class InvoicePdf
             return;
         }
 
-        var box = c.Height(16, Unit.Millimetre).MaxWidth(70, Unit.Millimetre);
-        box = center ? box.AlignCenter() : right ? box.AlignRight() : box.AlignLeft();
+        // aligned first, then limited: a box limited first stands at the left and the logo would only be in the middle of that box, not of the page.
+        // In the middle the logo is a letterhead and larger (app.css, .mb-doc__head--centered).
+        var aligned = center ? c.AlignCenter() : right ? c.AlignRight() : c.AlignLeft();
+        var box = center ? aligned.Height(22, Unit.Millimetre).MaxWidth(90, Unit.Millimetre) : aligned.Height(16, Unit.Millimetre).MaxWidth(70, Unit.Millimetre);
         if (logo.IsSvg)
         {
             box.Svg(Encoding.UTF8.GetString(logo.Bytes)).FitArea();

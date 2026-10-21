@@ -171,33 +171,34 @@ public static partial class DocumentFooter
     /// <summary>How much of the width a column gets: as much as its longest line needs (within bounds), so an IBAN stays on one line where a short column has room to give.</summary>
     public static int Weight(List<string> column) => Math.Clamp(column.Count == 0 ? 10 : column.Max(l => l.Length), 10, 48);
 
-    public static List<List<string>> Columns(CompanyConfig company)
-        => company.FooterColumns.Any(c => !string.IsNullOrWhiteSpace(c)) ? Written(company) : Automatic(company);
+    /// <summary>
+    /// The standard footer: address, contact, bank (a second account under the first), tax and register, written with the placeholders. A company without a footer
+    /// of its own gets it; Branding shows it in its fields to be changed, and "Restore the standard" writes it there again.
+    /// </summary>
+    public static IReadOnlyList<string> Default { get; } =
+    [
+        "{Name}\n{NameLine2}\n{Street}\n{PostalCode} {City}\n{Manager}",
+        "Tel. {Phone}\n{Email}\n{Website}",
+        "{BankName}\nIBAN {Iban}\nBIC {Bic}\nKontoinhaber: {AccountHolder}\n{Bank2Name}\nIBAN {Bank2Iban}\nBIC {Bank2Bic}",
+        "Steuernummer {TaxNumber}\nUSt-IdNr. {VatId}\n{Register}",
+    ];
 
-    /// <summary>The footer from the company data: address, contact, bank (a second account under the first), tax and register.</summary>
-    private static List<List<string>> Automatic(CompanyConfig company)
-    {
-        static List<string> Lines(params string?[] lines) => [.. lines.Where(l => !string.IsNullOrWhiteSpace(l)).Select(l => l!.Trim())];
-        static string? Labelled(string label, string? value) => string.IsNullOrWhiteSpace(value) ? null : label + " " + value.Trim();
-        var place = string.Join(" ", new[] { company.PostalCode, company.City }.Where(s => !string.IsNullOrWhiteSpace(s)));
-        return new List<List<string>>
-        {
-            Lines(company.Name, company.NameLine2, company.Street, place, company.Manager),
-            Lines(Labelled("Tel.", company.Phone), company.Email, company.Website),
-            Lines(company.BankName, Labelled("IBAN", company.Iban), Labelled("BIC", company.Bic), Labelled("Kontoinhaber:", company.AccountHolder),
-                company.Bank2Name, Labelled("IBAN", company.Bank2Iban), Labelled("BIC", company.Bank2Bic)),
-            Lines(Labelled("Steuernummer", company.TaxNumber), Labelled("USt-IdNr.", company.VatId), company.Register),
-        }.Where(c => c.Count > 0).ToList();
-    }
+    /// <summary>The footer of a company: its own columns from Branding, else the standard, the placeholders filled in.</summary>
+    public static List<List<string>> Columns(CompanyConfig company)
+        => Fill(company, company.FooterColumns.Any(c => !string.IsNullOrWhiteSpace(c)) ? company.FooterColumns : Default);
+
+    /// <summary>Whether columns are the standard (line ends and spaces at the ends aside): such a footer is kept as none, so it follows the standard.</summary>
+    public static bool IsDefault(IReadOnlyList<string> columns)
+        => columns.Count == Default.Count && columns.Zip(Default).All(p => p.First.ReplaceLineEndings("\n").Trim() == p.Second);
 
     /// <summary>
-    /// The footer as written in Branding: one column per field, one line per line, the placeholders filled in. A line whose placeholders are all empty is left
-    /// out ("IBAN {Bank2Iban}" without a second account), so one text fits companies with and without every detail.
+    /// One column per text, one line per line, the placeholders filled in. A line whose placeholders are all empty is left out ("IBAN {Bank2Iban}" without a
+    /// second account), so one text fits companies with and without every detail; a column without lines is left out.
     /// </summary>
-    private static List<List<string>> Written(CompanyConfig company)
+    private static List<List<string>> Fill(CompanyConfig company, IEnumerable<string> texts)
     {
         var columns = new List<List<string>>();
-        foreach (var text in company.FooterColumns.Take(MaxColumns))
+        foreach (var text in texts.Take(MaxColumns))
         {
             var lines = new List<string>();
             foreach (var raw in (text ?? "").Split('\n'))

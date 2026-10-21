@@ -274,6 +274,17 @@ async function confirmDialog(page) {
     await shot(page, file);
   }
 
+  console.log('Footer in Branding');
+  await page.goto(base + '/Admin/Branding');
+  const footer = () => page.locator('[data-footer-input]').evaluateAll(a => a.map(x => x.value));
+  const columns = await footer();
+  check(columns.length === 4 && columns.every(c => c.length > 0), 'the four columns of the footer start filled in: ' + columns.map(c => c.length).join(', '));
+  check(columns[0].includes('{Name}\n') && !/&#|&amp;/.test(columns.join('')), 'the columns have real line breaks, nothing encoded twice: ' + JSON.stringify(columns[0]));
+  await page.fill('[data-footer-input] >> nth=0', 'Nur eine Zeile');
+  await page.locator('[data-footer-reset]').click();
+  check(JSON.stringify(await footer()) === JSON.stringify(columns), '"Standard wiederherstellen" writes the standard into the columns again');
+  await shot(page, 'branding-footer');
+
   console.log('Lists fit');
   for (const w of [1440, 1024, 820]) {
     await page.setViewportSize({ width: w, height: 900 });

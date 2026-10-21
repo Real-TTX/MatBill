@@ -827,6 +827,16 @@
     });
   }
 
+  // "Restore the standard" writes the standard footer (data-default of each field, DocumentFooter.Default) into the fields; the preview follows the input.
+  $$('[data-footer-reset]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      $$('[data-footer-input]').forEach(function (area) {
+        area.value = area.getAttribute('data-default') || '';
+        area.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+    });
+  });
+
   // The columns of the footer share the width as in the PDF: by the longest line of each (data-weight, DocumentFooter.Weight).
   $$('.mb-doc__footcols > [data-weight]').forEach(function (column) { column.style.flexGrow = column.getAttribute('data-weight'); });
 

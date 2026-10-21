@@ -61,4 +61,60 @@ public sealed class DocumentTests
         Assert.Contains("Mustermann", text);
         Assert.Single(InvoicePdf.RenderImages(sample.Doc, sample.Company, null));
     }
+
+    [Theory]
+    [InlineData(DocumentLayouts.Classic, "left")]
+    [InlineData(DocumentLayouts.Centered, "middle")]
+    [InlineData(DocumentLayouts.Right, "right")]
+    public void The_logo_stands_where_the_layout_says_and_in_the_middle_it_is_larger(string layout, string where)
+    {
+        var config = new AppConfig();
+        config.Company.Name = "Nordlicht Design";
+        config.Company.Layout = layout;
+        var logo = new LogoImage(File.ReadAllBytes(Path.Combine(RepoRoot(), "src", "MatBill", "wwwroot", "img", "icon-512.png")), IsSvg: false);
+        var sample = SampleDocument.Of(config, null);
+        using var document = PdfDocument.Open(InvoicePdf.Render(sample.Doc, sample.Company, logo));
+        var page = document.GetPage(1);
+        var image = Assert.Single(page.GetImages());
+        var box = image.Bounds;
+        var middle = (box.Left + box.Right) / 2;
+        const double mm = 72 / 25.4;
+        switch (where)
+        {
+            case "middle":
+                Assert.InRange(middle, page.Width / 2 - 1, page.Width / 2 + 1);
+                Assert.InRange(box.Height, 22 * mm - 1, 22 * mm + 1);
+                break;
+            case "left":
+                Assert.InRange(box.Left, 20 * mm - 1, 20 * mm + 1);
+                Assert.InRange(box.Height, 16 * mm - 1, 16 * mm + 1);
+                break;
+            default:
+                Assert.InRange(box.Right, page.Width - 20 * mm - 1, page.Width - 20 * mm + 1);
+                break;
+        }
+    }
+
+    [Fact]
+    public void The_standard_footer_is_its_template_filled_in_and_an_unchanged_template_is_the_standard()
+    {
+        var company = new CompanyConfig { Name = "Nordlicht Design", Street = "Weg 1", PostalCode = "12345", City = "Stadt", Phone = "0123 456", BankName = "Bank A", Iban = "DE11", AccountHolder = "Erika Mustermann", TaxNumber = "12/345" };
+        Assert.Equal(
+            [["Nordlicht Design", "Weg 1", "12345 Stadt"], ["Tel. 0123 456"], ["Bank A", "IBAN DE11", "Kontoinhaber: Erika Mustermann"], ["Steuernummer 12/345"]],
+            DocumentFooter.Columns(company));
+        // the fields of Branding post the template with the line ends of the browser
+        Assert.True(DocumentFooter.IsDefault([.. DocumentFooter.Default.Select(c => c.Replace("\n", "\r\n") + " ")]));
+        Assert.False(DocumentFooter.IsDefault([.. DocumentFooter.Default.Take(3), "Steuernummer {TaxNumber}"]));
+    }
+
+    private static string RepoRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "MatBill.slnx")))
+        {
+            dir = dir.Parent;
+        }
+
+        return dir?.FullName ?? throw new InvalidOperationException("MatBill.slnx not found above " + AppContext.BaseDirectory);
+    }
 }

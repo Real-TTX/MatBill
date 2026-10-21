@@ -22,7 +22,8 @@
   "Branding.Signature": { "en": "Greeting", "de": "Gruß" },
   "Branding.Signature.Hint": { "en": "Appears at the bottom right, for example \"Danke!\". Empty: no greeting.", "de": "Steht unten rechts, zum Beispiel „Danke!“. Leer: kein Gruß." },
   "Branding.Footer": { "en": "Footer", "de": "Fußzeile" },
-  "Branding.Footer.Text": { "en": "Leave all columns empty and the footer is made from the company data (address, contact, bank, tax). Or write it yourself: one column per field, one line per line, with placeholders. A line whose placeholders are all empty is left out, so “IBAN {Bank2Iban}” only shows when there is a second account.", "de": "Bleiben alle Spalten leer, entsteht der Fuß aus den Unternehmensdaten (Anschrift, Kontakt, Bank, Steuer). Oder du schreibst ihn selbst: ein Feld je Spalte, eine Zeile je Zeile, mit Platzhaltern. Eine Zeile, deren Platzhalter alle leer sind, entfällt; „IBAN {Bank2Iban}“ steht also nur da, wenn es eine zweite Bankverbindung gibt." },
+  "Branding.Footer.Text": { "en": "One field per column, one line per line; the placeholders are filled in from the company data. A line whose placeholders are all empty is left out, so “IBAN {Bank2Iban}” only shows when there is a second account. The fields start with the standard footer; as long as it is unchanged, it follows the standard.", "de": "Ein Feld je Spalte, eine Zeile je Zeile; die Platzhalter werden aus den Unternehmensdaten gefüllt. Eine Zeile, deren Platzhalter alle leer sind, entfällt; „IBAN {Bank2Iban}“ steht also nur da, wenn es eine zweite Bankverbindung gibt. Die Felder beginnen mit dem Standard-Fuß; solange er unverändert ist, folgt er dem Standard." },
+  "Branding.Footer.Reset": { "en": "Restore the standard", "de": "Standard wiederherstellen" },
   "Branding.Footer.Column": { "en": "Column {0}", "de": "Spalte {0}" },
   "Branding.Footer.Placeholders": { "en": "Placeholders:", "de": "Platzhalter:" },
 

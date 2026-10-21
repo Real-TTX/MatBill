@@ -89,14 +89,21 @@ public abstract class FieldTagHelper : TagHelper
             }
 
             sb.Append(' ').Append(a.Name);
-            var value = a.Value?.ToString();
-            if (a.ValueStyle != HtmlAttributeValueStyle.Minimized && value is not null)
+            if (a.ValueStyle != HtmlAttributeValueStyle.Minimized && a.Value is not null)
             {
-                sb.Append("=\"").Append(WebUtility.HtmlEncode(value)).Append('"');
+                // a value written in the markup comes as HTML that Razor encoded already (&#10; for a line break): written as it is, not encoded twice
+                sb.Append("=\"").Append(a.Value is Microsoft.AspNetCore.Html.IHtmlContent html ? Encoded(html) : WebUtility.HtmlEncode(a.Value.ToString())).Append('"');
             }
         }
 
         return sb.ToString();
+    }
+
+    private static string Encoded(Microsoft.AspNetCore.Html.IHtmlContent html)
+    {
+        using var w = new StringWriter();
+        html.WriteTo(w, System.Text.Encodings.Web.HtmlEncoder.Default);
+        return w.ToString();
     }
 
     protected abstract string Control(string id, TagHelperAttributeList attributes);

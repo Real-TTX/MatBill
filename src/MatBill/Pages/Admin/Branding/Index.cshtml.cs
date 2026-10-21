@@ -24,7 +24,7 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
         [Display(Name = "Branding.Layout")]
         public string Layout { get; set; } = DocumentLayouts.Classic;
 
-        /// <summary>The columns of the footer with placeholders; all empty: made from the company data.</summary>
+        /// <summary>The columns of the footer with placeholders; the standard (or all empty): the standard footer, kept as none.</summary>
         public string?[] Footer { get; set; } = new string?[DocumentFooter.MaxColumns];
     }
 
@@ -42,7 +42,7 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
     public void OnGet()
     {
         var c = config.Current.Company;
-        Input = new InputModel { AccentColor = c.AccentColor, Signature = c.Signature, Layout = DocumentLayouts.Of(c.Layout), Footer = [.. Enumerable.Range(0, DocumentFooter.MaxColumns).Select(i => c.FooterColumns.ElementAtOrDefault(i))] };
+        Input = new InputModel { AccentColor = c.AccentColor, Signature = c.Signature, Layout = DocumentLayouts.Of(c.Layout), Footer = [.. Enumerable.Range(0, DocumentFooter.MaxColumns).Select(i => (c.FooterColumns.Count > 0 ? c.FooterColumns : DocumentFooter.Default).ElementAtOrDefault(i))] };
         Prepare();
     }
 
@@ -108,11 +108,11 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
         return File(png, "image/png");
     }
 
-    /// <summary>The columns as they are kept: at most four, each trimmed and at most 600 characters; when all are empty, none (the footer is made automatically).</summary>
+    /// <summary>The columns as they are kept: at most four, each trimmed and at most 600 characters; the standard or all empty: none (the standard footer, also when it changes).</summary>
     private static List<string> FooterOf(string?[]? columns)
     {
         var list = (columns ?? []).Take(DocumentFooter.MaxColumns).Select(c => (c ?? "").ReplaceLineEndings("\n").Trim()).Select(c => c.Length > 600 ? c[..600] : c).ToList();
-        return list.All(c => c.Length == 0) ? [] : list;
+        return list.All(c => c.Length == 0) || DocumentFooter.IsDefault(list) ? [] : list;
     }
 
     public async Task<IActionResult> OnPostRemoveLogoAsync()
