@@ -302,11 +302,11 @@ select.mb-in { appearance: none; -webkit-appearance: none; cursor: pointer; text
 .mb-doc--lines .mb-lines__head { background: none; border-bottom: 1pt solid #1f2937; }
 .mb-doc--lines .mb-doc__totals > .mb-doc__grand { padding-block: 2mm; border-top: 1pt solid #1f2937; border-bottom: 1pt solid #1f2937; }
 .mb-doc--lines .mb-doc__terms { padding: 3mm 0; background: none; border-top: .5pt solid #e5e7eb; border-bottom: .5pt solid #e5e7eb; }
-.mb-doc--accent .mb-lines__head { background: var(--mb-doc-accent); color: #fff; }
+.mb-doc--accent .mb-lines__head { background: var(--mb-doc-accent, var(--mat-accent)); color: #fff; }
 .mb-doc--accent .mb-lines__head, .mb-doc--accent .mb-lines__body { border-inline: .5pt solid #e5e7eb; }
-.mb-doc--accent .mb-doc__totals > .mb-doc__grand { padding: 2mm; border-top: 0; background: var(--mb-doc-accent); }
+.mb-doc--accent .mb-doc__totals > .mb-doc__grand { padding: 2mm; border-top: 0; background: var(--mb-doc-accent, var(--mat-accent)); }
 .mb-doc--accent .mb-doc__grand :is(dt, dd) { color: #fff; }
-.mb-doc--accent .mb-doc__terms { border-left: 1.2mm solid var(--mb-doc-accent); }
+.mb-doc--accent .mb-doc__terms { border-left: 1.2mm solid var(--mb-doc-accent, var(--mat-accent)); }
 .mb-doc__closing { margin-top: 8mm; }
 .mb-doc__signature { font-family: "MB Lato", var(--mat-font); font-style: italic; font-size: 16pt; transform: none; }
 .mb-doc__foot { padding-top: 8mm; gap: 2mm; font-size: 7pt; line-height: 1.3; }

@@ -828,6 +828,12 @@
     });
   }
 
+  // The colour of a document (branding) is data: a custom property on the paper wherever it is shown (the editor, an issued invoice, the share page).
+  $$('[data-doc-accent]').forEach(function (el) {
+    var colour = el.getAttribute('data-doc-accent');
+    if (colour && /^#[0-9a-f]{6}$/i.test(colour)) { el.style.setProperty('--mb-doc-accent', colour); }
+  });
+
   // "Restore the standard" writes the standard footer (data-default of each field, DocumentFooter.Default) into the fields; the preview follows the input.
   $$('[data-footer-reset]').forEach(function (button) {
     button.addEventListener('click', function () {

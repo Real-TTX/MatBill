@@ -40,6 +40,10 @@ public sealed class ShareTests : IClassFixture<AppFixture>
         Assert.Contains("Hallo Offen", text);
         Assert.Contains("Leistung Offen", text);
         Assert.DoesNotContain("/Invoices/Edit", text);
+        // the paper carries the design and the colour of the company here too (outside the editor): the Akzent design would be white on nothing without it
+        var html = await response.Content.ReadAsStringAsync();
+        Assert.Matches("class=\"mb-paper mb-paper--view mb-doc mb-doc--(classic|lines|accent) ", html);
+        Assert.Matches("data-doc-accent=\"#[0-9a-fA-F]{6}\"", html);
 
         var pdf = await visitor.GetAsync($"/s/{link.Token}/pdf");
         Assert.Equal(HttpStatusCode.OK, pdf.StatusCode);
