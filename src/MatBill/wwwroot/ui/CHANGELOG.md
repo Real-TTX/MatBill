@@ -13,6 +13,11 @@ A change that an app can see is written down under **Unreleased** in the pull re
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-21
+### Added
+
+- A record card on a phone (`TABLE-02`): mark the cell that names a record and opens it with `mat-table__primary` (`<td class="mat-table__primary" data-label="Name"><a href="…">…</a></td>`). Below 720 px that row is a card whose title is this cell, with a chevron, and its link covers the whole card, so a tap anywhere opens the record; the other cells follow in one flowing line without their labels on the screen (the label stays for a screen reader, an empty cell is left out), and the actions stand in a row of their own below the card, each icon button with its `data-tip` written next to its icon. Links and buttons in the other cells stay tappable above the covering link. A row without the class, a grouped table and a selectable row keep the card with labels as before. Nothing changes for an app that does not set the class; a list whose rows open a record should set it on the first cell.
+
 ## [0.5.0] - 2026-10-21
 ### Added
 

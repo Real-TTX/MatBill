@@ -1,6 +1,8 @@
 @model TableModel
 @*
-    The one table control. Every cell carries its data-label: on a phone the rows become cards. A table without rows shows the empty state instead.
+    The one table control. Every cell carries its data-label: on a phone the rows become cards. A row whose first cell links to its record marks that cell
+    mat-table__primary: on a phone it is a record card (the name as title, a tap anywhere opens it, the actions below with their text).
+    A table without rows shows the empty state instead.
     Several tables can share a page: Model.Id makes the caption and the empty state unique.
 *@
 @if (Model.Rows.Count == 0)
@@ -35,7 +37,7 @@ else
                         @for (var i = 0; i < Model.Columns.Count; i++)
                         {
                             var c = Model.Columns[i];
-                            <td data-label="@c.Header" class="@(c.Numeric ? "mat-num" : "") @(c.Mono ? "mat-mono" : "") @(c.HideOnPhone ? "mat-hide-sm" : "")">@row.Cells[i]</td>
+                            <td data-label="@c.Header" class="@(i == 0 && row.Opens ? "mat-table__primary" : "") @(c.Numeric ? "mat-num" : "") @(c.Mono ? "mat-mono" : "") @(c.HideOnPhone ? "mat-hide-sm" : "")">@row.Cells[i]</td>
                         }
                         @if (Model.HasActions)
                         {

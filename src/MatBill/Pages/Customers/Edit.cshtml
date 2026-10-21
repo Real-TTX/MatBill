@@ -77,7 +77,7 @@
                                 @foreach (var i in Model.Invoices)
                                 {
                                     <tr>
-                                        <td data-label="@L["Customers.Column.Number"]"><a href="/Invoices/Edit?id=@i.Id">@(i.Number ?? L["Customers.Invoices.Draft"])</a></td>
+                                        <td data-label="@L["Customers.Column.Number"]" class="mat-table__primary"><a href="/Invoices/Edit?id=@i.Id">@(i.Number ?? L["Customers.Invoices.Draft"])</a></td>
                                         <td data-label="@L["Common.Date"]">@Fmt.Date(i.InvoiceDate)</td>
                                         <td data-label="@L["Common.Amount"]" class="mat-num">@Ui.Money(i.GrossTotal)</td>
                                         <td data-label="@L["Common.Status"]">@Labels.Pill(i, Model.Today)</td>

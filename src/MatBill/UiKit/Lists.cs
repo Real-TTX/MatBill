@@ -153,7 +153,18 @@ public sealed record RowAction(string Icon, string Label, string Href);
 
 public sealed record TableColumn(string Header, bool Numeric = false, bool HideOnPhone = false, bool Mono = false);
 
-public sealed record TableRow(IReadOnlyList<IHtmlContent> Cells, IReadOnlyList<RowAction> Actions);
+/// <summary>A row of a table. <see cref="Opens"/>: its first cell holds a link, the record it names; on a phone the row is then a record card that opens it from anywhere (MatUi TABLE-02).</summary>
+public sealed record TableRow(IReadOnlyList<IHtmlContent> Cells, IReadOnlyList<RowAction> Actions)
+{
+    public bool Opens { get; } = Cells.Count > 0 && HasLink(Cells[0]);
+
+    private static bool HasLink(IHtmlContent cell)
+    {
+        using var w = new StringWriter();
+        cell.WriteTo(w, System.Text.Encodings.Web.HtmlEncoder.Default);
+        return w.ToString().Contains("<a ", StringComparison.Ordinal);
+    }
+}
 
 /// <summary>
 /// The one table control: header, rows, the empty state, the actions at the end of a row. On a phone the rows become cards (each cell carries its

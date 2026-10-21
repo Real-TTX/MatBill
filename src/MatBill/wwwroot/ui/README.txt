@@ -1,4 +1,4 @@
-MatUi 0.5.0 (ef3cab7bf5)
+MatUi 0.6.0 (dcf7c53351)
 Made by MatDesign local-20261021.
 The UI toolkit of the Mat apps. Rules, documentation and live examples: the MatDesign site.
 
