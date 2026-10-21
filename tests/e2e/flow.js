@@ -290,6 +290,13 @@ async function confirmDialog(page) {
   await page.locator('[data-footer-reset]').click();
   check(JSON.stringify(await footer()) === JSON.stringify(columns), '"Standard wiederherstellen" writes the standard into the columns again');
   await shot(page, 'branding-footer');
+  // position, size of the logo and design are three choices; the preview (the PDF as an image) follows them before they are saved
+  check(await page.locator('input[name="Input.LogoSize"]').count() === 3 && await page.locator('input[name="Input.Design"]').count() === 3, 'Branding offers three sizes of the logo and three designs');
+  await page.locator('input[name="Input.Design"][value="accent"]').check({ force: true });
+  await page.waitForFunction(() => /design=accent/.test(document.querySelector('[data-preview-img]').src), null, { timeout: 5000 }).catch(() => {});
+  const previewSrc = await page.getAttribute('[data-preview-img]', 'src');
+  check(/design=accent/.test(previewSrc) && (await page.request.get(base + previewSrc)).headers()['content-type'] === 'image/png', 'the preview follows the design before it is saved: ' + previewSrc);
+  await page.goto(base + '/Admin/Branding');
 
   console.log('Lists fit');
   for (const w of [1440, 1024, 820]) {

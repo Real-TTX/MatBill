@@ -63,14 +63,18 @@ public sealed class DocumentTests
     }
 
     [Theory]
-    [InlineData(DocumentLayouts.Classic, "left")]
-    [InlineData(DocumentLayouts.Centered, "middle")]
-    [InlineData(DocumentLayouts.Right, "right")]
-    public void The_logo_stands_where_the_layout_says_and_in_the_middle_it_is_larger(string layout, string where)
+    [InlineData(DocumentLayouts.Classic, "left", DocumentLogoSizes.Medium, 16)]
+    [InlineData(DocumentLayouts.Centered, "middle", DocumentLogoSizes.Medium, 16)]
+    [InlineData(DocumentLayouts.Right, "right", DocumentLogoSizes.Medium, 16)]
+    [InlineData(DocumentLayouts.Classic, "left", DocumentLogoSizes.Small, 12)]
+    [InlineData(DocumentLayouts.Centered, "middle", DocumentLogoSizes.Large, 22)]
+    [InlineData(DocumentLayouts.Right, "right", DocumentLogoSizes.Large, 22)]
+    public void The_logo_stands_where_the_layout_says_and_is_as_large_as_its_size_says(string layout, string where, string size, double height)
     {
         var config = new AppConfig();
         config.Company.Name = "Nordlicht Design";
         config.Company.Layout = layout;
+        config.Company.LogoSize = size;
         var logo = new LogoImage(File.ReadAllBytes(Path.Combine(RepoRoot(), "src", "MatBill", "wwwroot", "img", "icon-512.png")), IsSvg: false);
         var sample = SampleDocument.Of(config, null);
         using var document = PdfDocument.Open(InvoicePdf.Render(sample.Doc, sample.Company, logo));
@@ -79,15 +83,14 @@ public sealed class DocumentTests
         var box = image.Bounds;
         var middle = (box.Left + box.Right) / 2;
         const double mm = 72 / 25.4;
+        Assert.InRange(box.Height, height * mm - 1, height * mm + 1);
         switch (where)
         {
             case "middle":
                 Assert.InRange(middle, page.Width / 2 - 1, page.Width / 2 + 1);
-                Assert.InRange(box.Height, 22 * mm - 1, 22 * mm + 1);
                 break;
             case "left":
                 Assert.InRange(box.Left, 20 * mm - 1, 20 * mm + 1);
-                Assert.InRange(box.Height, 16 * mm - 1, 16 * mm + 1);
                 break;
             default:
                 Assert.InRange(box.Right, page.Width - 20 * mm - 1, page.Width - 20 * mm + 1);

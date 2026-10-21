@@ -22,8 +22,8 @@
     string DaysUnit(int days) => days == 1 ? "Tag" : days == 0 && !quote ? "Tage (sofort)" : "Tage";
 }
 
-<article class="mb-paper mb-doc @(Model.Stamp is null ? "" : "is-draft") @(Model.TaxExempt ? "is-exempt" : "")" data-stamp="@Model.Stamp" aria-label="@(template ? L["Editor.Aria.Template"] : quote ? L["Editor.Aria.Quote"] : L["Editor.Aria.Invoice"])">
-    <header class="mb-doc__head mb-doc__head--@MatBill.Configuration.DocumentLayouts.Of(company.Layout)">
+<article class="mb-paper mb-doc mb-doc--@MatBill.Configuration.DocumentDesigns.Of(company.Design) @(Model.Stamp is null ? "" : "is-draft") @(Model.TaxExempt ? "is-exempt" : "")" data-stamp="@Model.Stamp" aria-label="@(template ? L["Editor.Aria.Template"] : quote ? L["Editor.Aria.Quote"] : L["Editor.Aria.Invoice"])">
+    <header class="mb-doc__head mb-doc__head--@MatBill.Configuration.DocumentLayouts.Of(company.Layout) mb-doc__head--@MatBill.Configuration.DocumentLogoSizes.Of(company.LogoSize)">
         <div class="mb-doc__logo">
             @if (Model.LogoUrl is not null)
             {

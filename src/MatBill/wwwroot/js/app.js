@@ -798,18 +798,19 @@
 
   // ================================================================================================ the layout of the head
 
-  // The preview is the first page of the PDF as an image. On the branding page it follows the layout, the colour and the greeting before they are saved.
+  // The preview is the first page of the PDF as an image. On the branding page it follows the position and size of the logo, the design, the colour,
+  // the greeting and the footer before they are saved.
   var previewImg = $('[data-preview-img]');
-  var layoutRadios = $$('input[name="Input.Layout"]');
+  var layoutRadios = $$('input[name="Input.Layout"], input[name="Input.LogoSize"], input[name="Input.Design"]');
   if (previewImg && layoutRadios.length) {
     var previewTimer = null;
+    var checked = function (name) { var r = $('input[name="' + name + '"]:checked'); return r ? r.value : ''; };
     var refreshPreview = function () {
       clearTimeout(previewTimer);
       previewTimer = setTimeout(function () {
-        var chosen = layoutRadios.filter(function (r) { return r.checked; })[0];
         var accent = $('#Input_AccentColor');
         var signature = $('#Input_Signature');
-        var query = new URLSearchParams({ handler: 'Preview', layout: chosen ? chosen.value : '', accent: accent ? accent.value : '', signature: signature ? signature.value : '', v: String(Date.now()) });
+        var query = new URLSearchParams({ handler: 'Preview', layout: checked('Input.Layout'), logoSize: checked('Input.LogoSize'), design: checked('Input.Design'), accent: accent ? accent.value : '', signature: signature ? signature.value : '', v: String(Date.now()) });
         $$('[data-footer-input]').forEach(function (area) { query.append('footer', area.value); });
         previewImg.classList.add('is-loading');
         previewImg.src = '/Admin/Branding?' + query.toString();

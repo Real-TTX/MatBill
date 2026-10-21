@@ -258,19 +258,24 @@ select.mb-in { appearance: none; -webkit-appearance: none; cursor: pointer; text
 .mb-doc__sender { flex: none; width: 62mm; font-size: inherit; line-height: inherit; color: color-mix(in srgb, var(--mat-text) 85%, transparent); }
 .mb-doc__sender strong { color: var(--mat-text); }
 .mb-doc__sender > strong, .mb-doc__sender > span { display: block; }
-/* the layouts of the head (CompanyConfig.Layout), as InvoicePdf.Head draws them: the logo left, in the middle or right; the address is in the footer */
+/* the position of the logo (CompanyConfig.Layout), as InvoicePdf.Head draws it: left, in the middle or right; the address is in the footer */
 .mb-doc__head--classic { justify-content: flex-start; }
 .mb-doc__head--centered { justify-content: center; }
-/* in the middle the logo is a letterhead: larger (InvoicePdf.Logo: 22 mm high, up to 90 mm wide), in the middle of the page */
-.mb-doc__head--centered .mb-doc__logo { max-width: 90mm; text-align: center; }
-.mb-doc__head--centered .mb-doc__logo img { height: 22mm; max-height: 22mm; max-width: 90mm; margin-inline: auto; object-position: center; }
+.mb-doc__head--centered .mb-doc__logo { text-align: center; }
+.mb-doc__head--centered .mb-doc__logo img { margin-inline: auto; object-position: center; }
+/* the size of the logo (CompanyConfig.LogoSize, DocumentLogoSizes): 12, 16 or 22 mm high, up to 55, 70 or 90 mm wide, wherever it stands */
+.mb-doc__head--small .mb-doc__logo, .mb-doc__head--small .mb-doc__logo img { max-width: 55mm; }
+.mb-doc__head--small .mb-doc__logo img { height: 12mm; max-height: 12mm; }
+.mb-doc__head--large .mb-doc__logo, .mb-doc__head--large .mb-doc__logo img { max-width: 90mm; }
+.mb-doc__head--large .mb-doc__logo img { height: 22mm; max-height: 22mm; }
 .mb-doc__head--right { justify-content: flex-end; }
 .mb-doc__head--right .mb-doc__logo { text-align: right; }
 .mb-doc__head--right .mb-doc__logo img { margin-left: auto; object-position: right center; }
 /* the footer: the columns of DocumentFooter side by side, equally wide, as in the PDF */
 .mb-doc__footcols { display: flex; gap: 3mm; }
 .mb-doc__footcols > p { flex: 1 1 0; min-width: 0; }
-.mb-doc__top { margin-top: 12mm; gap: 10mm; }
+/* the head is 30 mm high and the sender line 5 mm under it (InvoicePdf.HeadHeight, AddressGap): the address stands in the window of the envelope */
+.mb-doc__top { margin-top: 5mm; gap: 10mm; }
 .mb-doc__senderline { font-size: 7pt; margin-bottom: 3pt; color: var(--mat-text-muted); }
 .mb-doc__address { gap: 0; }
 .mb-doc__title { font-size: 20pt; line-height: 1.2; letter-spacing: 0; margin: 0 0 3mm; }
@@ -291,6 +296,17 @@ select.mb-in { appearance: none; -webkit-appearance: none; cursor: pointer; text
 .mb-doc__note { margin: 3mm 0 0; font-size: 8.5pt; }
 .mb-doc__terms { margin-top: 8mm; padding: 4mm; border: 0; border-radius: 0; }
 .mb-doc__terms .mb-doc__caption { font-size: inherit; margin-bottom: 2pt; }
+/* the designs (CompanyConfig.Design, DocumentDesigns), as InvoicePdf draws them. Klassisch is the paper above. Linien: no areas, a line of ink under the heading
+   and around the total, fine lines around the terms. Akzent: the heading and the total in the colour of the document with white letters, the positions framed,
+   a bar of the colour beside the terms. */
+.mb-doc--lines .mb-lines__head { background: none; border-bottom: 1pt solid #1f2937; }
+.mb-doc--lines .mb-doc__totals > .mb-doc__grand { padding-block: 2mm; border-top: 1pt solid #1f2937; border-bottom: 1pt solid #1f2937; }
+.mb-doc--lines .mb-doc__terms { padding: 3mm 0; background: none; border-top: .5pt solid #e5e7eb; border-bottom: .5pt solid #e5e7eb; }
+.mb-doc--accent .mb-lines__head { background: var(--mb-doc-accent); color: #fff; }
+.mb-doc--accent .mb-lines__head, .mb-doc--accent .mb-lines__body { border-inline: .5pt solid #e5e7eb; }
+.mb-doc--accent .mb-doc__totals > .mb-doc__grand { padding: 2mm; border-top: 0; background: var(--mb-doc-accent); }
+.mb-doc--accent .mb-doc__grand :is(dt, dd) { color: #fff; }
+.mb-doc--accent .mb-doc__terms { border-left: 1.2mm solid var(--mb-doc-accent); }
 .mb-doc__closing { margin-top: 8mm; }
 .mb-doc__signature { font-family: "MB Lato", var(--mat-font); font-style: italic; font-size: 16pt; transform: none; }
 .mb-doc__foot { padding-top: 8mm; gap: 2mm; font-size: 7pt; line-height: 1.3; }
@@ -313,6 +329,7 @@ select.mb-in { appearance: none; -webkit-appearance: none; cursor: pointer; text
    (app.js writes --mb-paper-zoom). What opens over the paper (suggestions, the menu of a position, the date picker) keeps its own size: it undoes the zoom. */
 @media (min-width: 900px) {
   .mb-editor:not([data-view="form"]) .mb-paper, .mb-paper--view { width: 210mm; max-width: none; zoom: var(--mb-paper-zoom, 1); }
+  .mb-editor:not([data-view="form"]) .mb-paper .mb-doc__head, .mb-paper--view .mb-doc__head { height: 30mm; align-items: flex-start; }
   .mb-paper :is(.mb-combo__list, .mb-line__menu, .mat-picker__panel) { zoom: calc(1 / var(--mb-paper-zoom, 1)); }
 }
 

@@ -2,6 +2,8 @@
 @model MatBill.Pages.Admin.Branding.IndexModel
 @{
     var layouts = MatBill.Configuration.DocumentLayouts.All.Select(l => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem(L["Branding.Layout." + l].Value, l)).ToList();
+    var sizes = MatBill.Configuration.DocumentLogoSizes.All.Select(s => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem(L["Branding.LogoSize." + s].Value, s)).ToList();
+    var styles = MatBill.Configuration.DocumentDesigns.All.Select(s => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem(L["Branding.Style." + s].Value, s)).ToList();
 }
 
 <div class="mb-split">
@@ -29,7 +31,9 @@
 
         <mb-card title="@L["Branding.Design"]" icon="palette">
             <div class="mat-form__grid">
-                <mb-radios for="Input.Layout" label="@L["Branding.Layout"]" items="layouts" full="true" />
+                <mb-radios for="Input.Layout" label="@L["Branding.Layout"]" items="layouts" />
+                <mb-radios for="Input.LogoSize" label="@L["Branding.LogoSize"]" items="sizes" hint="@L["Branding.Window.Hint"]" />
+                <mb-radios for="Input.Design" label="@L["Branding.Style"]" items="styles" full="true" />
                 <div class="mat-field">
                     <label class="mat-label" for="Input_AccentColor">@L["Branding.Accent"]</label>
                     <div class="mat-picker" data-picker="colour"><input class="mat-picker__input" id="Input_AccentColor" name="Input.AccentColor" value="@Model.Input.AccentColor" /></div>

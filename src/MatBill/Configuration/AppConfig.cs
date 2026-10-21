@@ -88,9 +88,15 @@ public sealed class CompanyConfig
     /// <summary>A line under the payment terms, in the handwriting of the document ("Danke!"); empty shows nothing.</summary>
     public string? Signature { get; set; } = "Danke!";
 
-    /// <summary>The head of the document: <see cref="DocumentLayouts.Classic"/> (logo left, sender right), <see cref="DocumentLayouts.Centered"/> (logo centred above
-    /// the sender in one line) or <see cref="DocumentLayouts.Right"/> (sender left, logo right). The same in the editor, the view and the PDF.</summary>
+    /// <summary>Where the logo stands in the head: <see cref="DocumentLayouts.Classic"/> (left), <see cref="DocumentLayouts.Centered"/> (in the middle) or
+    /// <see cref="DocumentLayouts.Right"/> (right). The same in the editor, the view and the PDF.</summary>
     public string Layout { get; set; } = DocumentLayouts.Classic;
+
+    /// <summary>How large the logo is (<see cref="DocumentLogoSizes"/>), wherever it stands; the address keeps its place in the window of the envelope.</summary>
+    public string LogoSize { get; set; } = DocumentLogoSizes.Medium;
+
+    /// <summary>The look of the rest of the document (<see cref="DocumentDesigns"/>): the positions, the totals, the payment terms.</summary>
+    public string Design { get; set; } = DocumentDesigns.Classic;
 
     /// <summary>The columns of the footer as written in Branding, with placeholders ({Name}, {Iban} ...; <see cref="Services.DocumentFooter"/>).
     /// All empty: the footer is made from the company data.</summary>
@@ -305,4 +311,43 @@ public static class DocumentLayouts
     public static readonly string[] All = [Classic, Centered, Right];
 
     public static string Of(string? layout) => All.Contains(layout) ? layout! : Classic;
+}
+
+/// <summary>The sizes of the logo (<see cref="CompanyConfig.LogoSize"/>): its height and the width it may take, in mm. The head has room for the largest (InvoicePdf.HeadHeight).</summary>
+public static class DocumentLogoSizes
+{
+    public const string Small = "small";
+
+    public const string Medium = "medium";
+
+    public const string Large = "large";
+
+    public static readonly string[] All = [Small, Medium, Large];
+
+    public static string Of(string? size) => All.Contains(size) ? size! : Medium;
+
+    public static (float Height, float MaxWidth) Millimetres(string? size) => Of(size) switch
+    {
+        Small => (12, 55),
+        Large => (22, 90),
+        _ => (16, 70),
+    };
+}
+
+/// <summary>
+/// The designs of a document (<see cref="CompanyConfig.Design"/>): <see cref="Classic"/> (a grey heading over the positions, a grey box for the terms),
+/// <see cref="Lines"/> (no areas of colour, only fine lines) and <see cref="Accent"/> (the heading and the total in the colour of the document, the positions framed).
+/// InvoicePdf draws them, the paper of the editor and of the view the same (app.css, mb-doc--design-*).
+/// </summary>
+public static class DocumentDesigns
+{
+    public const string Classic = "classic";
+
+    public const string Lines = "lines";
+
+    public const string Accent = "accent";
+
+    public static readonly string[] All = [Classic, Lines, Accent];
+
+    public static string Of(string? design) => All.Contains(design) ? design! : Classic;
 }

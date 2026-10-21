@@ -10,8 +10,8 @@
     var showTax = d.Totals.Taxes.Count > 1;
     var stamp = d.Stamp;
 }
-<article class="mb-paper mb-paper--view mb-doc @(showTax ? "has-tax" : "") @(d.IsCancelled ? "is-cancelled" : d.IsDraft ? "is-draft" : "")" data-stamp="@stamp" aria-label="@d.Title @d.Number">
-    <header class="mb-doc__head mb-doc__head--@MatBill.Configuration.DocumentLayouts.Of(company.Layout)">
+<article class="mb-paper mb-paper--view mb-doc mb-doc--@MatBill.Configuration.DocumentDesigns.Of(company.Design) @(showTax ? "has-tax" : "") @(d.IsCancelled ? "is-cancelled" : d.IsDraft ? "is-draft" : "")" data-stamp="@stamp" aria-label="@d.Title @d.Number">
+    <header class="mb-doc__head mb-doc__head--@MatBill.Configuration.DocumentLayouts.Of(company.Layout) mb-doc__head--@MatBill.Configuration.DocumentLogoSizes.Of(company.LogoSize)">
         <div class="mb-doc__logo">
             @if (Model.LogoUrl is not null)
             {

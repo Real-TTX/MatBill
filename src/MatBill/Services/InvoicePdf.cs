@@ -74,18 +74,20 @@ public static partial class InvoicePdf
                 page.Background().AlignCenter().AlignMiddle().Rotate(-30).Text(stamp).FontSize(64).Bold().FontColor("#f1f2f5");
             }
 
+            var design = DocumentDesigns.Of(company.Design);
             page.Content().Column(col =>
             {
-                col.Item().Element(c => Head(c, company, logo));
-                col.Item().PaddingTop(12, Unit.Millimetre).Element(c => AddressAndFacts(c, doc, company));
+                // the head has a fixed height, so the address stands in the window of the envelope whatever the size of the logo (DIN 5008 B: 45 to 90 mm from the top)
+                col.Item().Height(HeadHeight, Unit.Millimetre).Element(c => Head(c, company, logo));
+                col.Item().PaddingTop(AddressGap, Unit.Millimetre).Element(c => AddressAndFacts(c, doc, company));
 
                 if (!string.IsNullOrWhiteSpace(doc.IntroText))
                 {
                     col.Item().PaddingTop(10, Unit.Millimetre).Text(doc.IntroText.Trim());
                 }
 
-                col.Item().PaddingTop(6, Unit.Millimetre).Element(c => Positions(c, doc));
-                col.Item().PaddingTop(4, Unit.Millimetre).AlignRight().Width(80, Unit.Millimetre).Element(c => Totals(c, doc, accent));
+                col.Item().PaddingTop(6, Unit.Millimetre).Element(c => Positions(c, doc, design, accent));
+                col.Item().PaddingTop(4, Unit.Millimetre).AlignRight().Width(80, Unit.Millimetre).Element(c => Totals(c, doc, design, accent));
 
                 if (doc.TaxExempt && !string.IsNullOrWhiteSpace(doc.TaxExemptNote))
                 {
@@ -94,7 +96,14 @@ public static partial class InvoicePdf
 
                 if (!string.IsNullOrWhiteSpace(doc.PaymentTerms))
                 {
-                    col.Item().PaddingTop(8, Unit.Millimetre).Background(Soft).Padding(4, Unit.Millimetre).Column(box =>
+                    var terms = col.Item().PaddingTop(8, Unit.Millimetre);
+                    terms = design switch
+                    {
+                        DocumentDesigns.Lines => terms.BorderTop(0.5f).BorderBottom(0.5f).BorderColor(Line).PaddingVertical(3, Unit.Millimetre),
+                        DocumentDesigns.Accent => terms.BorderLeft(1.2f, Unit.Millimetre).BorderColor(accent).Background(Soft).Padding(4, Unit.Millimetre),
+                        _ => terms.Background(Soft).Padding(4, Unit.Millimetre),
+                    };
+                    terms.Column(box =>
                     {
                         box.Item().Text(doc.TermsLabel).SemiBold();
                         box.Item().PaddingTop(2).Text(doc.PaymentTerms.Trim()).FontColor("#374151");
@@ -128,6 +137,12 @@ public static partial class InvoicePdf
         Logo(container, company, logo, center: layout == DocumentLayouts.Centered, right: layout == DocumentLayouts.Right);
     }
 
+    /// <summary>The height of the head (mm): the largest logo has room in it, and with the top margin of 15 mm the address below begins at the window.</summary>
+    public const float HeadHeight = 30;
+
+    /// <summary>Between the head and the sender line (mm): the sender line stands at 50 mm from the top, 5 mm into the window (45 to 90 mm), the recipient under it.</summary>
+    public const float AddressGap = 5;
+
     private static void Logo(IContainer c, CompanyConfig company, LogoImage? logo, bool center, bool right = false)
     {
         if (logo is null)
@@ -147,9 +162,10 @@ public static partial class InvoicePdf
         }
 
         // aligned first, then limited: a box limited first stands at the left and the logo would only be in the middle of that box, not of the page.
-        // In the middle the logo is a letterhead and larger (app.css, .mb-doc__head--centered).
-        var aligned = center ? c.AlignCenter() : right ? c.AlignRight() : c.AlignLeft();
-        var box = center ? aligned.Height(22, Unit.Millimetre).MaxWidth(90, Unit.Millimetre) : aligned.Height(16, Unit.Millimetre).MaxWidth(70, Unit.Millimetre);
+        // The size is a setting of its own (DocumentLogoSizes), the same in every position (app.css, .mb-doc__head--small/medium/large).
+        var (height, maxWidth) = DocumentLogoSizes.Millimetres(company.LogoSize);
+        var aligned = (center ? c.AlignCenter() : right ? c.AlignRight() : c.AlignLeft()).AlignTop();
+        var box = aligned.Height(height, Unit.Millimetre).MaxWidth(maxWidth, Unit.Millimetre);
         if (logo.IsSvg)
         {
             box.Svg(SvgForPdf(Encoding.UTF8.GetString(logo.Bytes))).FitArea();
@@ -225,10 +241,11 @@ public static partial class InvoicePdf
             r.AutoItem().AlignRight().Text(value).SemiBold();
         });
 
-    private static void Positions(IContainer container, InvoiceDocument doc)
+    private static void Positions(IContainer container, InvoiceDocument doc, string design, string accent)
     {
         var showTax = doc.Totals.Taxes.Count > 1;
-        container.Table(table =>
+        // Akzent frames the positions; the heading of each design in HeadCell
+        (design == DocumentDesigns.Accent ? container.Border(0.5f).BorderColor(Line) : container).Table(table =>
         {
             table.ColumnsDefinition(c =>
             {
@@ -243,18 +260,20 @@ public static partial class InvoicePdf
                 c.RelativeColumn(1.9f);
             });
 
-            table.Header(h =>
+            // the heading is one cell over all columns with a row of the same widths: one area (or one line) without seams between the columns
+            table.Header(h => h.Cell().ColumnSpan(showTax ? 5u : 4u).Element(c => HeadCell(c, design, accent)).Row(r =>
             {
-                h.Cell().Element(HeadCell).Text("Leistung");
-                h.Cell().Element(HeadCell).AlignRight().Text("Menge");
-                h.Cell().Element(HeadCell).AlignRight().Text("Einzelpreis");
+                static IContainer Pad(IContainer c) => c.PaddingHorizontal(2, Unit.Millimetre);
+                r.RelativeItem(5).Element(Pad).Text("Leistung");
+                r.RelativeItem(1.6f).Element(Pad).AlignRight().Text("Menge");
+                r.RelativeItem(1.9f).Element(Pad).AlignRight().Text("Einzelpreis");
                 if (showTax)
                 {
-                    h.Cell().Element(HeadCell).AlignRight().Text("USt.");
+                    r.RelativeItem(1f).Element(Pad).AlignRight().Text("USt.");
                 }
 
-                h.Cell().Element(HeadCell).AlignRight().Text("Gesamtpreis");
-            });
+                r.RelativeItem(1.9f).Element(Pad).AlignRight().Text("Gesamtpreis");
+            }));
 
             foreach (var line in doc.Lines)
             {
@@ -278,13 +297,21 @@ public static partial class InvoicePdf
         });
     }
 
-    private static IContainer HeadCell(IContainer c)
-        => c.Background(Soft).PaddingVertical(2.5f, Unit.Millimetre).PaddingHorizontal(2, Unit.Millimetre).DefaultTextStyle(x => x.SemiBold().FontSize(8.5f));
+    /// <summary>The heading of the positions: grey (Klassisch), a line under it (Linien), the colour of the document with white letters (Akzent).</summary>
+    private static IContainer HeadCell(IContainer c, string design, string accent)
+        => (design switch
+        {
+            DocumentDesigns.Lines => c.BorderBottom(1).BorderColor(Ink),
+            DocumentDesigns.Accent => c.Background(accent),
+            _ => c.Background(Soft),
+        })
+        .PaddingVertical(2.5f, Unit.Millimetre)
+        .DefaultTextStyle(x => x.SemiBold().FontSize(8.5f).FontColor(design == DocumentDesigns.Accent ? Colors.White : Ink));
 
     private static IContainer BodyCell(IContainer c)
         => c.BorderBottom(0.5f).BorderColor(Line).PaddingVertical(2.5f, Unit.Millimetre).PaddingHorizontal(2, Unit.Millimetre);
 
-    private static void Totals(IContainer container, InvoiceDocument doc, string accent)
+    private static void Totals(IContainer container, InvoiceDocument doc, string design, string accent)
         => container.Column(col =>
         {
             if (!doc.TaxExempt)
@@ -296,10 +323,19 @@ public static partial class InvoicePdf
                 }
             }
 
-            col.Item().PaddingTop(2, Unit.Millimetre).BorderTop(1).BorderColor("#cbd5e1").PaddingTop(2, Unit.Millimetre).Row(r =>
+            // the total: under a grey line (Klassisch), between two lines of ink (Linien), white on the colour of the document (Akzent)
+            var grand = col.Item().PaddingTop(2, Unit.Millimetre);
+            grand = design switch
             {
-                r.RelativeItem().AlignBottom().Text("Gesamtbetrag").Bold().FontSize(11);
-                r.AutoItem().Text(DocFmt.Money(doc.Totals.Gross)).Bold().FontSize(15).FontColor(accent);
+                DocumentDesigns.Lines => grand.BorderTop(1).BorderBottom(1).BorderColor(Ink).PaddingVertical(2, Unit.Millimetre),
+                DocumentDesigns.Accent => grand.Background(accent).PaddingVertical(2, Unit.Millimetre).PaddingHorizontal(2, Unit.Millimetre),
+                _ => grand.BorderTop(1).BorderColor("#cbd5e1").PaddingTop(2, Unit.Millimetre),
+            };
+            var onAccent = design == DocumentDesigns.Accent;
+            grand.Row(r =>
+            {
+                r.RelativeItem().AlignBottom().Text("Gesamtbetrag").Bold().FontSize(11).FontColor(onAccent ? Colors.White : Ink);
+                r.AutoItem().Text(DocFmt.Money(doc.Totals.Gross)).Bold().FontSize(15).FontColor(onAccent ? Colors.White : accent);
             });
         });
 

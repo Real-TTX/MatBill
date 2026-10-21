@@ -24,6 +24,12 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
         [Display(Name = "Branding.Layout")]
         public string Layout { get; set; } = DocumentLayouts.Classic;
 
+        [Display(Name = "Branding.LogoSize")]
+        public string LogoSize { get; set; } = DocumentLogoSizes.Medium;
+
+        [Display(Name = "Branding.Style")]
+        public string Design { get; set; } = DocumentDesigns.Classic;
+
         /// <summary>The columns of the footer with placeholders; the standard (or all empty): the standard footer, kept as none.</summary>
         public string?[] Footer { get; set; } = new string?[DocumentFooter.MaxColumns];
     }
@@ -42,7 +48,7 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
     public void OnGet()
     {
         var c = config.Current.Company;
-        Input = new InputModel { AccentColor = c.AccentColor, Signature = c.Signature, Layout = DocumentLayouts.Of(c.Layout), Footer = [.. Enumerable.Range(0, DocumentFooter.MaxColumns).Select(i => (c.FooterColumns.Count > 0 ? c.FooterColumns : DocumentFooter.Default).ElementAtOrDefault(i))] };
+        Input = new InputModel { AccentColor = c.AccentColor, Signature = c.Signature, Layout = DocumentLayouts.Of(c.Layout), LogoSize = DocumentLogoSizes.Of(c.LogoSize), Design = DocumentDesigns.Of(c.Design), Footer = [.. Enumerable.Range(0, DocumentFooter.MaxColumns).Select(i => (c.FooterColumns.Count > 0 ? c.FooterColumns : DocumentFooter.Default).ElementAtOrDefault(i))] };
         Prepare();
     }
 
@@ -68,6 +74,8 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
             c.Company.AccentColor = Input.AccentColor.ToLowerInvariant();
             c.Company.Signature = string.IsNullOrWhiteSpace(Input.Signature) ? null : Input.Signature.Trim();
             c.Company.Layout = DocumentLayouts.Of(Input.Layout);
+            c.Company.LogoSize = DocumentLogoSizes.Of(Input.LogoSize);
+            c.Company.Design = DocumentDesigns.Of(Input.Design);
             c.Company.FooterColumns = FooterOf(Input.Footer);
         });
         await log.LogAsync(L["Branding.Log.Changed"], "Company");
@@ -77,14 +85,24 @@ public sealed class IndexModel(ConfigStore config, BrandingService branding, Act
 
     /// <summary>
     /// The first page of the sample invoice as the PDF draws it, as a PNG: the preview beside the forms of branding and company. An image scales as a whole,
-    /// where the paper in HTML would set its text anew in a narrow column. Layout, colour and greeting can be tried before they are saved.
+    /// where the paper in HTML would set its text anew in a narrow column. Position and size of the logo, design, colour, greeting and footer can be tried before they are saved.
     /// </summary>
-    public async Task<IActionResult> OnGetPreviewAsync(string? layout, string? accent, string? signature, string?[]? footer)
+    public async Task<IActionResult> OnGetPreviewAsync(string? layout, string? logoSize, string? design, string? accent, string? signature, string?[]? footer)
     {
         var copy = System.Text.Json.JsonSerializer.Deserialize<AppConfig>(System.Text.Json.JsonSerializer.Serialize(config.Current))!;
         if (layout is not null)
         {
             copy.Company.Layout = DocumentLayouts.Of(layout);
+        }
+
+        if (logoSize is not null)
+        {
+            copy.Company.LogoSize = DocumentLogoSizes.Of(logoSize);
+        }
+
+        if (design is not null)
+        {
+            copy.Company.Design = DocumentDesigns.Of(design);
         }
 
         if (InvoicePdf.IsColour(accent))
