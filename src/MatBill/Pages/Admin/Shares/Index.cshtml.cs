@@ -55,7 +55,7 @@ public sealed class IndexModel(MbDbContext db, TimeProvider clock) : PageModelBa
         [
             (new TableColumn(L["Admin.Shares.Link"]), l => Ui.NameWithSub(l.Title, $"/Admin/Shares/Edit?id={l.Id}", l.RecipientName is { Length: > 0 } ? L["Admin.Shares.For", l.RecipientName].Value : null)),
             (new TableColumn(L["Admin.Shares.Invoice"], HideOnPhone: true), l => Ui.Text(l.Invoice is null ? "–" : $"{l.Invoice.Number} · {l.Invoice.RecipientName}")),
-            (new TableColumn(L["Admin.Shares.ValidUntil"]), l => Ui.Text(Fmt.Date(l.ExpiresDate))),
+            (new TableColumn(L["Admin.Shares.ValidUntil"], KeepLabel: true), l => Ui.Text(Fmt.Date(l.ExpiresDate))),
             (new TableColumn(L["Admin.Shares.Views"], Numeric: true, HideOnPhone: true), l => Ui.Text(l.ViewCount.ToString())),
             (new TableColumn(L["Common.Status"]), l => l.RevokedDate is not null ? Ui.Pill(revoked, "plain") : l.ExpiresDate <= now ? Ui.Pill(expired, "plain") : Ui.Pill(valid, "ok")),
         ],

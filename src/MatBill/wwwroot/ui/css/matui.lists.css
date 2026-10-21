@@ -144,9 +144,15 @@
   .mat-table > tbody:not(.mat-group) > tr:has(> td.mat-table__primary):not(:has(> td.mat-table__select)) > td::before {
     position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
   }
-  .mat-table > tbody:not(.mat-group) > tr:has(> td.mat-table__primary):not(:has(> td.mat-table__select)) > td.mat-table__primary {
-    order: -1; flex: 1 1 100%; padding-right: var(--mat-space-6); color: var(--mat-text); font-size: var(--mat-fs-md); font-weight: 600;
+  /* a value that says nothing without its column (an open sum, the next date) keeps its label in front of it: mat-table__keep-label */
+  .mat-table > tbody:not(.mat-group) > tr:has(> td.mat-table__primary):not(:has(> td.mat-table__select)) > td.mat-table__keep-label::before {
+    position: static; width: auto; height: auto; overflow: visible; clip-path: none; margin-right: var(--mat-space-1);
   }
+  .mat-table > tbody:not(.mat-group) > tr:has(> td.mat-table__primary):not(:has(> td.mat-table__select)) > td.mat-table__primary {
+    order: -1; flex: 1 1 100%; color: var(--mat-text); font-size: var(--mat-fs-md); font-weight: 600;
+  }
+  /* the chevron has a column of its own on the right: no cell of the card runs into it */
+  .mat-table > tbody:not(.mat-group) > tr:has(> td.mat-table__primary a[href]):not(:has(> td.mat-table__select)) { padding-right: calc(var(--mat-table-pad-x, var(--mat-space-4)) + var(--mat-space-6)); }
   .mat-table > tbody:not(.mat-group) > tr:has(> td.mat-table__primary):not(:has(> td.mat-table__select)) > td.mat-table__primary::before { content: none; }
   .mat-table > tbody:not(.mat-group) > tr:has(> td.mat-table__primary a[href]):not(:has(> td.mat-table__select)) > td.mat-table__primary::after {
     content: ""; position: absolute; top: 50%; right: var(--mat-table-pad-x, var(--mat-space-4)); width: .5rem; height: .5rem;

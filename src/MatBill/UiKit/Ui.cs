@@ -71,7 +71,7 @@ public static partial class Ui
     public static IHtmlContent Text(string? text) => new HtmlString(WebUtility.HtmlEncode(text ?? string.Empty));
 
     /// <summary>A quiet dash for "nothing here".</summary>
-    public static IHtmlContent None() => new HtmlString("<span class=\"mat-muted\">–</span>");
+    public static IHtmlContent None() => new HtmlString("<span class=\"mat-muted mb-none\">–</span>");
 
     /// <summary>A link in a table cell.</summary>
     public static IHtmlContent Link(string text, string href)

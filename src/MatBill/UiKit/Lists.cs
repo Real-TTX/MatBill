@@ -151,12 +151,13 @@ public sealed record LinkTabsModel(string Label, IReadOnlyList<LinkTab> Tabs, st
 /// <summary>A tool of a row: an icon button at the end of it (open, edit).</summary>
 public sealed record RowAction(string Icon, string Label, string Href);
 
-public sealed record TableColumn(string Header, bool Numeric = false, bool HideOnPhone = false, bool Mono = false);
+/// <summary>A column of a table. <see cref="Primary"/>: the column that names the record (the first one when no column says so); <see cref="KeepLabel"/>: its value says nothing without the heading, the record card on a phone keeps it.</summary>
+public sealed record TableColumn(string Header, bool Numeric = false, bool HideOnPhone = false, bool Mono = false, bool Primary = false, bool KeepLabel = false);
 
-/// <summary>A row of a table. <see cref="Opens"/>: its first cell holds a link, the record it names; on a phone the row is then a record card that opens it from anywhere (MatUi TABLE-02).</summary>
+/// <summary>A row of a table. <see cref="Opens"/>: the cell of the primary column holds a link, the record it names; on a phone the row is then a record card that opens it from anywhere (MatUi TABLE-02).</summary>
 public sealed record TableRow(IReadOnlyList<IHtmlContent> Cells, IReadOnlyList<RowAction> Actions)
 {
-    public bool Opens { get; } = Cells.Count > 0 && HasLink(Cells[0]);
+    public bool Opens(int primary) => primary < Cells.Count && HasLink(Cells[primary]);
 
     private static bool HasLink(IHtmlContent cell)
     {
@@ -187,6 +188,9 @@ public sealed record TableModel
     public string EmptyIcon { get; init; } = "search";
 
     public bool HasActions => Rows.Any(r => r.Actions.Count > 0);
+
+    /// <summary>The index of the column that names the record: the one marked <see cref="TableColumn.Primary"/>, else the first.</summary>
+    public int PrimaryColumn => Math.Max(0, Columns.ToList().FindIndex(c => c.Primary));
 
     /// <summary>Builds a table from items: one column definition per column, a cell for each.</summary>
     public static TableModel Of<T>(string id, string caption, IEnumerable<T> items, IReadOnlyList<(TableColumn Column, Func<T, IHtmlContent> Cell)> columns, Func<T, IReadOnlyList<RowAction>>? actions = null)

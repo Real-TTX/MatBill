@@ -64,7 +64,7 @@ public sealed class IndexModel(MbDbContext db) : PageModelBase
             (new TableColumn(L["Customers.Column.Number"], HideOnPhone: true, Mono: true), c => Ui.Text(c.Number)),
             (new TableColumn(L["Customers.Column.City"], HideOnPhone: true), c => Ui.Text(string.Join(" ", new[] { c.PostalCode, c.City }.Where(s => !string.IsNullOrWhiteSpace(s))))),
             (new TableColumn(L["Common.Email"], HideOnPhone: true), c => string.IsNullOrWhiteSpace(c.Email) ? Ui.None() : Ui.Text(c.Email)),
-            (new TableColumn(L["Customers.Column.Open"], Numeric: true), c => open.TryGetValue(c.Id, out var sum) ? Ui.Money(sum) : Ui.None()),
+            (new TableColumn(L["Customers.Column.Open"], Numeric: true, KeepLabel: true), c => open.TryGetValue(c.Id, out var sum) ? Ui.Money(sum) : Ui.None()),
         ],
         c => [new RowAction("edit", edit, $"/Customers/Edit?id={c.Id}"), new RowAction("file-plus", newInvoice, $"/Invoices/Edit?customer={c.Id}")]);
         Table = Table with

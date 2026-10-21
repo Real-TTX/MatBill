@@ -229,10 +229,17 @@ async function confirmDialog(page) {
   await shot(page, 'expense');
 
   console.log('Banking');
-  await page.goto(base + '/Banking/Accounts/Edit');
-  await page.fill('#Input_Name', 'Testkonto');
-  await page.getByRole('button', { name: 'Speichern', exact: true }).first().click();
-  await page.waitForURL(/Banking\/Import/, { timeout: 15000 });
+  // the account of an earlier run is used again, so that the accounts do not pile up with every run
+  await page.goto(base + '/Banking');
+  const known = await page.locator('.mb-account__name', { hasText: /^Testkonto$/ }).first().getAttribute('href').catch(() => null);
+  if (known) {
+    await page.goto(base + '/Banking/Import?account=' + new URL(known, base).searchParams.get('id'));
+  } else {
+    await page.goto(base + '/Banking/Accounts/Edit');
+    await page.fill('#Input_Name', 'Testkonto');
+    await page.getByRole('button', { name: 'Speichern', exact: true }).first().click();
+    await page.waitForURL(/Banking\/Import/, { timeout: 15000 });
+  }
   const open = await page.request.get(base + '/Invoices?status=open');
   const openHtml = await open.text();
   const number = (openHtml.match(/RE-\d{4}-\d{4}/) || [])[0];
@@ -332,12 +339,42 @@ async function confirmDialog(page) {
   const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: 'de-DE', storageState: await context.storageState() });
   const mobile = await phone.newPage();
   mobile.on('pageerror', err => problems.push('page error (phone): ' + err.message));
-  for (const [url, file] of [['/', 'mobile-dashboard'], ['/Invoices/Edit', 'mobile-editor'], ['/Invoices', 'mobile-invoices'], ['/Invoices/Edit?id=' + id, 'mobile-invoice'], ['/Banking', 'mobile-banking'], ['/Expenses', 'mobile-expenses']]) {
+  const lists = ['/Invoices', '/Quotes', '/Recurring', '/Customers', '/Products', '/Expenses', '/Banking', '/Admin/Users'];
+  for (const [url, file] of [['/', 'mobile-dashboard'], ['/Invoices/Edit', 'mobile-editor'], ['/Invoices/Edit?id=' + id, 'mobile-invoice'], ...lists.map(l => [l, 'mobile' + l.toLowerCase().replace(/\//g, '-')])]) {
     await mobile.goto(base + url);
     const overflow = await mobile.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     check(overflow <= 1, url + ' fits the phone (overflow ' + overflow + ' px)');
+    if (lists.includes(url)) {
+      // a list on a phone: a row that links to its record is a card that opens it, and the first one is in view without scrolling
+      const card = await mobile.evaluate(() => {
+        const row = document.querySelector('.mat-table tbody tr:has(> td.mat-table__primary)');
+        if (!row) { return null; }
+        const r = row.getBoundingClientRect();
+        const label = getComputedStyle(row.querySelector('td:not(.mat-table__primary):not(.mat-table__cell-actions)') || row, '::before');
+        const dashes = [...document.querySelectorAll('.mat-table tbody tr:has(> td.mat-table__primary) > td')].filter(td => td.offsetParent && td.textContent.trim() === '–').length;
+        return { top: r.top, dashes, display: getComputedStyle(row).display, label: parseFloat(label.width) || 0, actions: [...row.querySelectorAll('.mat-table__actions .mat-btn')].map(b => getComputedStyle(b, '::after').content) };
+      });
+      if (card) {
+        check(card.display === 'flex' && card.label <= 1, url + ': a row is a record card without labels (' + card.display + ', ' + card.label + ')');
+        check(card.dashes === 0, url + ': a card shows no lone dash of an empty cell (' + card.dashes + ')');
+        // the accounts of Banking stand above its list, one line each: with more than three the list is lower by design
+        const accounts = await mobile.locator('.mb-account').count();
+        if (accounts <= 3) check(card.top < 844, url + ': the first record is in view without scrolling (top ' + Math.round(card.top) + ')');
+        check(card.actions.every(c => c !== 'none' && c !== 'normal'), url + ': the actions of a card show their text: ' + card.actions.join(', '));
+      }
+    }
+    // the app shell scrolls inside .mat-main: the shot needs a viewport as tall as the content
+    const height = await mobile.evaluate(() => Math.max(844, document.querySelector('.mat-main')?.scrollHeight || 0));
+    await mobile.setViewportSize({ width: 390, height: Math.min(height + 120, 6000) });
     await shot(mobile, file);
+    await mobile.setViewportSize({ width: 390, height: 844 });
   }
+  await mobile.goto(base + '/Invoices');
+  const card = mobile.locator('.mat-table tbody tr:has(> td.mat-table__primary)').first();
+  const box = await card.boundingBox();
+  await mobile.mouse.click(box.x + box.width - 30, box.y + box.height / 2 - 6);
+  await mobile.waitForURL(/\/Invoices\/Edit\?id=\d+/, { timeout: 5000 }).catch(() => {});
+  check(/\/Invoices\/Edit\?id=\d+/.test(mobile.url()), 'a tap on a card beside the number opens the invoice: ' + mobile.url());
   const fontSize = await mobile.evaluate(() => { const el = document.querySelector('.mb-in'); return el ? parseFloat(getComputedStyle(el).fontSize) : 16; });
   check(fontSize >= 16, 'fields of the editor have 16 px on a phone (no zoom on iOS): ' + fontSize);
 

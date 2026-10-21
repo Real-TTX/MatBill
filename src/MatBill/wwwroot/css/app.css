@@ -38,6 +38,19 @@
 .mb-stat .mat-stat__value { font-variant-numeric: tabular-nums; }
 a.mb-stat--link { color: inherit; text-decoration: none; }
 a.mb-stat--link:hover { border-color: var(--mat-border-strong); text-decoration: none; }
+/* A record card on a phone leaves out a cell that holds nothing (Ui.None, the quiet dash): without its label the dash says nothing. */
+@media (max-width: 720px) {
+  .mat-table > tbody > tr:has(> td.mat-table__primary):not(:has(> td.mat-table__select)) > td:has(> .mb-none:only-child) { display: none; }
+}
+/* On a phone the cards are small, two in a row (an odd last one takes the whole row), so the list below them is in view on the first screen. */
+@media (max-width: 720px) {
+  .mb-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--mat-space-2); }
+  .mb-stats > .mb-stat:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .mb-stats .mb-stat > .mat-card__body { padding: var(--mat-space-3); }
+  .mb-stats .mat-stat__label { font-size: var(--mat-fs-xs); }
+  .mb-stats .mat-stat__value { font-size: var(--mat-fs-lg); overflow-wrap: anywhere; }
+  .mb-stats .mat-stat__delta { font-size: var(--mat-fs-xs); }
+}
 
 /* ---- The bell in the header bar ---- */
 .mb-bell { position: relative; }
@@ -482,6 +495,19 @@ select.mb-in { appearance: none; -webkit-appearance: none; cursor: pointer; text
 .mb-account__balance { font-size: var(--mat-fs-xl); font-weight: 700; margin-top: var(--mat-space-1); }
 .mb-account__meta { font-size: var(--mat-fs-xs); margin: 0; }
 .mb-account__actions { display: flex; flex-wrap: wrap; gap: var(--mat-space-2); margin-top: var(--mat-space-2); }
+/* On a phone an account is one line (name and state, balance, the buttons as icons with their text for a screen reader), so the bookings are in view;
+   the IBAN and the date of the balance are on the account's page, an error of the fetch stays. */
+@media (max-width: 720px) {
+  .mb-accounts { grid-template-columns: minmax(0, 1fr); gap: var(--mat-space-2); }
+  .mb-account .mat-card__body { grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; column-gap: var(--mat-space-3); padding: var(--mat-space-2) var(--mat-space-3); }
+  .mb-account__head { justify-content: flex-start; }
+  .mb-account__iban, .mb-account__meta:not(.mb-warn-text) { display: none; }
+  .mb-account__balance { grid-column: 2; grid-row: 1; margin: 0; font-size: var(--mat-fs-md); text-align: right; white-space: nowrap; }
+  .mb-account__actions { grid-column: 3; grid-row: 1; flex-wrap: nowrap; gap: var(--mat-space-1); margin: 0; }
+  .mb-account__actions .mat-btn { padding: 0; width: 44px; min-height: 44px; }
+  .mb-account__actions .mat-btn > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .mb-account .mb-warn-text { grid-column: 1 / -1; }
+}
 
 /* ---- the score of a suggestion ---- */
 .mb-score { flex: none; display: inline-grid; place-items: center; min-width: 2.4rem; height: 2rem; padding: 0 var(--mat-space-2); border-radius: var(--mat-radius-pill); background: var(--mat-surface-3); color: var(--mat-text-muted); font-weight: 700; font-variant-numeric: tabular-nums; }

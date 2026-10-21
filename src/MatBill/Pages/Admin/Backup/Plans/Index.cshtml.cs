@@ -54,7 +54,7 @@ public sealed class IndexModel(MbDbContext db) : PageModelBase
             (new TableColumn(L["Backup.Target"], HideOnPhone: true), p => Ui.Text(p.Target?.Name)),
             (new TableColumn(L["Backup.Plans.Col.Schedule"], HideOnPhone: true), p => Ui.Text(BackupSchedule.Describe(p))),
             (new TableColumn(L["Backup.Plans.Col.Next"], HideOnPhone: true), p => Ui.Text(p.IsEnabled ? Fmt.Moment(p.NextRunDate) : "")),
-            (new TableColumn(L["Backup.Plans.Col.Last"]), p => p.LastRunDate is null ? Ui.Text(L["Backup.Never"].Value) : BackupService.IsFailedStatus(p.LastStatus) ? Ui.Pill(L["Backup.Failed"].Value, "error") : Ui.Pill(L["Backup.Ok"].Value, "ok")),
+            (new TableColumn(L["Backup.Plans.Col.Last"], KeepLabel: true), p => p.LastRunDate is null ? Ui.Text(L["Backup.Never"].Value) : BackupService.IsFailedStatus(p.LastStatus) ? Ui.Pill(L["Backup.Failed"].Value, "error") : Ui.Pill(L["Backup.Ok"].Value, "ok")),
             (new TableColumn(L["Common.Status"]), p => p.IsEnabled ? Ui.Pill(L["Backup.Active"].Value, "ok") : Ui.Pill(L["Backup.Off"].Value, "plain")),
         ],
         p => [new RowAction("edit", L["Common.Edit"].Value, $"/Admin/Backup/Plans/Edit?id={p.Id}")]);

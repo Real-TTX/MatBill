@@ -81,7 +81,7 @@ public sealed class IndexModel(MbDbContext db, MatchingService matching, BankSyn
         Table = TableModel.Of("transaction-table", L["Banking.Transactions"], result.Items,
         [
             (new TableColumn(L["Common.Date"]), t => Ui.Text(Fmt.Date(t.BookingDate))),
-            (new TableColumn(L["Banking.Column.NamePurpose"]), t => Ui.NameWithSub(t.CounterpartyName ?? noName, $"/Banking/Transaction?id={t.Id}", t.Purpose is { Length: > 90 } p ? p[..90] + " …" : t.Purpose)),
+            (new TableColumn(L["Banking.Column.NamePurpose"], Primary: true), t => Ui.NameWithSub(t.CounterpartyName ?? noName, $"/Banking/Transaction?id={t.Id}", t.Purpose is { Length: > 90 } p ? p[..90] + " …" : t.Purpose)),
             (new TableColumn(L["Banking.Account"], HideOnPhone: true), t => Ui.Text(t.BankAccount?.Name)),
             (new TableColumn(L["Common.Amount"], Numeric: true), t => Ui.Money(t.Amount)),
             (new TableColumn(L["Banking.Match"]), t => t.State switch

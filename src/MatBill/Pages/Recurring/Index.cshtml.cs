@@ -88,7 +88,7 @@ public sealed class IndexModel(MbDbContext db, ConfigStore config, TimeProvider 
         [
             (new TableColumn(L["Recurring.Series"]), s => Ui.NameWithSub(s.Name, $"/Recurring/Edit?id={s.Id}", s.Customer?.Name)),
             (new TableColumn(L["Recurring.Field.Interval"], HideOnPhone: true), s => Ui.Text(Labels.Of(s.Interval))),
-            (new TableColumn(L["Recurring.NextInvoice"]), s => s.NextRunDate is { } next && s.Status == RecurringStatus.Active ? Ui.Text(Fmt.Date(next)) : Ui.None()),
+            (new TableColumn(L["Recurring.NextInvoice"], KeepLabel: true), s => s.NextRunDate is { } next && s.Status == RecurringStatus.Active ? Ui.Text(Fmt.Date(next)) : Ui.None()),
             (new TableColumn(L["Common.Amount"], Numeric: true, HideOnPhone: true), s => Ui.Money(InvoiceMath.Totals(s.Lines.Select(l => l.Amounts), exempt).Gross)),
             (new TableColumn(L["Common.Status"]), s => Labels.Pill(s)),
             (new TableColumn(L["Recurring.Created"], Numeric: true, HideOnPhone: true), s => Ui.Text(s.CreatedCount.ToString())),
