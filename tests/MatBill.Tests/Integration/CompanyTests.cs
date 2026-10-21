@@ -49,12 +49,12 @@ public sealed class CompanyTests : IClassFixture<AppFixture>
 
             var saved = await AppFixture.PostFormAsync(client, "/Admin/Company", new Dictionary<string, string>
             {
-                ["Input.Name"] = "Matthix", ["Input.NameLine2"] = "Matthias Schmoldt", ["Input.Street"] = "Weg 1", ["Input.PostalCode"] = "12345", ["Input.City"] = "Stadt",
+                ["Input.Name"] = "Nordlicht Design", ["Input.NameLine2"] = "Erika Mustermann", ["Input.Street"] = "Weg 1", ["Input.PostalCode"] = "12345", ["Input.City"] = "Stadt",
                 ["Input.SmallBusiness"] = "false",
             });
             Assert.Equal(HttpStatusCode.Redirect, saved.StatusCode);
-            Assert.Equal("Matthias Schmoldt", Config.Current.Company.NameLine2);
-            Assert.Equal("Matthix · Matthias Schmoldt · Weg 1 · 12345 Stadt", Config.Current.Company.SenderLine);
+            Assert.Equal("Erika Mustermann", Config.Current.Company.NameLine2);
+            Assert.Equal("Nordlicht Design · Erika Mustermann · Weg 1 · 12345 Stadt", Config.Current.Company.SenderLine);
 
             Assert.DoesNotContain(De("Dashboard.Setup.Title"), await AppFixture.TextAsync(client, "/"));
 
@@ -195,7 +195,7 @@ public sealed class CompanyTests : IClassFixture<AppFixture>
     public async Task A_small_business_shows_no_tax_and_counts_expenses_gross()
     {
         await _app.EnsureAdminAsync();
-        await WithCompanyAsync(c => { c.SmallBusiness = true; c.Name = "Matthix"; c.NameLine2 = "Matthias Schmoldt"; }, async () =>
+        await WithCompanyAsync(c => { c.SmallBusiness = true; c.Name = "Nordlicht Design"; c.NameLine2 = "Erika Mustermann"; }, async () =>
         {
             var (_, invoice, _) = await _app.CreateInvoiceWithPdfAsync("Klein", 100m);
             Assert.True(invoice.TaxExempt);
@@ -206,7 +206,7 @@ public sealed class CompanyTests : IClassFixture<AppFixture>
             using (var document = PdfDocument.Open(pdf))
             {
                 var text = string.Join(" ", document.GetPages().Select(p => p.Text));
-                Assert.Contains("Matthias Schmoldt", text);
+                Assert.Contains("Erika Mustermann", text);
                 Assert.Contains("UStG", text);
                 Assert.DoesNotContain("Zwischensumme", text);
             }
@@ -225,7 +225,7 @@ public sealed class CompanyTests : IClassFixture<AppFixture>
             using var client = _app.NewClient();
             await AppFixture.LoginAsync(client, "admin@example.com", "Start12345");
             var view = await AppFixture.TextAsync(client, $"/Invoices/Edit?id={invoice.Id}");
-            Assert.Contains("Matthias Schmoldt", view);
+            Assert.Contains("Erika Mustermann", view);
             Assert.DoesNotContain("Zwischensumme", view);
             Assert.DoesNotContain(De("Export.Kpi.TaxDue"), await AppFixture.TextAsync(client, "/Export?year=2001"));
             Assert.DoesNotContain(De("Products.Column.Vat"), await AppFixture.TextAsync(client, "/Products"));

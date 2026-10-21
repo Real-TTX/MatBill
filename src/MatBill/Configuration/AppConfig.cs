@@ -36,7 +36,7 @@ public sealed class CompanyConfig
 {
     public string Name { get; set; } = "";
 
-    /// <summary>A second line of the name, under it in the sender block and in the sender line ("Matthias Schmoldt" under the trading name "Matthix").</summary>
+    /// <summary>A second line of the name, under it in the sender block and in the sender line ("Erika Mustermann" under the trading name "Nordlicht Design").</summary>
     public string? NameLine2 { get; set; }
 
     /// <summary>The owner or managing director ("Inhaber: Jonas Dierksen", "Geschäftsführer: ..."), a line of the footer.</summary>

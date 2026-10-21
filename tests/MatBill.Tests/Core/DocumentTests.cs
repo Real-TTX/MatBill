@@ -25,18 +25,18 @@ public sealed class DocumentTests
     [Fact]
     public void The_footer_carries_the_address_and_a_second_bank_and_can_be_written_with_placeholders()
     {
-        var company = new CompanyConfig { Name = "Matthix", NameLine2 = "Matthias Schmoldt", Street = "Weg 1", PostalCode = "12345", City = "Stadt", Phone = "0123 456", BankName = "Bank A", Iban = "DE11", Bank2Name = "Bank B", Bank2Iban = "DE22", TaxNumber = "12/345" };
+        var company = new CompanyConfig { Name = "Nordlicht Design", NameLine2 = "Erika Mustermann", Street = "Weg 1", PostalCode = "12345", City = "Stadt", Phone = "0123 456", BankName = "Bank A", Iban = "DE11", Bank2Name = "Bank B", Bank2Iban = "DE22", TaxNumber = "12/345" };
 
         // made from the data: the full address in lines, both accounts in the bank column
         var automatic = DocumentFooter.Columns(company);
-        Assert.Equal(["Matthix", "Matthias Schmoldt", "Weg 1", "12345 Stadt"], automatic[0]);
+        Assert.Equal(["Nordlicht Design", "Erika Mustermann", "Weg 1", "12345 Stadt"], automatic[0]);
         Assert.Equal(["Bank A", "IBAN DE11", "Bank B", "IBAN DE22"], automatic[2]);
 
         // written by hand: placeholders filled in, a line whose placeholders are all empty left out, an empty column left out
         company.FooterColumns = ["{Name} · {City}\nBIC {Bic}\nInhaber: {NameLine2}", "", "IBAN {Iban}\nIBAN {Bank2Iban}\n{Bank2Bic}"];
         var written = DocumentFooter.Columns(company);
         Assert.Equal(2, written.Count);
-        Assert.Equal(["Matthix · Stadt", "Inhaber: Matthias Schmoldt"], written[0]);
+        Assert.Equal(["Nordlicht Design · Stadt", "Inhaber: Erika Mustermann"], written[0]);
         Assert.Equal(["IBAN DE11", "IBAN DE22"], written[1]);
     }
 
@@ -47,8 +47,8 @@ public sealed class DocumentTests
     public void Every_layout_of_the_head_draws_the_sender(string layout)
     {
         var config = new AppConfig();
-        config.Company.Name = "Matthix";
-        config.Company.NameLine2 = "Matthias Schmoldt";
+        config.Company.Name = "Nordlicht Design";
+        config.Company.NameLine2 = "Erika Mustermann";
         config.Company.Street = "Weg 1";
         config.Company.PostalCode = "12345";
         config.Company.City = "Stadt";
@@ -57,8 +57,8 @@ public sealed class DocumentTests
         var pdf = InvoicePdf.Render(sample.Doc, sample.Company, null);
         using var document = PdfDocument.Open(pdf);
         var text = string.Join(" ", document.GetPages().Select(p => p.Text));
-        Assert.Contains("Matthias", text);
-        Assert.Contains("Schmoldt", text);
+        Assert.Contains("Erika", text);
+        Assert.Contains("Mustermann", text);
         Assert.Single(InvoicePdf.RenderImages(sample.Doc, sample.Company, null));
     }
 }

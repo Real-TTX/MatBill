@@ -6,7 +6,7 @@
   "Company.Name": { "en": "Company name", "de": "Name des Unternehmens" },
   "Company.Name.Required": { "en": "Please enter the name of the company.", "de": "Bitte gib den Namen des Unternehmens ein." },
   "Company.NameLine2": { "en": "Second name line", "de": "Zweite Namenszeile" },
-  "Company.NameLine2.Hint": { "en": "Optional, under the name in the sender, for example the owner: \"Matthias Schmoldt\".", "de": "Optional, unter dem Namen im Absender, zum Beispiel der Inhaber: „Matthias Schmoldt“." },
+  "Company.NameLine2.Hint": { "en": "Optional, under the name in the sender, for example the owner: \"Erika Mustermann\".", "de": "Optional, unter dem Namen im Absender, zum Beispiel der Inhaber: „Erika Mustermann“." },
   "Company.Street": { "en": "Street and number", "de": "Straße und Hausnummer" },
   "Company.PostalCode": { "en": "Postcode", "de": "PLZ" },
   "Company.City": { "en": "City", "de": "Ort" },
