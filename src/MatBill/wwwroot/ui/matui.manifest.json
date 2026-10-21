@@ -1,27 +1,27 @@
 {
   "name": "MatUi",
-  "version": "0.3.2",
-  "build": "local-20261020",
-  "hash": "270ce1b878",
+  "version": "0.4.0",
+  "build": "local-20261021",
+  "hash": "9b39a21784",
   "changelog": "CHANGELOG.md",
   "files": [
     {
       "name": "matui.css",
       "url": "matui.css",
-      "bytes": 296044,
-      "sha256": "1111d06f2724ab8fb16ebc5d049277fb30a3df6f7aefe83cc736c11f8987a431"
+      "bytes": 298356,
+      "sha256": "50cf4f7f94d4606281aa2a23762478e7800c7be48e072048c421f62be9bf48e7"
     },
     {
       "name": "matui.js",
       "url": "matui.js",
-      "bytes": 463059,
-      "sha256": "4d8649f5dcd11710013ff8f5fb7193506f70340c002b16b73fd769bb66da6699"
+      "bytes": 469790,
+      "sha256": "63907e9401e15b70aeecc6762774b8f196462048eddd531a64fd0996a7e4fe33"
     },
     {
       "name": "matui.boot.js",
       "url": "matui.boot.js",
       "bytes": 1098,
-      "sha256": "bf9974a9c010b728d9fd0a354b393655431fdc73d8e27148f807b2b5d82b8c3e"
+      "sha256": "1be9c6e7b2484c5028c660207877c54ab1fc92d9e2828af96a28fd2fdd978057"
     },
     {
       "name": "matui-icons.svg",
@@ -56,20 +56,20 @@
     {
       "name": "css/matui.forms.css",
       "url": "css/matui.forms.css",
-      "bytes": 56225,
-      "sha256": "85289847cb0b0946c6834d8509d58278e33b635c6143f2cd1257e3782d435998"
+      "bytes": 57592,
+      "sha256": "929e19c0f72ba719b7c1d336e4bf17c2cd677d9727d510e9af156db6d6ed9e3d"
     },
     {
       "name": "css/matui.pickers.css",
       "url": "css/matui.pickers.css",
-      "bytes": 39225,
-      "sha256": "ac4306ded252cc8c600fb17052207de8ac513ad3b7a4adb8df7aa3f31002a219"
+      "bytes": 39634,
+      "sha256": "a18dac9b401ef55904df19f9ce2fd61cd5aa8e42af211f52fccb08f6b8b3f291"
     },
     {
       "name": "css/matui.lists.css",
       "url": "css/matui.lists.css",
-      "bytes": 76389,
-      "sha256": "e756dcba47e0ebc1ff215427ad2d9ff66edbaac2542de427cbf6d9d8d82b3089"
+      "bytes": 76925,
+      "sha256": "d5ab71007ba2891b6394fa9dd2ad8dc7fdf78b700c7ccff9aaa05cee5c826d35"
     },
     {
       "name": "css/matui.dialogs.css",
@@ -92,8 +92,8 @@
     {
       "name": "CHANGELOG.md",
       "url": "CHANGELOG.md",
-      "bytes": 29844,
-      "sha256": "534b5e50b4177d4ee21d471ea398f12e185ad9f4173a7e6da1bddf5448690217"
+      "bytes": 32925,
+      "sha256": "6bd7fe2386a84454bf510f548953d766d6aa0eccd2542f5772b86db5745b7c2a"
     }
   ]
 }

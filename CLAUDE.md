@@ -69,7 +69,7 @@ Test changes by **rebuilding the container and redeploying the stack**. Wait for
 
 - MatUi only, flat look (MatDesign "A flat look"); app classes `mb-*` in `app.css`; no inline styles or scripts (CSP `default-src 'self'`): data becomes a custom property in
   `app.js`; the editor's data is a `<script type="application/json" id="mb-editor-data">` block (never executed). Icons from the sprite (`Ui.Icon`; own icons in `ui/mb-icons.svg`).
-- Lists: toolbar above (search, filter, sort), table, pager directly below, actions below on the left. A list never scrolls sideways: MatUi (0.3.2) hides `mat-hide-sm` columns, the last first, while a table is wider than its frame (give secondary columns that class), and a hidden tooltip takes no room. CRUD = list + separate edit page. Buttons in one row from positive
+- Lists: toolbar above (search, filter, sort), table, pager directly below, actions below on the left. A list never scrolls sideways: MatUi (0.4.0) hides `mat-hide-sm` columns, the last first, while a table is wider than its frame (give secondary columns that class), and a hidden tooltip takes no room. CRUD = list + separate edit page. Buttons in one row from positive
   to negative, delete spaced apart (`mb-buttons`, `mat-btn-row`). Dependent fields with `show-if` (MatUi `data-show-if`). Several controls of one kind per page: ids derive from the control id.
 - Dialogs: confirmations and messages are MatUi (`data-confirm`, `MatUi.confirm`, `MatUi.toast`), never `confirm()`/`alert()` of the browser; leaving the editor with
   unsaved input asks with `MatUi.confirm` (no `beforeunload`: the copy in localStorage brings the input back).

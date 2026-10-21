@@ -482,3 +482,9 @@
   .mat-colour__hue { box-sizing: border-box; height: 44px; padding-block: 15px; background-clip: content-box; }
 }
 @media (pointer: coarse) and (min-width: 641px) { .mat-cal__month { min-width: 308px; } }
+
+/* ---- The type of a field on a touch screen (MOBILE-06): the search field and the text field of the tags have `font: inherit`, so they are raised to 16 px here, after their own rules
+   (the rest is in matui.forms.css). max(1rem, 1em) never makes one smaller than the size of what it stands in. ---- */
+@media (pointer: coarse) {
+  .mat-search__input, .mat-tagfield__input { font-size: max(1rem, 1em); }
+}

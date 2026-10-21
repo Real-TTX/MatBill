@@ -217,11 +217,12 @@ a.mat-tile:hover { border-color: var(--mat-text-faint); background: var(--mat-su
 /* @prop tabs | --mat-tabs-gap | length | var(--mat-space-1) | Space between two tabs. */
 /* @prop tabs | --mat-tabs-indicator-width | length | 2px | Thickness of the line under the current tab. */
 /* @prop tabs | --mat-tabs-font-weight | number | 600 | Weight of the letters of a tab. */
-.mat-tabs { display: flex; gap: var(--mat-tabs-gap, var(--mat-space-1)); border-bottom: 1px solid var(--mat-border); overflow-x: auto; }
+/* The line under the tabs is an inset shadow inside the bar, not a border below it: the line under the current tab lies on it without a negative margin, so the bar,
+   which scrolls sideways on a narrow screen (overflow-x), has nothing that stands out of it below and never scrolls up and down (overflow-y: hidden). */
+.mat-tabs { display: flex; gap: var(--mat-tabs-gap, var(--mat-space-1)); box-shadow: inset 0 -1px 0 var(--mat-border); overflow-x: auto; overflow-y: hidden; }
 .mat-tab {
   display: inline-flex; align-items: center; gap: var(--mat-space-2);
   min-height: var(--mat-tabs-height, var(--mat-control-h)); padding: 0 var(--mat-tabs-pad-x, var(--mat-space-4));
-  margin-bottom: -1px;
   border: 0; border-bottom: var(--mat-tabs-indicator-width, 2px) solid transparent; border-radius: 0;
   background: transparent; color: var(--mat-text-muted);
   font-weight: var(--mat-tabs-font-weight, 600); white-space: nowrap; cursor: pointer; text-decoration: none;
@@ -332,11 +333,11 @@ th[aria-sort="descending"] .mat-icon { transform: rotate(180deg); }
 [data-select-item].is-selected { background: var(--mat-accent-soft); border-color: var(--mat-accent); }
 
 /* ---- Pills and vertical tabs; tabs that fill the width ---- */
-.mat-tabs--pills { gap: var(--mat-space-2); border-bottom: 0; }
+.mat-tabs--pills { gap: var(--mat-space-2); box-shadow: none; }
 .mat-tabs--pills .mat-tab { margin-bottom: 0; border-bottom: 0; border-radius: var(--mat-radius-pill); min-height: var(--mat-control-h-sm); padding-inline: var(--mat-space-4); }
 .mat-tabs--pills .mat-tab:hover { background: var(--mat-accent-soft); }
 .mat-tabs--pills .mat-tab[aria-selected="true"], .mat-tabs--pills .mat-tab.is-active { background: var(--mat-accent-soft-strong); }
-.mat-tabs--vertical { flex-direction: column; gap: 2px; border-bottom: 0; border-right: 1px solid var(--mat-border); padding-right: var(--mat-space-3); overflow: visible; }
+.mat-tabs--vertical { flex-direction: column; gap: 2px; box-shadow: none; border-right: 1px solid var(--mat-border); padding-right: var(--mat-space-3); overflow: visible; }
 .mat-tabs--vertical .mat-tab { margin-bottom: 0; justify-content: flex-start; border-bottom: 0; border-radius: var(--mat-radius-sm); }
 .mat-tabs--vertical .mat-tab:hover { background: var(--mat-surface-3); }
 .mat-tabs--vertical .mat-tab[aria-selected="true"], .mat-tabs--vertical .mat-tab.is-active { background: var(--mat-accent-soft-strong); }
@@ -463,6 +464,8 @@ a.mat-item__main:active, button.mat-item__main:active, label.mat-item__main:acti
 .mat-item__input::placeholder { color: var(--mat-text-faint); }
 select.mat-item__input { width: calc(100% + 4px); margin-left: -4px; cursor: pointer; }
 .mat-item__input:focus-visible { box-shadow: none; }
+/* the type of a field on a touch screen is 16 px or more (MOBILE-06, matui.forms.css); this one has `font: inherit` and so its own rule */
+@media (pointer: coarse) { .mat-item__input { font-size: max(1rem, 1em); } }
 @media (min-width: 480px) {
   .mat-item--inline .mat-item__body { flex-direction: row; align-items: center; gap: var(--mat-item-gap); }
   .mat-item--inline .mat-item__label { flex: 0 0 7rem; color: var(--mat-text); font-size: var(--mat-fs-md); }

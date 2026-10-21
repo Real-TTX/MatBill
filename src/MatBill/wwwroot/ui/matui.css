@@ -1,4 +1,4 @@
-/* MatUi 0.3.2 (270ce1b878) - build local-20261020 - bundled from matui.tokens.css, matui.base.css, matui.shell.css, matui.controls.css, matui.forms.css, matui.pickers.css, matui.lists.css, matui.dialogs.css, matui.layout.css, matui.apps.css */
+/* MatUi 0.4.0 (9b39a21784) - build local-20261021 - bundled from matui.tokens.css, matui.base.css, matui.shell.css, matui.controls.css, matui.forms.css, matui.pickers.css, matui.lists.css, matui.dialogs.css, matui.layout.css, matui.apps.css */
 /* ==========================================================================
    MatUi · tokens
    The single source of the look of every Mat app. Components use only these custom properties, never a raw colour.
@@ -1884,6 +1884,20 @@ input[type="file"].mat-input { padding: 6px; }
 .mat-input-group--sm .mat-input, .mat-input-group--sm .mat-select, .mat-input-group--sm .mat-btn, .mat-input-group--sm .mat-input-addon { min-height: var(--mat-control-h-sm); font-size: var(--mat-fs-sm); }
 .mat-input-group--lg .mat-input, .mat-input-group--lg .mat-select, .mat-input-group--lg .mat-btn, .mat-input-group--lg .mat-input-addon { min-height: var(--mat-control-h-lg); font-size: var(--mat-fs-lg); }
 
+/* ---- The type of a field on a touch screen (MOBILE-06) ----
+   iOS Safari zooms into a field whose type is under 16 px when it takes the focus, and the page stays zoomed. So on a touch screen every field has 16 px type or more; with a mouse nothing changes.
+   A field takes the size of what it stands in (15 px in the body), so max(1rem, 1em) never makes one smaller than its context gave it. The small size is raised to 16 px as well (its 36 px height
+   stays), the large one keeps 17 px. This block stands after the sizes of the field, of the input group and of the stepper, whose rules have the same weight. The fields that the script draws have
+   their rules next to them: the search field and the tags in matui.pickers.css, the field of a row in matui.lists.css. */
+@media (pointer: coarse) {
+  .mat-input, .mat-select, .mat-textarea { font-size: max(1rem, 1em); }
+  .mat-input--sm, .mat-select--sm, .mat-input-group--sm .mat-input, .mat-input-group--sm .mat-select { font-size: 1rem; }
+  .mat-input--lg, .mat-select--lg, .mat-input-group--lg .mat-input, .mat-input-group--lg .mat-select { font-size: max(1rem, var(--mat-fs-lg)); }
+  /* the buttons and the unit of a number stepper are in the size of its field */
+  .mat-stepper:has(> .mat-input--sm) { font-size: 1rem; }
+  .mat-stepper:has(> .mat-input--lg) { font-size: max(1rem, var(--mat-fs-lg)); }
+}
+
 /* ---- An icon in the field (search), a button in the field (show the password), a counter ---- */
 .mat-input-icon { position: relative; display: flex; align-items: center; }
 .mat-input-icon > .mat-icon { position: absolute; left: var(--mat-space-3); font-size: 1.1rem; color: var(--mat-text-muted); pointer-events: none; }
@@ -2669,6 +2683,12 @@ fieldset.mat-rating:not(.is-ready) > .mat-hint, fieldset.mat-rating:not(.is-read
 }
 @media (pointer: coarse) and (min-width: 641px) { .mat-cal__month { min-width: 308px; } }
 
+/* ---- The type of a field on a touch screen (MOBILE-06): the search field and the text field of the tags have `font: inherit`, so they are raised to 16 px here, after their own rules
+   (the rest is in matui.forms.css). max(1rem, 1em) never makes one smaller than the size of what it stands in. ---- */
+@media (pointer: coarse) {
+  .mat-search__input, .mat-tagfield__input { font-size: max(1rem, 1em); }
+}
+
 /* ==========================================================================
    MatUi · lists
    The list block (toolbar -> applied filters -> table or gallery -> empty state -> pagination -> actions), tabs and the
@@ -2888,11 +2908,12 @@ a.mat-tile:hover { border-color: var(--mat-text-faint); background: var(--mat-su
 /* @prop tabs | --mat-tabs-gap | length | var(--mat-space-1) | Space between two tabs. */
 /* @prop tabs | --mat-tabs-indicator-width | length | 2px | Thickness of the line under the current tab. */
 /* @prop tabs | --mat-tabs-font-weight | number | 600 | Weight of the letters of a tab. */
-.mat-tabs { display: flex; gap: var(--mat-tabs-gap, var(--mat-space-1)); border-bottom: 1px solid var(--mat-border); overflow-x: auto; }
+/* The line under the tabs is an inset shadow inside the bar, not a border below it: the line under the current tab lies on it without a negative margin, so the bar,
+   which scrolls sideways on a narrow screen (overflow-x), has nothing that stands out of it below and never scrolls up and down (overflow-y: hidden). */
+.mat-tabs { display: flex; gap: var(--mat-tabs-gap, var(--mat-space-1)); box-shadow: inset 0 -1px 0 var(--mat-border); overflow-x: auto; overflow-y: hidden; }
 .mat-tab {
   display: inline-flex; align-items: center; gap: var(--mat-space-2);
   min-height: var(--mat-tabs-height, var(--mat-control-h)); padding: 0 var(--mat-tabs-pad-x, var(--mat-space-4));
-  margin-bottom: -1px;
   border: 0; border-bottom: var(--mat-tabs-indicator-width, 2px) solid transparent; border-radius: 0;
   background: transparent; color: var(--mat-text-muted);
   font-weight: var(--mat-tabs-font-weight, 600); white-space: nowrap; cursor: pointer; text-decoration: none;
@@ -3003,11 +3024,11 @@ th[aria-sort="descending"] .mat-icon { transform: rotate(180deg); }
 [data-select-item].is-selected { background: var(--mat-accent-soft); border-color: var(--mat-accent); }
 
 /* ---- Pills and vertical tabs; tabs that fill the width ---- */
-.mat-tabs--pills { gap: var(--mat-space-2); border-bottom: 0; }
+.mat-tabs--pills { gap: var(--mat-space-2); box-shadow: none; }
 .mat-tabs--pills .mat-tab { margin-bottom: 0; border-bottom: 0; border-radius: var(--mat-radius-pill); min-height: var(--mat-control-h-sm); padding-inline: var(--mat-space-4); }
 .mat-tabs--pills .mat-tab:hover { background: var(--mat-accent-soft); }
 .mat-tabs--pills .mat-tab[aria-selected="true"], .mat-tabs--pills .mat-tab.is-active { background: var(--mat-accent-soft-strong); }
-.mat-tabs--vertical { flex-direction: column; gap: 2px; border-bottom: 0; border-right: 1px solid var(--mat-border); padding-right: var(--mat-space-3); overflow: visible; }
+.mat-tabs--vertical { flex-direction: column; gap: 2px; box-shadow: none; border-right: 1px solid var(--mat-border); padding-right: var(--mat-space-3); overflow: visible; }
 .mat-tabs--vertical .mat-tab { margin-bottom: 0; justify-content: flex-start; border-bottom: 0; border-radius: var(--mat-radius-sm); }
 .mat-tabs--vertical .mat-tab:hover { background: var(--mat-surface-3); }
 .mat-tabs--vertical .mat-tab[aria-selected="true"], .mat-tabs--vertical .mat-tab.is-active { background: var(--mat-accent-soft-strong); }
@@ -3134,6 +3155,8 @@ a.mat-item__main:active, button.mat-item__main:active, label.mat-item__main:acti
 .mat-item__input::placeholder { color: var(--mat-text-faint); }
 select.mat-item__input { width: calc(100% + 4px); margin-left: -4px; cursor: pointer; }
 .mat-item__input:focus-visible { box-shadow: none; }
+/* the type of a field on a touch screen is 16 px or more (MOBILE-06, matui.forms.css); this one has `font: inherit` and so its own rule */
+@media (pointer: coarse) { .mat-item__input { font-size: max(1rem, 1em); } }
 @media (min-width: 480px) {
   .mat-item--inline .mat-item__body { flex-direction: row; align-items: center; gap: var(--mat-item-gap); }
   .mat-item--inline .mat-item__label { flex: 0 0 7rem; color: var(--mat-text); font-size: var(--mat-fs-md); }

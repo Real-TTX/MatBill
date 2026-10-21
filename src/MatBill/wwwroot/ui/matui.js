@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Version 0.3.2 of the toolkit MatUi (what changed in each version: CHANGELOG.md; how to update an app: docs/VERSIONING.md).
+   Version 0.4.0 of the toolkit MatUi (what changed in each version: CHANGELOG.md; how to update an app: docs/VERSIONING.md).
    `node tools/bump.js` writes the version here, in matui.boot.js and in MatUiVersion (Directory.Build.props); window.MatUi.version has it.
    MatUi · behaviour
    Dependency-free. Everything is wired by delegated listeners and data-attributes, so server-rendered and dynamically added
@@ -129,6 +129,33 @@
                                             that another element has as data-shortcut stays that element's). In the header bar (.mat-topbar__search, SHELL-20) a phone gets an icon button; on a phone
                                             the focused field is a full-screen panel with an X. Events: mat:search-select (cancelable), mat:search-results. API: MatUi.search.init / setItems /
                                             open / close / clear / focus / value. The texts: data-sr-<name> on <html>
+
+   Events (CustomEvents named after the control and what happened; this is all of them, docs/ADOPTING.md section 3b has the same list as a table and a test holds both to the code).
+   Each is sent on the element it is about and bubbles, so one listener on document hears them all, except the first four: they are sent on <html> and do not bubble
+   (listen on document.documentElement). None can be cancelled except where it says so; a cancelled one (preventDefault) stops what the script would do next.
+     mat:theme            <html>           { theme: 'system' | 'light' | 'dark' }: the theme was applied (a click, MatUi.theme.set) and once when the script starts
+     mat:accent           <html>           { accent: name | null } or { accent: 'custom', color: '#rrggbb' }: MatUi.accent.set / .custom, and once at the start for data-custom-accent
+     mat:scheme           <html>           { scheme: 'standard' | 'paper' | 'contrast' | 'oled' }: the colour scheme was chosen (data-scheme-set, MatUi.scheme.set)
+     mat:navset           <html>           { set: id }: the menu switcher shows another menu (an entry that is a button, MatUi.nav.set)
+     mat:dialog-open      the dialog       no detail: a dialog.mat-dialog was opened (data-dialog-open, data-autoopen, MatUi.dialog.open, MatUi.confirm / alert / prompt)
+     mat:group-toggle     tbody.mat-group  { group, open }: a group of a table opened or closed
+     mat:item-action      li.mat-item      { item, action, list }: a sliding option was pressed (action is its data-item-action or its text in lower case)
+     mat:reorder          li.mat-item      { list, item, from, to, order }: a row was dropped in a new place (order = the keys of the rows now)
+     mat:item-filter      the list         { list, text, shown, total }: the filter field of a list changed which rows are shown
+     mat:slots-needed     .mat-picker      { month, from, to, picker }: the appointment picker shows a month it has no times for; answer with MatUi.picker.setSlots
+     mat:otp-complete     .mat-otp         { value }: every box has a character; cancelable: preventDefault keeps data-submit from sending the form
+     mat:rating-change    .mat-rating      { value, rating }: the user chose a value
+     mat:schedule-select  .mat-schedule    the event as the app gave it: an event was chosen; cancelable: preventDefault keeps a link (url) from being followed
+     mat:schedule-range   .mat-schedule    { from, to, view, date }: the range that is shown changed (and once when it is drawn first): load its events
+     mat:schedule-day     .mat-schedule    { date, view }: the user chose a day
+     mat:tree-select      li.mat-tree__item  { tree, item, selected, values }: an item was selected or ticked
+     mat:tree-toggle      li.mat-tree__item  { tree, item, open }: a parent opened or closed (not when the remembered state is restored)
+     mat:tree-load        li.mat-tree__item  { tree, item, id, value }: a lazy parent opens for the first time; answer with MatUi.tree.setChildren
+     mat:tree-filter      ul.mat-tree      { tree, text, shown, total }: the filter field changed which items are shown
+     mat:upload-change    .mat-upload      { files, added, removed, source }: the list of files changed (source: picker, drop, paste, remove, reset or api)
+     mat:upload-refused   .mat-upload      { refused, source }: files that were not taken, each with its reason
+     mat:search-results   .mat-search      { query, count, source }: suggestions were drawn (source: local, server or error)
+     mat:search-select    .mat-search      { item, group, query, source }: an option was chosen (source: result, recent or all); cancelable: preventDefault means the app takes over, nothing is followed
    ========================================================================== */
 (function () {
   'use strict';
@@ -1107,7 +1134,45 @@
     if (host.parentNode !== home) { home.appendChild(host); }
     return host;
   }
-  function placeToasts() { if ($('.mat-toasts')) { toastHost(); } }
+  function placeToasts() { if ($('.mat-toasts')) { toastHost(); toasts.slice().forEach(toastSettle); } }
+
+  // A toast goes after 6 s, but never while it is being read or used: the timer waits while the pointer is over the toast or the focus is inside it (its X, a link), and when both have
+  // gone it runs the time that was left, 1.5 s at least. A toast lets taps through (CSS: pointer-events: none, only its X takes one), so it never receives a pointer event of its own:
+  // the pointer is looked for by its position, by one listener on the document that works only while a toast is there, and a touch is never "over" (it has no hover).
+  var TOAST_TIME = 6000, TOAST_LEAST = 1500;
+  var toasts = [];
+  function toastHeld(s) { return s.over || s.el.contains(doc.activeElement); }
+  // is the timer to run or to wait? Called whenever the pointer or the focus may have changed; the focus is read from the document, never from a focus event (moving the host
+  // into a dialog takes the focus off a toast without one).
+  function toastSettle(s) {
+    if (!s.el.parentNode) { toastEnd(s); return; }
+    if (toastHeld(s)) {
+      if (s.timer) { clearTimeout(s.timer); s.timer = 0; s.left = Math.max(s.left - (Date.now() - s.since), TOAST_LEAST); }
+    } else if (!s.timer) {
+      s.since = Date.now();
+      s.timer = setTimeout(function () { s.timer = 0; if (toastHeld(s)) { s.left = Math.max(s.left, TOAST_LEAST); } else { toastEnd(s); } }, s.left);
+    }
+  }
+  function toastEnd(s) {
+    clearTimeout(s.timer);
+    s.timer = 0;
+    var at = toasts.indexOf(s);
+    if (at >= 0) { toasts.splice(at, 1); }
+    var focused = s.el.contains(doc.activeElement);
+    if (s.el.parentNode) { s.el.parentNode.removeChild(s.el); }
+    // a toast that had the focus gives it back to what had it before (A11Y-09)
+    if (focused && s.back && s.back.focus && doc.contains(s.back)) { s.back.focus({ preventScroll: true }); }
+  }
+  doc.addEventListener('pointermove', function (e) {
+    if (!toasts.length || e.pointerType === 'touch') { return; }
+    toasts.slice().forEach(function (s) {
+      var r = s.el.getBoundingClientRect();
+      var over = r.width > 0 && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+      if (over !== s.over) { s.over = over; toastSettle(s); }
+    });
+  }, { passive: true });
+  // the pointer that leaves the window from the toast sends no more moves
+  root.addEventListener('pointerleave', function () { toasts.slice().forEach(function (s) { if (s.over) { s.over = false; toastSettle(s); } }); });
 
   function toast(message, options) {
     var o = options || {};
@@ -1118,9 +1183,14 @@
       '<div class="mat-alert__body">' + esc(message) + '</div>' +
       '<button type="button" class="mat-alert__close" aria-label="' + esc(label('data-dlg-close', 'Close')) + '">' + icon('x') + '</button>';
     host.appendChild(t);
-    function remove() { if (t.parentNode) { t.parentNode.removeChild(t); } }
-    $('.mat-alert__close', t).addEventListener('click', remove);
-    setTimeout(remove, o.timeout || 6000);
+    var s = { el: t, left: o.timeout || TOAST_TIME, since: 0, timer: 0, over: false, back: null };
+    toasts.push(s);
+    $('.mat-alert__close', t).addEventListener('click', function () { toastEnd(s); });
+    t.addEventListener('focusin', function (e) { if (e.relatedTarget && !t.contains(e.relatedTarget)) { s.back = e.relatedTarget; } toastSettle(s); });
+    t.addEventListener('focusout', function () { toastSettle(s); });
+    // Escape closes the toast that has the focus, and only it (not the dialog it is shown in)
+    t.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); toastEnd(s); } });
+    toastSettle(s);
   }
 
   // ----------------------------------------------------------------------------------------- dependent form fields
@@ -7970,7 +8040,7 @@
   if (doc.readyState === 'loading') { doc.addEventListener('DOMContentLoaded', init); } else { init(); }
 
   window.MatUi = {
-    version: '0.3.2',
+    version: '0.4.0',
     dialog: { open: openDialog, close: closeDialog },
     confirm: confirmDialog,
     alert: alertDialog,

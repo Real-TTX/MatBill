@@ -126,7 +126,8 @@ async function confirmDialog(page) {
   console.log('Issue it');
   await page.locator('button', { hasText: 'Ausstellen' }).first().click();
   await confirmDialog(page);
-  await page.waitForLoadState('networkidle');
+  // the form is sent after the confirmation: wait for the issued invoice, not only for a quiet network (it can be quiet before the page changes)
+  await page.waitForFunction(() => /Rechnung RE-/.test((document.querySelector('h1') || {}).textContent || ''), null, { timeout: 15000 }).catch(() => {});
   const title = await page.locator('h1').innerText();
   check(/Rechnung RE-\d{4}-\d{4}/.test(title), 'the issued invoice has its number: ' + title);
   check(await page.locator('.mb-paper--view').count() === 1, 'an issued invoice is shown read only');
