@@ -883,6 +883,31 @@
       img.src = src; img.alt = alt; img.loading = 'lazy'; img.decoding = 'async';
       previewPages.appendChild(img);
     };
+    // [data-preview-post] in an editor: what it holds now, saved or not. Its fields go to the handler Preview of the page (nothing is saved), which answers
+    // { pages, url, download }: page n is url/n, the PDF of exactly this is download.
+    var showPages = function (info) {
+      for (var n = 1; n <= info.pages; n++) { previewImage(info.url + '/' + n, t('Js.Preview.Page', n, info.pages)); }
+      previewDownload.href = info.download;
+      previewDownload.hidden = false;
+      previewStatus.textContent = '';
+    };
+    doc.addEventListener('click', function (e) {
+      var button = e.target.closest && e.target.closest('[data-preview-post]');
+      if (!button) { return; }
+      var form = button.closest('form') || ($('[data-editor]') && $('[data-editor]').closest('form'));
+      if (!form) { return; }
+      e.preventDefault();
+      previewPages.innerHTML = '';
+      previewDownload.hidden = true;
+      previewStatus.textContent = t('Js.Preview.Loading');
+      if (window.MatUi && window.MatUi.dialog) { window.MatUi.dialog.open(previewDialog, button); } else { previewDialog.showModal(); }
+      var url = new URL(window.location.href);
+      url.searchParams.set('handler', 'Preview');
+      fetch(url.toString(), { method: 'POST', credentials: 'same-origin', headers: { 'X-Requested-With': 'fetch' }, body: new FormData(form) })
+        .then(function (response) { if (!response.ok) { throw new Error(); } return response.json(); })
+        .then(showPages)
+        .catch(function () { previewStatus.textContent = t('Js.Preview.Failed'); });
+    });
     doc.addEventListener('click', function (e) {
       var link = e.target.closest && e.target.closest('[data-pdf-preview], [data-preview-image]');
       if (!link || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey) { return; }

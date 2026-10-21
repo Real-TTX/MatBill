@@ -4,6 +4,7 @@ using MatBill.Data;
 using MatBill.Data.Entities;
 using MatBill.Localization;
 using MatBill.Services;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using UglyToad.PdfPig;
 
@@ -115,7 +116,7 @@ public sealed class CompanyTests : IClassFixture<AppFixture>
     public async Task The_preview_of_a_draft_is_its_pages_as_images_inside_the_app()
     {
         await _app.EnsureAdminAsync();
-        var (customer, issued, _) = await _app.CreateInvoiceWithPdfAsync("Vorschau", 120m);
+        var (customer, _, _) = await _app.CreateInvoiceWithPdfAsync("Vorschau", 120m);
         var draftId = await _app.WithScopeAsync(async sp =>
         {
             var db = sp.GetRequiredService<MbDbContext>();
@@ -131,19 +132,38 @@ public sealed class CompanyTests : IClassFixture<AppFixture>
         using var client = _app.NewClient();
         await AppFixture.LoginAsync(client, "admin@example.com", "Start12345");
         var editor = await AppFixture.TextAsync(client, $"/Invoices/Edit?id={draftId}");
-        Assert.Contains($"data-pdf-preview=\"/invoices/{draftId}/preview\"", editor);
+        Assert.Contains("data-preview-post", editor);
         Assert.Contains("id=\"mb-preview\"", editor);
         Assert.DoesNotContain("target=\"_blank\"", editor);
 
-        using var info = System.Text.Json.JsonDocument.Parse(await client.GetStringAsync($"/invoices/{draftId}/preview"));
-        Assert.Equal(1, info.RootElement.GetProperty("pages").GetInt32());
-        Assert.Equal($"/invoices/{draftId}/pdf?download=1", info.RootElement.GetProperty("download").GetString());
-        var page = await client.GetAsync($"/invoices/{draftId}/preview/1");
-        Assert.Equal("image/png", page.Content.Headers.ContentType?.MediaType);
-        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/invoices/{draftId}/preview/2")).StatusCode);
+        // what the editor holds now, not saved: the preview shows it, the database does not get it
+        var fields = new Dictionary<string, string>
+        {
+            ["Input.RecipientName"] = "Ungespeichert GmbH", ["Input.RecipientStreet"] = "Weg 2", ["Input.RecipientPostalCode"] = "12345", ["Input.RecipientCity"] = "Stadt",
+            ["Input.Lines[0].Name"] = "Nicht gespeicherte Leistung", ["Input.Lines[0].Quantity"] = "2", ["Input.Lines[0].UnitPrice"] = "75", ["Input.Lines[0].TaxRate"] = "19",
+        };
+        foreach (var url in new[] { $"/Invoices/Edit?id={draftId}&handler=Preview", "/Invoices/Edit?handler=Preview" })
+        {
+            var answer = await AppFixture.PostFormAsync(client, "/Invoices/Edit", fields, url);
+            Assert.Equal(HttpStatusCode.OK, answer.StatusCode);
+            using var info = System.Text.Json.JsonDocument.Parse(await answer.Content.ReadAsStringAsync());
+            Assert.Equal(1, info.RootElement.GetProperty("pages").GetInt32());
+            var page = await client.GetAsync(info.RootElement.GetProperty("url").GetString() + "/1");
+            Assert.Equal("image/png", page.Content.Headers.ContentType?.MediaType);
+            var pdf = await client.GetByteArrayAsync(info.RootElement.GetProperty("download").GetString());
+            using var document = PdfDocument.Open(pdf);
+            var text = string.Join(" ", document.GetPages().Select(p => p.Text));
+            Assert.Contains("Ungespeichert", text);
+            Assert.Contains("150,00", text);
+        }
 
-        // an issued invoice is its stored PDF, not a preview
-        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/invoices/{issued.Id}/preview")).StatusCode);
+        await _app.WithScopeAsync(async sp =>
+        {
+            var db = sp.GetRequiredService<MbDbContext>();
+            Assert.Equal("Vorschau-Leistung", (await db.Invoice.Include(i => i.Lines).FirstAsync(i => i.Id == draftId)).Lines.Single().Name);
+            Assert.False(await db.Customer.AnyAsync(c => c.Name == "Ungespeichert GmbH"));
+        });
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/preview/{Guid.NewGuid()}/1")).StatusCode);
     }
 
     [DatabaseFact]

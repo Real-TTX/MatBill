@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Version 0.4.0 of the toolkit MatUi (what changed in each version: CHANGELOG.md; how to update an app: docs/VERSIONING.md).
+   Version 0.5.0 of the toolkit MatUi (what changed in each version: CHANGELOG.md; how to update an app: docs/VERSIONING.md).
    `node tools/bump.js` writes the version here, in matui.boot.js and in MatUiVersion (Directory.Build.props); window.MatUi.version has it.
    MatUi · behaviour
    Dependency-free. Everything is wired by delegated listeners and data-attributes, so server-rendered and dynamically added
@@ -52,7 +52,8 @@
                                             data-placeholder, data-clearable (a button that clears the value), data-min / data-max / data-week-start / data-flex (dates),
                                             data-step / data-hour12 (times), data-swatches (colours), data-search / data-multiple / data-sep (select; the options are
                                             .mat-picker__option with data-value), data-select-all (select with data-multiple: a first row "Select all" with a box in three
-                                            states for the options that are shown). The texts change with data-pk-<name> on <html>, the format of dates with data-locale.
+                                            states for the options that are shown). The texts change with data-pk-<name> on <html>, the format of dates with data-locale (on <html>; a date field in an element with lang, or with its own
+                                            data-locale, writes its value in that language: a German document in an English page)
                                             tags is a field of chips and has no panel: data-sep, data-max (number of tags), data-max-length (of one tag),
                                             data-duplicates (allow a tag twice), data-strict (only the options, which are the suggestions, can be added)
                                             slot books an appointment (FORM-18): a month with the days that have a free time, then the times of the chosen day. It posts
@@ -1960,6 +1961,23 @@
     }
     return pkFormats;
   }
+  // The language of the value of one date field: its own data-locale, else the lang of the nearest element inside the page that has one (a German document in an
+  // English page writes its dates the German way), else the page's. Only the value in the field: the panel and its texts stay in the language of the page.
+  var pkDayFormats = {};
+  function valueLocale(el) {
+    var holder = el && el.closest ? el.closest('[lang]') : null;
+    var l = (el && el.getAttribute('data-locale')) || (holder && holder !== root ? holder.getAttribute('lang') : null);
+    if (!l) { return pkLocale(); }
+    if (/^en$/i.test(l)) { l = 'en-GB'; }
+    try { Intl.DateTimeFormat(l); } catch (e) { return pkLocale(); }
+    return l;
+  }
+  function dayFormat(el) {
+    var l = valueLocale(el);
+    if (l === pkLocale()) { return formats().day; }
+    if (!pkDayFormats[l]) { pkDayFormats[l] = new Intl.DateTimeFormat(l, { dateStyle: 'medium' }); }
+    return pkDayFormats[l];
+  }
   function isPhone() { return window.matchMedia('(max-width: 640px)').matches; }
   function clamp(n, lo, hi) { return Math.min(hi, Math.max(lo, n)); }
   function p2(n) { return (n < 10 ? '0' : '') + n; }
@@ -2983,7 +3001,7 @@
   var CAL_FOCUS = '.mat-cal__day[tabindex="0"]';
 
   function calDisplay(p, out) {
-    var v = dateValue(p), f = formats().day;
+    var v = dateValue(p), f = dayFormat(p.wrap);
     if (!p.input.value) { out.textContent = placeholderOf(p); return; }
     if (!v.start) { out.textContent = p.input.value; return; }
     var text = f.format(v.start);
@@ -8040,7 +8058,7 @@
   if (doc.readyState === 'loading') { doc.addEventListener('DOMContentLoaded', init); } else { init(); }
 
   window.MatUi = {
-    version: '0.4.0',
+    version: '0.5.0',
     dialog: { open: openDialog, close: closeDialog },
     confirm: confirmDialog,
     alert: alertDialog,

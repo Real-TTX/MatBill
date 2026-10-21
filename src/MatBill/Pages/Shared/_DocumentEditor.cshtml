@@ -4,7 +4,8 @@
     The editable A4 document: every value is a field at the place where it stands on the paper. It is drawn inside the page's form; app.js adds the
     suggestions (customers, products), the positions and the sums. In the form view (data-view="form" on the editor) the same fields become an ordinary form.
     Every field has its label: hidden on the paper (the paper itself says what a value is), visible in the form.
-    The paper is the document the customer gets and stays German (captions, sums, stamp, default values, DocFmt); what only the writer sees
+    The paper is the document the customer gets and stays German (captions, sums, stamp, default values, DocFmt; its date fields have data-locale="de-DE",
+    so MatUi writes them the German way in an English interface); what only the writer sees
     (labels of the form view, placeholders, hints, aria labels) follows the language of the interface.
 *@
 @{
@@ -90,18 +91,18 @@
                 {
                     <div>
                         <dt><label for="Input_InvoiceDate">@(quote ? "Angebotsdatum" : "Rechnungsdatum")</label></dt>
-                        <dd><div class="mat-picker" data-picker="date"><input class="mat-picker__input" id="Input_InvoiceDate" name="Input.InvoiceDate" value="@Fmt.Iso(input.InvoiceDate)" required data-msg-required="@L["Editor.Date.Required"]" /></div></dd>
+                        <dd><div class="mat-picker" data-picker="date" data-locale="de-DE"><input class="mat-picker__input" id="Input_InvoiceDate" name="Input.InvoiceDate" value="@Fmt.Iso(input.InvoiceDate)" required data-msg-required="@L["Editor.Date.Required"]" /></div></dd>
                     </div>
                 }
                 @if (Model.Mode == EditorMode.Invoice)
                 {
                     <div>
                         <dt><label for="Input_ServiceFrom">Leistungsdatum</label></dt>
-                        <dd><div class="mat-picker" data-picker="date" data-clearable data-placeholder="@L["Editor.Service.SameAsDate"]"><input class="mat-picker__input" id="Input_ServiceFrom" name="Input.ServiceFrom" value="@Fmt.Iso(input.ServiceFrom)" /></div></dd>
+                        <dd><div class="mat-picker" data-picker="date" data-locale="de-DE" data-clearable data-placeholder="@L["Editor.Service.SameAsDate"]"><input class="mat-picker__input" id="Input_ServiceFrom" name="Input.ServiceFrom" value="@Fmt.Iso(input.ServiceFrom)" /></div></dd>
                     </div>
                     <div>
                         <dt><label for="Input_ServiceTo">Leistung bis</label></dt>
-                        <dd><div class="mat-picker" data-picker="date" data-clearable data-placeholder="@L["Common.Optional"]"><input class="mat-picker__input" id="Input_ServiceTo" name="Input.ServiceTo" value="@Fmt.Iso(input.ServiceTo)" /></div></dd>
+                        <dd><div class="mat-picker" data-picker="date" data-locale="de-DE" data-clearable data-placeholder="@L["Common.Optional"]"><input class="mat-picker__input" id="Input_ServiceTo" name="Input.ServiceTo" value="@Fmt.Iso(input.ServiceTo)" /></div></dd>
                     </div>
                 }
                 <div>

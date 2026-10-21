@@ -12,7 +12,7 @@ namespace MatBill.Services;
 /// invoice draft with the same positions. An issued quote is not changed any more; a new version is a copy.
 /// </summary>
 public sealed class QuoteService(MbDbContext db, ConfigStore config, NumberService numbers, BrandingService branding, Storage.FileStoreService files,
-    InvoiceService invoices, ActivityLogger activity, TimeProvider clock)
+    InvoiceService invoices, ActivityLogger activity, TimeProvider clock, PreviewStore previews)
 {
     public const string QuoteRange = "quote";
 
@@ -128,9 +128,9 @@ public sealed class QuoteService(MbDbContext db, ConfigStore config, NumberServi
     public async Task<byte[]> RenderAsync(Quote quote, CancellationToken ct = default)
         => InvoicePdf.Render(InvoiceDocument.Of(quote, config.Current.Invoicing), config.Current.Company, await branding.GetLogoAsync(ct));
 
-    /// <summary>The pages as they look now as PNG images: the preview inside the app.</summary>
-    public async Task<List<byte[]>> RenderPagesAsync(Quote quote, CancellationToken ct = default)
-        => [.. InvoicePdf.RenderImages(InvoiceDocument.Of(quote, config.Current.Invoicing), config.Current.Company, await branding.GetLogoAsync(ct), dpi: 110)];
+    /// <summary>The preview of a quote that the editor holds and that may not be saved: a token of <see cref="PreviewStore"/>.</summary>
+    public async Task<(Guid Token, int Pages)> PreviewAsync(Quote quote, CancellationToken ct = default)
+        => previews.Put(InvoiceDocument.Of(quote, config.Current.Invoicing), config.Current.Company, await branding.GetLogoAsync(ct), PdfName(quote));
 
     public async Task<byte[]> PdfAsync(Quote quote, CancellationToken ct = default)
     {

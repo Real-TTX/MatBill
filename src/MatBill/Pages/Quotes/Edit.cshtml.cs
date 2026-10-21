@@ -64,6 +64,17 @@ public sealed class EditModel(MbDbContext db, QuoteService quotes, NumberService
 
     public Task<IActionResult> OnPostSaveAsync() => SaveAsync(issue: false);
 
+    /// <summary>The preview of what the editor holds now, saved or not (a new draft that is never saved; see the invoice editor).</summary>
+    public async Task<IActionResult> OnPostPreviewAsync()
+    {
+        var customer = Input.CustomerId is { } cid ? await db.Customer.AsNoTracking().FirstOrDefaultAsync(c => c.Id == cid) : null;
+        var draft = quotes.NewDraft(customer);
+        quotes.Apply(draft, Input);
+        draft.Customer = customer;
+        var (token, pages) = await quotes.PreviewAsync(draft, HttpContext.RequestAborted);
+        return new JsonResult(new { pages, url = $"/preview/{token}", download = $"/preview/{token}.pdf" });
+    }
+
     public Task<IActionResult> OnPostIssueAsync() => SaveAsync(issue: true);
 
     private async Task<IActionResult> SaveAsync(bool issue)

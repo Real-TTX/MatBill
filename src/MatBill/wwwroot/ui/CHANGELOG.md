@@ -13,6 +13,11 @@ A change that an app can see is written down under **Unreleased** in the pull re
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-21
+### Added
+
+- A date field writes its value in the language of the element it stands in (`FORM-15`): the `lang` of the nearest element inside the page that has one, or `data-locale` on the picker itself, else the language of the page as before. A German document in an English page (the paper of an invoice editor) shows `14.10.2026` instead of `14 Oct 2026`; the panel and its texts stay in the language of the page, and the posted value is the same ISO date. Nothing to do for an app but copy the files; an app that has a document in another language than its interface sets `lang` on the document.
+
 ## [0.4.0] - 2026-10-21
 ### Added
 

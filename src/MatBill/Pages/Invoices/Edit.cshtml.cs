@@ -87,6 +87,20 @@ public sealed class EditModel(MbDbContext db, InvoiceService invoices, Recurring
 
     public async Task<IActionResult> OnPostSaveAsync() => await SaveAsync(issue: false);
 
+    /// <summary>
+    /// The preview of what the editor holds now, saved or not: its fields go into a new draft that is never saved (no number, no customer is created) and the
+    /// document is drawn as page images (PreviewStore). The dialog of the app shows /preview/{token}/{n}; the PDF of it is /preview/{token}.pdf.
+    /// </summary>
+    public async Task<IActionResult> OnPostPreviewAsync()
+    {
+        var customer = Input.CustomerId is { } cid ? await db.Customer.AsNoTracking().FirstOrDefaultAsync(c => c.Id == cid) : null;
+        var draft = invoices.NewDraft(customer);
+        invoices.Apply(draft, Input);
+        draft.Customer = customer;
+        var (token, pages) = await invoices.PreviewAsync(draft, HttpContext.RequestAborted);
+        return new JsonResult(new { pages, url = $"/preview/{token}", download = $"/preview/{token}.pdf" });
+    }
+
     public async Task<IActionResult> OnPostIssueAsync() => await SaveAsync(issue: true);
 
     private async Task<IActionResult> SaveAsync(bool issue)

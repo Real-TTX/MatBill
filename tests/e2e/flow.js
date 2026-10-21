@@ -116,9 +116,15 @@ async function confirmDialog(page) {
   // the preview stays inside the app: a dialog with the pages as images (an installed app has no way back from a PDF in a new window)
   let popup = false;
   page.once('popup', () => { popup = true; });
-  await page.locator('[data-pdf-preview]').first().click();
+  // and it shows what the editor holds now: a change that is not saved is in it
+  await page.locator('#Input_IntroText').fill('Vorschau ohne Speichern');
+  await page.locator('#Input_IntroText').dispatchEvent('input');
+  await page.locator('[data-preview-post]').first().click();
   await page.waitForFunction(() => document.querySelectorAll('#mb-preview img').length > 0 && [...document.querySelectorAll('#mb-preview img')].every(i => i.complete && i.naturalWidth > 0), null, { timeout: 15000 });
   check(await page.locator('#mb-preview').evaluate(d => d.open) && !popup, 'the PDF preview opens in a dialog of the app, not in a new window');
+  const unsavedPdf = await page.request.get(base + await page.locator('[data-preview-download]').getAttribute('href'));
+  check(unsavedPdf.ok() && (await unsavedPdf.body()).slice(0, 4).toString() === '%PDF', 'the PDF of the preview is the document as it stands in the editor, not saved');
+  await page.waitForTimeout(400); // the dialog fades in
   await shot(page, 'pdf-preview');
   await page.locator('#mb-preview .mat-dialog__close').click();
   check(!(await page.locator('#mb-preview').evaluate(d => d.open)), 'the preview closes with its X');

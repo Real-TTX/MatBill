@@ -111,10 +111,8 @@
                 <button type="submit" class="mat-btn mat-btn--primary" asp-page-handler="Issue" asp-route-id="@invoice.Id"
                         data-confirm="@L["Invoices.Edit.IssueConfirm", Model.Editor.NumberPreview ?? ""]" data-confirm-ok="@L["Invoices.Edit.Issue"]">@Ui.Icon("check")<span>@L["Invoices.Edit.Issue"]</span></button>
                 <button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="Save" asp-route-id="@invoice.Id">@Ui.Icon("save")<span>@L["Common.Save"]</span></button>
-                @if (!Model.IsNew)
-                {
-                    <a class="mat-btn mat-btn--ghost" href="/invoices/@invoice.Id/pdf?download=1" data-pdf-preview="/invoices/@invoice.Id/preview">@Ui.Icon("eye")<span>@L["Invoices.Edit.PdfPreview"]</span></a>
-                }
+                @* what the editor holds now, saved or not: the fields go to the handler Preview, nothing is saved *@
+                <button type="button" class="mat-btn mat-btn--ghost" data-preview-post>@Ui.Icon("eye")<span>@L["Invoices.Edit.PdfPreview"]</span></button>
                 <a class="mat-btn mat-btn--ghost" href="/Invoices">@Ui.Icon("back")<span>@L["Common.Back"]</span></a>
                 @if (!Model.IsNew)
                 {

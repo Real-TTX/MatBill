@@ -15,7 +15,7 @@ public sealed record FieldProblem(string Key, string Message);
 /// changed again (it is paid, or cancelled and written anew). The pages and the series go through this class, so the rules live in one place.
 /// </summary>
 public sealed class InvoiceService(MbDbContext db, ConfigStore config, NumberService numbers, BrandingService branding, Storage.FileStoreService files,
-    ActivityLogger activity, TimeProvider clock, ILogger<InvoiceService> logger)
+    ActivityLogger activity, TimeProvider clock, ILogger<InvoiceService> logger, PreviewStore previews)
 {
     public DateOnly Today => Fmt.Today(clock);
 
@@ -294,6 +294,10 @@ public sealed class InvoiceService(MbDbContext db, ConfigStore config, NumberSer
     /// <summary>The PDF as it looks now (a draft, or a preview); an issued invoice is read from the store with <see cref="PdfAsync"/>.</summary>
     public async Task<byte[]> RenderAsync(Invoice invoice, CancellationToken ct = default)
         => InvoicePdf.Render(InvoiceDocument.Of(invoice, config.Current.Invoicing), config.Current.Company, await branding.GetLogoAsync(ct));
+
+    /// <summary>The preview of an invoice that the editor holds and that may not be saved (built with <see cref="Apply"/> on a new draft): a token of <see cref="PreviewStore"/>.</summary>
+    public async Task<(Guid Token, int Pages)> PreviewAsync(Invoice invoice, CancellationToken ct = default)
+        => previews.Put(InvoiceDocument.Of(invoice, config.Current.Invoicing), config.Current.Company, await branding.GetLogoAsync(ct), PdfName(invoice));
 
     /// <summary>The pages as they look now as PNG images: the preview inside the app (a PDF opened in an installed app has no way back).</summary>
     public async Task<List<byte[]>> RenderPagesAsync(Invoice invoice, CancellationToken ct = default)

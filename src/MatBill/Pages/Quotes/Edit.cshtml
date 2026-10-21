@@ -46,10 +46,8 @@
             <div class="mat-btn-row mat-btn-row--sticky mb-editor__foot">
                 <button type="submit" class="mat-btn mat-btn--primary" asp-page-handler="Issue" asp-route-id="@quote.Id" data-confirm="@L["Quotes.Issue.Confirm", Model.Editor.NumberPreview]" data-confirm-ok="@L["Quotes.Issue"]">@Ui.Icon("check")<span>@L["Quotes.Issue"]</span></button>
                 <button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="Save" asp-route-id="@quote.Id">@Ui.Icon("save")<span>@L["Common.Save"]</span></button>
-                @if (!Model.IsNew)
-                {
-                    <a class="mat-btn mat-btn--ghost" href="/quotes/@quote.Id/pdf?download=1" data-pdf-preview="/quotes/@quote.Id/preview">@Ui.Icon("eye")<span>@L["Quotes.PdfPreview"]</span></a>
-                }
+                @* what the editor holds now, saved or not: the fields go to the handler Preview, nothing is saved *@
+                <button type="button" class="mat-btn mat-btn--ghost" data-preview-post>@Ui.Icon("eye")<span>@L["Quotes.PdfPreview"]</span></button>
                 <a class="mat-btn mat-btn--ghost" href="/Quotes">@Ui.Icon("back")<span>@L["Common.Back"]</span></a>
                 @if (!Model.IsNew)
                 {

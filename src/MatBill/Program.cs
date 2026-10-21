@@ -76,6 +76,7 @@ builder.Services.AddScoped<FileStoreService>();
 builder.Services.AddScoped<ShareService>();
 builder.Services.AddScoped<NumberService>();
 builder.Services.AddScoped<BrandingService>();
+builder.Services.AddSingleton<PreviewStore>();
 builder.Services.AddScoped<InvoiceService>();
 builder.Services.AddScoped<RecurringService>();
 builder.Services.AddScoped<MailService>();
@@ -422,17 +423,8 @@ app.MapGet("/recurring/{id:long}/preview.pdf", async (long id, HttpContext http,
 });
 
 // The preview inside the app (a dialog, never the PDF in a new window: an installed app shows it without a way back): the pages as images, drawn by the code of the
-// PDF. GET .../preview answers how many pages and where the PDF is downloaded, .../preview/{n} is page n as a PNG. Drafts of invoices and quotes, the next invoice of a series.
-app.MapGet("/invoices/{id:long}/preview/{page:int?}", async (long id, int? page, HttpContext http, InvoiceService invoices, IMemoryCache cache) =>
-    await invoices.FindAsync(id, http.RequestAborted) is { IsDraft: true } invoice
-        ? await PreviewAsync(http, cache, $"invoice:{id}:{invoice.UpdateDate.Ticks}", () => invoices.RenderPagesAsync(invoice, http.RequestAborted), $"/invoices/{id}/pdf?download=1", page)
-        : Results.NotFound());
-
-app.MapGet("/quotes/{id:long}/preview/{page:int?}", async (long id, int? page, HttpContext http, QuoteService quotes, IMemoryCache cache) =>
-    await quotes.FindAsync(id, http.RequestAborted) is { IsDraft: true } quote
-        ? await PreviewAsync(http, cache, $"quote:{id}:{quote.UpdateDate.Ticks}", () => quotes.RenderPagesAsync(quote, http.RequestAborted), $"/quotes/{id}/pdf?download=1", page)
-        : Results.NotFound());
-
+// PDF. GET .../preview answers how many pages and where the PDF is downloaded, .../preview/{n} is page n as a PNG: the next invoice of a series (the editors of
+// invoices and quotes show what they hold, saved or not, through their handler Preview and /preview/{token}).
 app.MapGet("/recurring/{id:long}/preview/{page:int?}", async (long id, int? page, HttpContext http, RecurringService recurring, InvoiceService invoices, ConfigStore cfg, IMemoryCache cache) =>
 {
     var series = await recurring.LoadAsync(id, http.RequestAborted);
@@ -443,6 +435,19 @@ app.MapGet("/recurring/{id:long}/preview/{page:int?}", async (long id, int? page
 
     var next = RecurringPreview.Of(series, invoices, cfg.Current.Company.SmallBusiness);
     return await PreviewAsync(http, cache, $"series:{id}:{series.UpdateDate.Ticks}", () => invoices.RenderPagesAsync(next, http.RequestAborted), $"/recurring/{id}/preview.pdf?download=1", page);
+});
+
+// The preview of what an editor holds now, saved or not (PreviewStore; the editors post their fields to their handler Preview): a page as an image, the whole as a PDF.
+app.MapGet("/preview/{token:guid}/{page:int}", (Guid token, int page, HttpContext http, PreviewStore previews) =>
+{
+    http.Response.Headers.CacheControl = "private, no-store";
+    return previews.Get(token) is { } entry && page >= 1 && page <= entry.Pages.Count ? Results.File(entry.Pages[page - 1], "image/png") : Results.NotFound();
+});
+
+app.MapGet("/preview/{token:guid}.pdf", (Guid token, HttpContext http, PreviewStore previews) =>
+{
+    http.Response.Headers.CacheControl = "private, no-store";
+    return previews.Get(token) is { } entry ? Results.File(entry.Pdf(), "application/pdf", entry.FileName) : Results.NotFound();
 });
 
 // The logo of the company (the token changes with every upload, so it may be cached for long). An SVG cannot run anything here.
