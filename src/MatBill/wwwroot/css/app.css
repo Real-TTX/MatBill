@@ -445,7 +445,11 @@ select.mb-in { appearance: none; -webkit-appearance: none; cursor: pointer; text
   .mb-line__tools { grid-column: span 1; flex-direction: row; justify-content: flex-end; }
   .mb-doc.is-exempt .mb-line { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .mb-doc.is-exempt .mb-line__total { grid-column: span 5; }
-  .mb-paper--view .mb-line > :nth-child(n+2) { grid-column: span 2; }
+  /* the view (an issued invoice, the share page): the name over the whole width, under it quantity, unit price (tax) and total side by side with their labels */
+  .mb-paper--view .mb-line, .mb-paper--view.is-exempt .mb-line { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .mb-paper--view.has-tax .mb-line { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .mb-paper--view .mb-line > :first-child { grid-column: 1 / -1; }
+  .mb-paper--view .mb-line > :nth-child(n+2) { grid-column: auto; }
   .mb-paper--view .mb-line > :nth-child(n+2)::before { content: attr(data-label); display: block; font-size: 11px; color: var(--mat-text-muted); }
   .mb-editor[data-view="document"] .mb-line .mb-label { position: static; width: auto; height: auto; margin: 0; overflow: visible; clip: auto; white-space: normal; display: block; font-size: 11px; color: var(--mat-text-muted); }
   .mb-editor[data-view="document"] .mb-line .mb-line__what .mb-label { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); }

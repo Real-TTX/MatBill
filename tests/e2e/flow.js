@@ -368,6 +368,16 @@ async function confirmDialog(page) {
     await mobile.goto(base + url);
     const overflow = await mobile.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     check(overflow <= 1, url + ' fits the phone (overflow ' + overflow + ' px)');
+    if (url === '/Invoices/Edit?id=' + id) {
+      // an issued invoice on a phone: the name of a position over the whole width, quantity, price and total in one row under it
+      const line = await mobile.evaluate(() => {
+        const row = document.querySelector('.mb-paper--view .mb-line');
+        if (!row) { return null; }
+        const cells = [...row.children].map(c => c.getBoundingClientRect());
+        return { nameShare: cells[0].width / row.getBoundingClientRect().width, oneRow: new Set(cells.slice(1).map(c => Math.round(c.top))).size === 1 };
+      });
+      check(line && line.nameShare > 0.9 && line.oneRow, 'a position of an issued invoice reads on a phone (name over the whole width, values in one row): ' + JSON.stringify(line));
+    }
     if (lists.includes(url)) {
       // a list on a phone: a row that links to its record is a card that opens it, and the first one is in view without scrolling
       const card = await mobile.evaluate(() => {
