@@ -1,4 +1,4 @@
-/* MatUi 0.7.0 (d579942f92) - build local-20261021 - bundled from matui.tokens.css, matui.base.css, matui.shell.css, matui.controls.css, matui.forms.css, matui.pickers.css, matui.lists.css, matui.dialogs.css, matui.layout.css, matui.apps.css */
+/* MatUi 0.8.2 (7ea4258ab5) - build local-20261022 - bundled from matui.tokens.css, matui.base.css, matui.shell.css, matui.controls.css, matui.forms.css, matui.pickers.css, matui.lists.css, matui.dialogs.css, matui.layout.css, matui.apps.css */
 /* ==========================================================================
    MatUi · tokens
    The single source of the look of every Mat app. Components use only these custom properties, never a raw colour.
@@ -580,6 +580,16 @@ kbd {
   background: var(--mat-bg);
 }
 
+/* The shell scrolls inside (the content, the list of the menu); the document itself never does. Without this a wheel over a part that does not
+   scroll (the foot of the menu with the account) is handed on to the document, and any pixel of overflow (rounding at a zoom, a popover, a toast,
+   a touchpad) lets the whole app slide out of the window. Pages without the shell (sign-in, .mat-auth) still scroll. */
+html:has(> body > .mat-app),
+html:has(> body > .mat-app) > body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 /* ---- The menu ---- */
 .mat-nav {
   position: relative;
@@ -591,6 +601,7 @@ kbd {
   border-right: 1px solid var(--mat-border);
   padding-top: var(--mat-safe-top);
   padding-left: var(--mat-safe-left);
+  overscroll-behavior: contain;
 }
 
 .mat-nav__brand {
@@ -1054,6 +1065,8 @@ button.mat-nav__item:hover { background: var(--mat-surface-3); }
   .mat-app.is-nav-open .mat-nav { transform: none; visibility: visible; transition-delay: 0s; }
   .mat-app.is-nav-open .mat-backdrop { opacity: 1; pointer-events: auto; }
   .mat-burger { display: inline-grid; }
+  /* on a touch screen a sideways swipe at the edge is the app's (the drawer), not the browser's back and forward (a trackpad on a wide screen keeps them) */
+  html { overscroll-behavior-x: none; }
   .mat-topbar { padding-top: var(--mat-safe-top); padding-left: calc(var(--mat-topbar-pad-x, var(--mat-content-pad)) + var(--mat-safe-left)); padding-right: calc(var(--mat-topbar-pad-x, var(--mat-content-pad)) + var(--mat-safe-right)); }
 }
 
@@ -1901,7 +1914,8 @@ input[type="file"].mat-input { padding: 6px; }
 /* ---- An icon in the field (search), a button in the field (show the password), a counter ---- */
 .mat-input-icon { position: relative; display: flex; align-items: center; }
 .mat-input-icon > .mat-icon { position: absolute; left: var(--mat-space-3); font-size: 1.1rem; color: var(--mat-text-muted); pointer-events: none; }
-.mat-input-icon > .mat-input { padding-left: calc(var(--mat-space-3) + 1.6rem); }
+/* room at the start only for an icon that stands there: the eye of a password field is at the end and the field starts like every field */
+.mat-input-icon > .mat-input:where(.mat-icon ~ .mat-input) { padding-left: calc(var(--mat-space-3) + 1.6rem); }
 .mat-input-icon--end > .mat-input { padding-right: 48px; }
 .mat-input-icon__btn { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); }
 .mat-toggle-off { display: none; }
