@@ -1,33 +1,33 @@
 {
   "name": "MatUi",
-  "version": "0.8.2",
+  "version": "0.9.0",
   "build": "local-20261022",
-  "hash": "7ea4258ab5",
+  "hash": "f18b2a1fcd",
   "changelog": "CHANGELOG.md",
   "files": [
     {
       "name": "matui.css",
       "url": "matui.css",
-      "bytes": 304054,
-      "sha256": "421cd3d7ff7310697a9484908c02aba64976cbd552e5e49e67b6b1f535e87181"
+      "bytes": 304122,
+      "sha256": "fb2c61d269961ec723751197caf86f2544850db72b32ea766f09f7584ef0fe6f"
     },
     {
       "name": "matui.js",
       "url": "matui.js",
       "bytes": 473855,
-      "sha256": "275ea992c6e18ec93c83b12a948289284a4c5f8e1c1b12353902c0159cb6efd6"
+      "sha256": "9a7f29a4b0b7a421615d890918398638db80a92e9d8d44e026557eabfc26c501"
     },
     {
       "name": "matui.boot.js",
       "url": "matui.boot.js",
       "bytes": 1098,
-      "sha256": "84e8c4f8f0faea22a6d9f7d8a06e3e15d6ed2187b24127545e50b81551721423"
+      "sha256": "0990e171b2cad30c7f67ce3404b79c7278011f5b7de3a489ff592a4c1bc24ea9"
     },
     {
       "name": "matui-icons.svg",
       "url": "matui-icons.svg",
-      "bytes": 21300,
-      "sha256": "6df3f19c8e3d24deef0c4faf86bc1b30f729d4d49892d94c14523b8de58c952e"
+      "bytes": 21455,
+      "sha256": "18b5bde1528c634012e5a3d1beba05fcd45dc9c0de6b58f88992852e99a5ea11"
     },
     {
       "name": "css/matui.tokens.css",
@@ -50,8 +50,8 @@
     {
       "name": "css/matui.controls.css",
       "url": "css/matui.controls.css",
-      "bytes": 37691,
-      "sha256": "35c98710efec6634e1914508aa07584c8caed9f1801a6e38548775d8f8b193d2"
+      "bytes": 37759,
+      "sha256": "4ab1a78302e5044c5df1957372bdb8ceea80229baf3cdfccb24cb8aaa805ee40"
     },
     {
       "name": "css/matui.forms.css",
@@ -87,13 +87,13 @@
       "name": "css/matui.apps.css",
       "url": "css/matui.apps.css",
       "bytes": 3935,
-      "sha256": "1762c1709be90716d7cc144c052f3d7d68cbf74f6b99573fbc33cf6c7a81badf"
+      "sha256": "84035e0236891903a0e33ab997d8171e1ad68615f06366cd67ef4620d85857bb"
     },
     {
       "name": "CHANGELOG.md",
       "url": "CHANGELOG.md",
-      "bytes": 37274,
-      "sha256": "cf429f25632e46ee79a65a10ecef6f5766ef63b6d07d59146922e1ae2403dd3a"
+      "bytes": 38610,
+      "sha256": "58d669ce6519cf4091a45109809a7d91d5c6ee782715d9523823827420bd773e"
     }
   ]
 }

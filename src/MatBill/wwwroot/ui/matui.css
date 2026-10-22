@@ -1,4 +1,4 @@
-/* MatUi 0.8.2 (7ea4258ab5) - build local-20261022 - bundled from matui.tokens.css, matui.base.css, matui.shell.css, matui.controls.css, matui.forms.css, matui.pickers.css, matui.lists.css, matui.dialogs.css, matui.layout.css, matui.apps.css */
+/* MatUi 0.9.0 (f18b2a1fcd) - build local-20261022 - bundled from matui.tokens.css, matui.base.css, matui.shell.css, matui.controls.css, matui.forms.css, matui.pickers.css, matui.lists.css, matui.dialogs.css, matui.layout.css, matui.apps.css */
 /* ==========================================================================
    MatUi · tokens
    The single source of the look of every Mat app. Components use only these custom properties, never a raw colour.
@@ -1354,10 +1354,10 @@ a.mat-card:hover, .mat-card--link:hover { border-color: var(--mat-text-faint); b
 .mat-empty__icon { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: var(--mat-accent-soft); color: var(--mat-accent-text); font-size: 1.8rem; }
 .mat-empty__title { font-size: var(--mat-fs-lg); font-weight: 650; color: var(--mat-text); }
 
-.mat-kv { display: grid; grid-template-columns: minmax(110px, 200px) minmax(0, 1fr); gap: var(--mat-space-3) var(--mat-space-5); margin: 0; }
-.mat-kv dt { color: var(--mat-text-muted); }
+.mat-kv { display: grid; grid-template-columns: fit-content(60%) minmax(0, 1fr); gap: var(--mat-space-3) var(--mat-space-5); margin: 0; }
+.mat-kv dt { color: var(--mat-text-muted); min-width: 200px; overflow-wrap: anywhere; }
 .mat-kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
-@media (max-width: 600px) { .mat-kv { grid-template-columns: minmax(0, 1fr); gap: 2px; } .mat-kv dd { margin-bottom: var(--mat-space-3); } }
+@media (max-width: 600px) { .mat-kv { grid-template-columns: minmax(0, 1fr); gap: 2px; } .mat-kv dt { min-width: 0; } .mat-kv dd { margin-bottom: var(--mat-space-3); } }
 
 .mat-code {
   position: relative;
@@ -4208,7 +4208,7 @@ dialog.mat-dialog--start[open] { animation-name: mat-panel-in-start; }
 [data-app="matsplit"]    { --mat-app-accent: #bf5610; }
 [data-app="matmon"]      { --mat-app-accent: #295cff; }
 [data-app="matcms"]      { --mat-app-accent: #2563eb; }
-[data-app="matdo"]       { --mat-app-accent: #8300bc; }
+[data-app="matdo"]       { --mat-app-accent: #d03d33; }
 [data-app="matstat"]     { --mat-app-accent: #2563eb; }
 [data-app="matbu"]       { --mat-app-accent: #0b7f8a; }
 [data-app="mattrakr"]    { --mat-app-accent: #6c5ce7; }

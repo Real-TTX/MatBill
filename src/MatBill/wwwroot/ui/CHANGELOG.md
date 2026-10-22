@@ -13,7 +13,16 @@ A change that an app can see is written down under **Unreleased** in the pull re
 
 ## [Unreleased]
 
-## [0.8.2] - 2026-10-22
+## [0.9.0] - 2026-10-22
+### Added
+
+- A new icon in the sprite, `list-checks` (two checks, each with a line beside it): the glyph of the MatDo logo, the short checklist of its new app icon (`IDENT-03`, one glyph per app logo, like `whale` for MatDock). `<svg class="mat-icon"><use href="#mat-i-list-checks"></use></svg>`. Nothing to do for an app but copy the files; `check-square` stays.
+
+### Changed
+
+- The colour of MatDo: `[data-app="matdo"]` sets `--mat-app-accent: #d03d33` (it was the purple `#8300bc`), the red of the rewritten task app and of its new logo; white text on it reaches 4.78:1 (AA). The registry of this site writes the name MatDo and draws its logo with `list-checks`. MatDo takes it with its next copy of the toolkit; the other apps have nothing to do but copy the files.
+- A long label in a key-and-value list no longer runs over its value (`mat-kv`): the label column was capped at 200 px and the label did not wrap, so a label such as a Docker option name (`com.docker.compose.project.working_dir`) lay on top of the value. The column is now at least 200 px (as it was in effect) and grows with the longest label up to 60 % of the list, and a label that is longer still wraps (`overflow-wrap: anywhere`). Lists with short labels look as before; on a phone the label stays above the value. Nothing to do for an app but copy the files.
+
 ### Fixed
 
 - The document of a page with the shell no longer scrolls (`SHELL-07`): `html` and `body` around `body > .mat-app` get `height: 100%`, `overflow: hidden` and `overscroll-behavior: none`, and `.mat-nav` gets `overscroll-behavior: contain`. Before, a wheel over a part of the shell that does not scroll itself (the foot of the menu with the user) was handed on to the document, and when the document was a pixel higher than the window (rounding at a zoom, a popover, a toast, a touchpad) the whole app slid out of the window. The content and the menu list scroll as before; a page without the shell (sign-in, `.mat-auth`) still scrolls. Nothing to do for an app but copy the files; an app that locked the document in its own CSS can drop those lines.
