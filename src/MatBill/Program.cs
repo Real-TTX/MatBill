@@ -1,4 +1,5 @@
 using System.Globalization;
+using MatBill.Api;
 using MatBill.Configuration;
 using MatBill.Core.Billing;
 using MatBill.Data;
@@ -87,6 +88,7 @@ builder.Services.AddScoped<BankingService>();
 builder.Services.AddScoped<MatchingService>();
 builder.Services.AddScoped<BankSyncService>();
 builder.Services.AddScoped<ExportService>();
+builder.Services.AddInvoiceRequestApi();
 builder.Services.AddHttpClient<EnableBankingClient>(c => c.Timeout = TimeSpan.FromSeconds(60));
 builder.Services.AddScoped<BackupStoreFactory>();
 builder.Services.AddScoped<DatabaseArchive>();
@@ -223,11 +225,16 @@ app.Use(async (context, next) =>
 
 app.UseAuthorization();
 
+app.UseRateLimiter();
+
 app.MapGet("/health", async (MbDbContext db) =>
 {
     await db.Database.CanConnectAsync();
     return Results.Text("ok");
 }).AllowAnonymous();
+
+// The API for other programs (invoice requests), with a key instead of a sign-in: docs/API.md.
+app.MapInvoiceRequestApi();
 
 app.MapPost("/api/theme", async (HttpContext http, IAntiforgery antiforgery, MbDbContext db, SignInService signIn, ICurrentUser user) =>
 {

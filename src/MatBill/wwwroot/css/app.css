@@ -26,6 +26,9 @@
 .mb-qr { display: flex; justify-content: center; margin: var(--mat-space-4) 0; }
 .mb-qr svg { width: 200px; height: 200px; background: var(--mat-surface); padding: var(--mat-space-2); border: 1px solid var(--mat-border); border-radius: var(--mat-radius); }
 .mb-cards { display: grid; gap: var(--mat-space-4); }
+/* The key of an API client, shown once: the field and its copy button under the text of the alert. */
+.mb-newkey { margin-top: var(--mat-space-2); }
+.mb-newkey .mat-input { min-width: 0; }
 /* A note at the top of a card stands apart from the fields below it. */
 .mat-card__body > .mat-alert + .mat-form__grid { margin-top: var(--mat-space-4); }
 .mb-split { display: grid; gap: var(--mat-space-4); align-items: start; }

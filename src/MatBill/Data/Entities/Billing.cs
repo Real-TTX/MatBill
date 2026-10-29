@@ -46,6 +46,13 @@ public class Customer : AuditedEntity, ISoftDeletable
 
     public string? Note { get; set; }
 
+    /// <summary>The API client that created this customer, and the key it knows the customer by ("matmon:org:…"): unique per client.</summary>
+    public long? ApiClientId { get; set; }
+
+    public ApiClient? ApiClient { get; set; }
+
+    public string? ExternalRef { get; set; }
+
     public UpdateState UpdateState { get; set; } = UpdateState.Created;
 
     /// <summary>The second line of a choice: street and town.</summary>
@@ -230,6 +237,18 @@ public class Invoice : AuditedEntity, ISoftDeletable
     public RecurringInvoice? RecurringInvoice { get; set; }
 
     public DateOnly? RecurringDate { get; set; }
+
+    /// <summary>
+    /// The API client that requested this invoice (a cancellation inherits it, so it takes its number from the same range), its reference (the idempotency key,
+    /// unique per client among the invoices that are not deleted; a cancellation has none) and its note for whoever checks the draft.
+    /// </summary>
+    public long? ApiClientId { get; set; }
+
+    public ApiClient? ApiClient { get; set; }
+
+    public string? ApiReference { get; set; }
+
+    public string? ApiNote { get; set; }
 
     public List<InvoiceLine> Lines { get; set; } = [];
 

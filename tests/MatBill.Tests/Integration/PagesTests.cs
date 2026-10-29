@@ -54,7 +54,7 @@ public sealed class PagesTests : IClassFixture<AppFixture>
             $"/Invoices/Edit?id={issued}", $"/Invoices/Edit?id={draft}", $"/Invoices/Send?id={issued}", $"/Invoices/Share?id={issued}",
             "/Recurring", "/Recurring?status=active", "/Recurring/Edit", $"/Recurring/Edit?id={series}", "/Customers", "/Customers?open=true", "/Customers/Edit", $"/Customers/Edit?id={customer}",
             "/Products", "/Products/Edit", $"/Products/Edit?id={product}", "/Admin/Company", "/Admin/Branding", "/Notifications", "/Notifications?unread=true",
-            "/Admin/Users", "/Admin/Users/Edit", "/Admin/Shares", $"/Admin/Shares/Edit?id={share}", "/Admin/Invoicing", "/Admin/Mail",
+            "/Admin/Users", "/Admin/Users/Edit", "/Admin/Shares", $"/Admin/Shares/Edit?id={share}", "/Admin/Invoicing", "/Admin/Mail", "/Admin/Api", "/Admin/Api/Edit", "/Invoices?origin=api",
             "/Admin/Storage", "/Admin/Backup", "/Admin/Backup/Plans", "/Admin/Backup/Plans/Edit", "/Admin/Backup/Targets", "/Admin/Backup/Targets/Edit", "/Admin/Backup/Restore", "/Admin/Security", "/Admin/Activity",
             "/Admin/System", "/Account/Profile", "/Account/Security", "/Admin/Banking",
             "/Quotes", "/Quotes/Edit", "/Quotes?status=open", "/Expenses", "/Expenses/Edit", "/Expenses?status=review", "/Banking", "/Banking/Import", "/Banking/Accounts/Edit",
@@ -103,7 +103,7 @@ public sealed class PagesTests : IClassFixture<AppFixture>
         using var user = _app.NewClient();
         await AppFixture.LoginAsync(user, "normal@example.test", "Normal-Passwort-2026");
         Assert.Equal(HttpStatusCode.OK, (await user.GetAsync("/Invoices")).StatusCode);
-        foreach (var url in new[] { "/Admin/Users", "/Admin/Backup", "/Admin/Shares", "/Admin/System", "/Admin/Mail", "/Admin/Invoicing", "/Admin/Security", "/Admin/Company", "/Admin/Branding" })
+        foreach (var url in new[] { "/Admin/Users", "/Admin/Api", "/Admin/Backup", "/Admin/Shares", "/Admin/System", "/Admin/Mail", "/Admin/Invoicing", "/Admin/Security", "/Admin/Company", "/Admin/Branding" })
         {
             var status = (await user.GetAsync(url)).StatusCode;
             Assert.NotEqual(HttpStatusCode.OK, status);

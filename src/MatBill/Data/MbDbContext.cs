@@ -49,6 +49,8 @@ public class MbDbContext(DbContextOptions<MbDbContext> options, ICurrentUser cur
 
     public DbSet<NumberSequence> NumberSequence => Set<NumberSequence>();
 
+    public DbSet<ApiClient> ApiClient => Set<ApiClient>();
+
     public DbSet<StoredFile> StoredFile => Set<StoredFile>();
 
     public DbSet<ShareLink> ShareLink => Set<ShareLink>();
@@ -91,6 +93,7 @@ public class MbDbContext(DbContextOptions<MbDbContext> options, ICurrentUser cur
         b.Entity<User>().Ignore(x => x.Initials);
         b.Entity<Customer>().Ignore(x => x.AddressLine);
         b.Entity<Invoice>().Ignore(x => x.IsDraft);
+        b.Entity<ApiClient>().Ignore(x => x.IsActive);
 
         b.Entity<User>(e =>
         {
@@ -110,6 +113,9 @@ public class MbDbContext(DbContextOptions<MbDbContext> options, ICurrentUser cur
         {
             e.HasIndex(x => x.Number).IsUnique().HasFilter("\"UpdateState\" <> 0");
             e.HasIndex(x => x.Name);
+            // A client knows a customer by its own key: one customer per key and client.
+            e.HasIndex(x => new { x.ApiClientId, x.ExternalRef }).IsUnique().HasFilter("\"ExternalRef\" IS NOT NULL AND \"UpdateState\" <> 0");
+            e.HasOne(x => x.ApiClient).WithMany().HasForeignKey(x => x.ApiClientId).OnDelete(DeleteBehavior.Restrict);
         });
         b.Entity<Product>(e =>
         {
@@ -138,6 +144,9 @@ public class MbDbContext(DbContextOptions<MbDbContext> options, ICurrentUser cur
             e.HasOne(x => x.Customer).WithMany().HasForeignKey(x => x.CustomerId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.PdfFile).WithMany().HasForeignKey(x => x.PdfFileId).OnDelete(DeleteBehavior.SetNull);
             e.HasOne(x => x.RecurringInvoice).WithMany().HasForeignKey(x => x.RecurringInvoiceId).OnDelete(DeleteBehavior.SetNull);
+            // The same request twice is the same invoice: the reference is unique per client (a deleted draft frees it, the request may be made again).
+            e.HasIndex(x => new { x.ApiClientId, x.ApiReference }).IsUnique().HasFilter("\"ApiReference\" IS NOT NULL AND \"UpdateState\" <> 0");
+            e.HasOne(x => x.ApiClient).WithMany().HasForeignKey(x => x.ApiClientId).OnDelete(DeleteBehavior.Restrict);
         });
         b.Entity<InvoiceLine>(e =>
         {
@@ -215,6 +224,11 @@ public class MbDbContext(DbContextOptions<MbDbContext> options, ICurrentUser cur
         b.Entity<BankImport>().HasOne(x => x.BankAccount).WithMany().HasForeignKey(x => x.BankAccountId).OnDelete(DeleteBehavior.Cascade);
 
         b.Entity<NumberSequence>().HasIndex(x => new { x.Name, x.Period }).IsUnique();
+        b.Entity<ApiClient>(e =>
+        {
+            e.HasIndex(x => x.KeyPrefix);
+            e.HasIndex(x => x.KeyHash).IsUnique();
+        });
 
         b.Entity<StoredFile>().HasIndex(x => x.Token).IsUnique();
         b.Entity<ShareLink>(e =>

@@ -23,6 +23,38 @@ public sealed class NumberService(MbDbContext db, ConfigStore config)
     public Task<string> NextInvoiceNumberAsync(DateOnly date, CancellationToken ct = default)
         => NextAsync(InvoiceRange, config.Current.Invoicing.InvoiceNumberPattern, date, ct);
 
+    /// <summary>The range of the invoices an API client requested: "invoice:client:&lt;id&gt;", with the pattern of the client.</summary>
+    public static string ClientRange(long apiClientId) => $"{InvoiceRange}:client:{apiClientId}";
+
+    /// <summary>
+    /// The range an invoice takes its number from: the own range of the API client that requested it when the client has a pattern, else the invoice range.
+    /// A client's range counts on its own (its own counter, the same yearly or monthly restart as any pattern with the year or the month).
+    /// </summary>
+    public async Task<(string Name, string Pattern)> InvoiceRangeOfAsync(long? apiClientId, CancellationToken ct = default)
+    {
+        if (apiClientId is { } id
+            && await db.ApiClient.AsNoTracking().Where(c => c.Id == id).Select(c => c.NumberPattern).FirstOrDefaultAsync(ct) is { Length: > 0 } pattern)
+        {
+            return (ClientRange(id), pattern);
+        }
+
+        return (InvoiceRange, config.Current.Invoicing.InvoiceNumberPattern);
+    }
+
+    /// <summary>The next number of an invoice, from the range of its API client (<see cref="InvoiceRangeOfAsync"/>).</summary>
+    public async Task<string> NextInvoiceNumberAsync(DateOnly date, long? apiClientId, CancellationToken ct = default)
+    {
+        var (name, pattern) = await InvoiceRangeOfAsync(apiClientId, ct);
+        return await NextAsync(name, pattern, date, ct);
+    }
+
+    /// <summary>The number the invoice would get now (the preview of a draft), from the range of its API client.</summary>
+    public async Task<string> PeekInvoiceNumberAsync(DateOnly date, long? apiClientId, CancellationToken ct = default)
+    {
+        var (name, pattern) = await InvoiceRangeOfAsync(apiClientId, ct);
+        return await PeekAsync(name, pattern, date, ct);
+    }
+
     /// <summary>The next customer number of the range. A number typed by hand may already stand where the range arrives: that one is skipped.</summary>
     public Task<string> NextCustomerNumberAsync(DateOnly date, CancellationToken ct = default)
         => NextAsync(CustomerRange, config.Current.Invoicing.CustomerNumberPattern, date, ct);
@@ -96,7 +128,8 @@ public sealed class NumberService(MbDbContext db, ConfigStore config)
     /// <summary>Whether a document carries one of the numbers.</summary>
     private async Task<bool> InUseAsync(string name, List<string> numbers, CancellationToken ct) => name switch
     {
-        InvoiceRange => await db.Invoice.IgnoreQueryFilters().AnyAsync(i => i.Number != null && numbers.Contains(i.Number), ct),
+        // every invoice range (the normal one and those of the API clients) checks all invoices: the number is unique across them
+        _ when IsInvoiceRange(name) => await db.Invoice.IgnoreQueryFilters().AnyAsync(i => i.Number != null && numbers.Contains(i.Number), ct),
         CustomerRange => await db.Customer.IgnoreQueryFilters().AnyAsync(c => numbers.Contains(c.Number), ct),
         ExpenseRange => await db.Expense.IgnoreQueryFilters().AnyAsync(e => numbers.Contains(e.Number), ct),
         QuoteService.QuoteRange => await db.Quote.IgnoreQueryFilters().AnyAsync(q => q.Number != null && numbers.Contains(q.Number), ct),
@@ -121,7 +154,9 @@ public sealed class NumberService(MbDbContext db, ConfigStore config)
 
     private const int MaxSkip = 1000;
 
-    private static bool IsKnown(string name) => name is InvoiceRange or CustomerRange or ExpenseRange or QuoteService.QuoteRange;
+    private static bool IsKnown(string name) => IsInvoiceRange(name) || name is CustomerRange or ExpenseRange or QuoteService.QuoteRange;
+
+    private static bool IsInvoiceRange(string name) => name == InvoiceRange || name.StartsWith(InvoiceRange + ":", StringComparison.Ordinal);
 
     private async Task<string> TakeAsync(string name, string pattern, DateOnly date, CancellationToken ct)
     {

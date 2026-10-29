@@ -46,6 +46,9 @@ public sealed class EditModel(MbDbContext db, InvoiceService invoices, Recurring
 
     public bool IsNew => Invoice.Id == 0;
 
+    /// <summary>The program that requested this invoice through the API (the origin chip and card), null for an invoice written here.</summary>
+    public ApiClient? ApiClient { get; private set; }
+
     public async Task<IActionResult> OnGetAsync(long? customer, long? from)
     {
         if (Id is { } id)
@@ -354,6 +357,7 @@ public sealed class EditModel(MbDbContext db, InvoiceService invoices, Recurring
 
     private async Task BuildAsync()
     {
+        ApiClient = Invoice.ApiClientId is { } apiClientId ? await db.ApiClient.AsNoTracking().FirstOrDefaultAsync(c => c.Id == apiClientId) : null;
         var company = config.Current.Company;
         var me = current.UserId is { } uid ? await db.User.AsNoTracking().FirstOrDefaultAsync(u => u.Id == uid) : null;
         EditorView = me?.EditorView ?? "document";
@@ -379,7 +383,7 @@ public sealed class EditModel(MbDbContext db, InvoiceService invoices, Recurring
             Mode = EditorMode.Invoice,
             Company = company,
             Invoicing = config.Current.Invoicing,
-            NumberPreview = await numbers.PeekInvoiceNumberAsync(Input.InvoiceDate ?? Today),
+            NumberPreview = await numbers.PeekInvoiceNumberAsync(Input.InvoiceDate ?? Today, Invoice.ApiClientId),
             LogoUrl = Brand.LogoUrl(company),
             CanEditBranding = current.IsAdmin,
             Stamp = "ENTWURF",

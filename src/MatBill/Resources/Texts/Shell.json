@@ -45,6 +45,7 @@
   "Shell.Nav.Users": { "en": "Users", "de": "Benutzer" },
   "Shell.Nav.Shares": { "en": "Share links", "de": "Freigaben" },
   "Shell.Nav.Invoicing": { "en": "Invoices", "de": "Rechnungen" },
+  "Shell.Nav.Api": { "en": "API", "de": "API" },
   "Shell.Nav.Mail": { "en": "Email", "de": "E-Mail" },
   "Shell.Nav.Storage": { "en": "Storage (NAS)", "de": "Speicher (NAS)" },
   "Shell.Nav.Backup": { "en": "Backup", "de": "Backup" },

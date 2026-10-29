@@ -241,7 +241,8 @@ public sealed class InvoiceService(MbDbContext db, ConfigStore config, NumberSer
         var ownTransaction = db.Database.CurrentTransaction is null;
         await using var transaction = ownTransaction ? await db.Database.BeginTransactionAsync(ct) : null;
         invoice.Customer ??= invoice.CustomerId is { } customerId ? await db.Customer.FirstOrDefaultAsync(c => c.Id == customerId, ct) : null;
-        invoice.Number = await numbers.NextInvoiceNumberAsync(invoice.InvoiceDate, ct);
+        // an invoice an API client requested takes the client's own range when it has one
+        invoice.Number = await numbers.NextInvoiceNumberAsync(invoice.InvoiceDate, invoice.ApiClientId, ct);
         invoice.Status = InvoiceStatus.Open;
         invoice.IssuedDate = clock.GetUtcNow().UtcDateTime;
         if (invoice.Kind == InvoiceKind.Invoice)
@@ -369,6 +370,8 @@ public sealed class InvoiceService(MbDbContext db, ConfigStore config, NumberSer
         cancellation.Title = "Stornorechnung";
         cancellation.CancelsInvoiceId = invoice.Id;
         cancellation.CancelsNumber = invoice.Number;
+        // the cancellation of a requested invoice belongs to the same client: its number comes from the same range, the client sees it
+        cancellation.ApiClientId = invoice.ApiClientId;
         cancellation.CustomerId = invoice.CustomerId;
         cancellation.Customer = invoice.Customer;
         cancellation.RecipientName = invoice.RecipientName;

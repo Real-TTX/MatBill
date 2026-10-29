@@ -1,0 +1,34 @@
+@model MatBill.Pages.Invoices.EditModel
+@inject MatBill.Services.ICurrentUser Current
+@* Where an invoice that another program asked for comes from: the program, its reference and its note (the side column of the editor and of the issued view). *@
+@if (Model.ApiClient is { } client)
+{
+    var invoice = Model.Invoice;
+    <div class="mat-card">
+        <div class="mat-card__head">@Ui.Icon("plug")<h2 class="mat-card__title">@L["Invoices.Api.Title"]</h2></div>
+        <div class="mat-card__body">
+            @if (Current.IsAdmin)
+            {
+                <p>@L["Invoices.Api.Text"] <a href="/Admin/Api/Edit?id=@client.Id">@client.Name</a>.</p>
+            }
+            else
+            {
+                <p>@L["Invoices.Api.Text"] <strong>@client.Name</strong>.</p>
+            }
+            <dl class="mat-kv">
+                @if (invoice.ApiReference is { } reference)
+                {
+                    <dt>@L["Invoices.Api.Reference"]</dt><dd class="mat-mono">@reference</dd>
+                }
+                @if (invoice.ApiNote is { } note)
+                {
+                    <dt>@L["Invoices.Api.Note"]</dt><dd class="mb-prewrap">@note</dd>
+                }
+                @if (client.NumberPattern is { Length: > 0 } pattern)
+                {
+                    <dt>@L["Invoices.Api.Range"]</dt><dd class="mat-mono">@pattern</dd>
+                }
+            </dl>
+        </div>
+    </div>
+}

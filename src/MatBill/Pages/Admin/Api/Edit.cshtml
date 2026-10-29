@@ -1,0 +1,75 @@
+@page
+@model MatBill.Pages.Admin.Api.EditModel
+@{
+    var client = Model.Client;
+}
+
+<form class="mat-form" method="post" novalidate>
+    <input type="hidden" name="Id" value="@Model.Id" />
+    <mb-summary />
+
+    @if (Model.NewKey is { } key)
+    {
+        <div class="mat-alert mat-alert--success" role="status">
+            @Ui.Icon("key")
+            <div class="mat-alert__body">
+                <strong>@L["Api.Key.Once"]</strong> @L["Api.Key.OnceText"]
+                <div class="mat-input-group mb-newkey">
+                    <input class="mat-input mat-mono" id="new-key" value="@key" readonly aria-label="@L["Api.Key.Label"]" />
+                    <button type="button" class="mat-btn mat-btn--secondary" data-copy="#new-key">@Ui.Icon("copy")<span>@L["Api.Key.Copy"]</span></button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (client is { IsActive: false })
+    {
+        <div class="mat-alert mat-alert--warning" role="status">
+            @Ui.Icon("ban")
+            <div class="mat-alert__body">@L["Api.RevokedText", Fmt.Moment(client.RevokedDate)]</div>
+        </div>
+    }
+
+    <mb-card title="@L["Api.Client"]" icon="plug">
+        <div class="mat-form__grid">
+            <mb-input for="Input.Name" label="@L["Common.Name"]" required="true" full="true" autocomplete="off" hint="@L["Api.Name.Hint"]" />
+            <mb-switch for="Input.CanCreate" label="@L["Api.CanCreate"]" full="true" />
+            <mb-switch for="Input.CanRead" label="@L["Api.CanRead"]" full="true" />
+            <mb-switch for="Input.CanIssue" label="@L["Api.CanIssue"]" hint="@L["Api.CanIssue.Hint"]" full="true" />
+        </div>
+    </mb-card>
+
+    <mb-card title="@L["Api.Range"]" icon="list" sub="@L["Admin.Invoicing.Next.Hint", Model.NextNumber]">
+        <p class="mat-muted">@L["Api.Range.Hint"] @L["Api.Range.NormalIs"] <span class="mat-mono">@Model.InvoicePattern</span></p>
+        <div class="mat-form__grid">
+            <mb-input for="Input.NumberPattern" label="@L["Api.Range.Pattern"]" autocomplete="off" placeholder="RE-MAT-{YYYY}-{NNNN}"
+                      data-number-pattern data-number-date="@Fmt.Iso(Model.Today)" data-number-next="Input_Next" data-number-fallback="@Model.NormalNext" />
+            <mb-input for="Input.Next" label="@L["Admin.Invoicing.Next"]" type="number" min="1" step="1" inputmode="numeric" hint="@L["Admin.Invoicing.Next.Hint", Model.NextNumber]" />
+        </div>
+    </mb-card>
+
+    @if (client is not null)
+    {
+        <mb-buttons back-href="/Admin/Api" delete-url="@(client.IsActive ? Url.Page("/Admin/Api/Edit", "Revoke", new { id = Model.Id }) : null)" delete-confirm="@L["Api.Revoke.Confirm"]" delete-text="@L["Api.Revoke"]">
+            <button type="submit" formnovalidate asp-page-handler="Renew" asp-route-id="@Model.Id" class="mat-btn mat-btn--ghost" data-confirm="@L["Api.Renew.Confirm"]" data-confirm-ok="@L["Api.Renew"]">@Ui.Icon("refresh")<span>@L["Api.Renew"]</span></button>
+        </mb-buttons>
+    }
+    else
+    {
+        <mb-buttons back-href="/Admin/Api" save-text="@L["Api.Create"]" save-icon="key" />
+    }
+</form>
+
+@if (client is not null)
+{
+    <mb-card title="@L["Api.Usage"]" icon="activity">
+        <dl class="mat-kv">
+            <dt>@L["Api.Key"]</dt><dd class="mat-mono">@client.KeyPrefix…</dd>
+            <dt>@L["Common.Status"]</dt><dd>@(client.IsActive ? Ui.Pill(L["Api.Active"].Value, "ok") : Ui.Pill(L["Api.RevokedPill"].Value, "error"))</dd>
+            <dt>@L["Api.CreatedAt"]</dt><dd>@Fmt.Moment(client.CreateDate)</dd>
+            <dt>@L["Api.LastUsed"]</dt><dd>@(client.LastUsedDate is null ? L["Api.Never"].Value : Fmt.Moment(client.LastUsedDate) + (client.LastUsedIp is null ? "" : " · " + client.LastUsedIp))</dd>
+            <dt>@L["Api.Invoices"]</dt><dd><a href="/Invoices?origin=api&amp;client=@client.Id">@Model.InvoiceCount</a></dd>
+            <dt>@L["Api.Customers"]</dt><dd>@Model.CustomerCount</dd>
+        </dl>
+    </mb-card>
+}

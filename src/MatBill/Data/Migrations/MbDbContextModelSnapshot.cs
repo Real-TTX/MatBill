@@ -74,6 +74,69 @@ namespace MatBill.Data.Migrations
                     b.ToTable("ActivityLog");
                 });
 
+            modelBuilder.Entity("MatBill.Data.Entities.ApiClient", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<bool>("CanCreate")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("CanIssue")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("CanRead")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CreateUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("KeyHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("KeyPrefix")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("LastUsedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastUsedIp")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("NumberPattern")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("RevokedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("UpdateUserId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("KeyHash")
+                        .IsUnique();
+
+                    b.HasIndex("KeyPrefix");
+
+                    b.ToTable("ApiClient");
+                });
+
             modelBuilder.Entity("MatBill.Data.Entities.BackupPlan", b =>
                 {
                     b.Property<long>("Id")
@@ -554,6 +617,9 @@ namespace MatBill.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<long?>("ApiClientId")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("BuyerReference")
                         .HasColumnType("text");
 
@@ -574,6 +640,9 @@ namespace MatBill.Data.Migrations
                         .HasColumnType("bigint");
 
                     b.Property<string>("Email")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ExternalRef")
                         .HasColumnType("text");
 
                     b.Property<string>("Kind")
@@ -622,6 +691,10 @@ namespace MatBill.Data.Migrations
                     b.HasIndex("Number")
                         .IsUnique()
                         .HasFilter("\"UpdateState\" <> 0");
+
+                    b.HasIndex("ApiClientId", "ExternalRef")
+                        .IsUnique()
+                        .HasFilter("\"ExternalRef\" IS NOT NULL AND \"UpdateState\" <> 0");
 
                     b.ToTable("Customer");
                 });
@@ -729,6 +802,15 @@ namespace MatBill.Data.Migrations
                         .HasColumnType("bigint");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long?>("ApiClientId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ApiNote")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ApiReference")
+                        .HasColumnType("text");
 
                     b.Property<string>("BuyerReference")
                         .HasColumnType("text");
@@ -885,6 +967,10 @@ namespace MatBill.Data.Migrations
                     b.HasIndex("PdfFileId");
 
                     b.HasIndex("SendState");
+
+                    b.HasIndex("ApiClientId", "ApiReference")
+                        .IsUnique()
+                        .HasFilter("\"ApiReference\" IS NOT NULL AND \"UpdateState\" <> 0");
 
                     b.HasIndex("RecurringInvoiceId", "RecurringDate")
                         .IsUnique()
@@ -1915,6 +2001,16 @@ namespace MatBill.Data.Migrations
                     b.Navigation("Invoice");
                 });
 
+            modelBuilder.Entity("MatBill.Data.Entities.Customer", b =>
+                {
+                    b.HasOne("MatBill.Data.Entities.ApiClient", "ApiClient")
+                        .WithMany()
+                        .HasForeignKey("ApiClientId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ApiClient");
+                });
+
             modelBuilder.Entity("MatBill.Data.Entities.Expense", b =>
                 {
                     b.HasOne("MatBill.Data.Entities.StoredFile", "ReceiptFile")
@@ -1927,6 +2023,11 @@ namespace MatBill.Data.Migrations
 
             modelBuilder.Entity("MatBill.Data.Entities.Invoice", b =>
                 {
+                    b.HasOne("MatBill.Data.Entities.ApiClient", "ApiClient")
+                        .WithMany()
+                        .HasForeignKey("ApiClientId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("MatBill.Data.Entities.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
@@ -1941,6 +2042,8 @@ namespace MatBill.Data.Migrations
                         .WithMany()
                         .HasForeignKey("RecurringInvoiceId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ApiClient");
 
                     b.Navigation("Customer");
 

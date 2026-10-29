@@ -1,0 +1,25 @@
+@page
+@model MatBill.Pages.Admin.Api.IndexModel
+
+<div class="mat-list">
+    <partial name="_Toolbar" model="Model.Toolbar" />
+    <partial name="_Table" model="Model.Table" />
+    <partial name="_Pager" model="Model.Pager" />
+    <div class="mat-actions">
+        <a class="mat-btn mat-btn--primary" href="/Admin/Api/Edit">@Ui.Icon("plus")<span>@L["Api.New"]</span></a>
+    </div>
+</div>
+
+<mb-card title="@L["Api.HowTo"]" icon="terminal">
+    <p>@L["Api.HowTo.Text"]</p>
+    <pre class="mat-code" tabindex="0" aria-label="@L["Api.HowTo.Example"]">curl -X POST @Model.Base/invoice-requests \
+  -H "Authorization: Bearer mbk_…" -H "Content-Type: application/json" \
+  -d '{ "reference": "matmon:2026-10:org:4f1c", "customer": { "externalRef": "matmon:org:4f1c", "name": "Beispiel GmbH",
+        "addressLines": ["Hauptstr. 1"], "postcode": "12345", "city": "Berlin", "country": "DE", "email": "rechnung@example.com" },
+        "lines": [ { "text": "Matmon Business", "quantity": 1, "unit": "Monat", "unitPrice": 29.00, "taxRate": 19,
+                     "servicePeriodFrom": "2026-10-01", "servicePeriodTo": "2026-10-31" } ] }'
+
+curl -H "Authorization: Bearer mbk_…" "@Model.Base/invoice-requests?reference=matmon:2026-10:org:4f1c"
+curl -H "Authorization: Bearer mbk_…" -o rechnung.pdf @Model.Base/invoices/{id}/pdf</pre>
+    <p class="mat-hint">@L["Api.HowTo.Answers"]</p>
+</mb-card>

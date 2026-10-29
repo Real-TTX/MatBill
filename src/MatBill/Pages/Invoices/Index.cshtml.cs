@@ -33,6 +33,9 @@ public sealed class IndexModel(MbDbContext db, TimeProvider clock) : PageModelBa
         Head(L["Invoices.Title"], L["Invoices.Sub"], (L["Invoices.Title"], null));
         var today = Fmt.Today(clock);
         var years = await db.Invoice.Select(i => i.InvoiceDate.Year).Distinct().OrderByDescending(y => y).ToListAsync();
+        // the programs that ask for invoices through the API: a handful, their names mark the invoices they requested
+        var apiClients = await db.ApiClient.AsNoTracking().OrderBy(c => c.Name).Select(c => new { c.Id, c.Name }).ToListAsync();
+        var apiNames = apiClients.ToDictionary(c => c.Id, c => c.Name);
 
         var spec = new ListSpec<Invoice>
         {
@@ -64,8 +67,19 @@ public sealed class IndexModel(MbDbContext db, TimeProvider clock) : PageModelBa
                 }),
                 new FilterSpec<Invoice>("year", L["Invoices.Filter.Year"], [.. years.Select(y => new FilterOption(y.ToString(), y.ToString()))], (q, v) => int.TryParse(v, out var y) ? q.Where(i => i.InvoiceDate.Year == y) : q),
                 new FilterSpec<Invoice>("customer", L["Invoices.Customer"], [], (q, v) => long.TryParse(v, out var id) ? q.Where(i => i.CustomerId == id) : q, Search: "customers", Resolve: Lookup.CustomerName(db)),
-                new FilterSpec<Invoice>("origin", L["Invoices.Filter.Origin"], [new("series", L["Invoices.Origin.Series"]), new("single", L["Invoices.Origin.Single"])],
-                    (q, v) => v == "series" ? q.Where(i => i.RecurringInvoiceId != null) : q.Where(i => i.RecurringInvoiceId == null)),
+                new FilterSpec<Invoice>("origin", L["Invoices.Filter.Origin"],
+                    [new("series", L["Invoices.Origin.Series"]), new("api", L["Invoices.Origin.Api"]), new("single", L["Invoices.Origin.Single"])],
+                    (q, v) => v switch
+                    {
+                        "series" => q.Where(i => i.RecurringInvoiceId != null),
+                        "api" => q.Where(i => i.ApiClientId != null),
+                        _ => q.Where(i => i.RecurringInvoiceId == null && i.ApiClientId == null),
+                    }),
+                .. apiClients.Count == 0 ? Array.Empty<FilterSpec<Invoice>>() :
+                [
+                    new FilterSpec<Invoice>("client", L["Invoices.Filter.ApiClient"], [.. apiClients.Select(c => new FilterOption(c.Id.ToString(), c.Name))],
+                        (q, v) => long.TryParse(v, out var id) ? q.Where(i => i.ApiClientId == id) : q),
+                ],
             ],
             Sorts = new Dictionary<string, (string, Func<IQueryable<Invoice>, bool, IOrderedQueryable<Invoice>>)>
             {
@@ -92,7 +106,10 @@ public sealed class IndexModel(MbDbContext db, TimeProvider clock) : PageModelBa
         string edit = L["Common.Edit"], open = L["Invoices.Open"];
         Table = TableModel.Of("invoice-table", L["Invoices.Title"], result.Items,
         [
-            (new TableColumn(L["Invoices.Number"]), i => Ui.NameWithSub(i.Number ?? draft, $"/Invoices/Edit?id={i.Id}", i.RecurringInvoiceId is null ? null : fromSeries)),
+            (new TableColumn(L["Invoices.Number"]), i => Ui.NameWithSub(i.Number ?? draft, $"/Invoices/Edit?id={i.Id}",
+                i.RecurringInvoiceId is not null ? fromSeries
+                : i.ApiClientId is { } api ? L["Invoices.FromApi", apiNames.GetValueOrDefault(api) ?? "API"].Value
+                : null)),
             (new TableColumn(L["Invoices.Customer"]), i => i.CustomerId is { } cid ? Ui.Link(i.RecipientName ?? "", $"/Customers/Edit?id={cid}&tab=invoices") : Ui.Text(i.RecipientName)),
             (new TableColumn(L["Common.Date"], HideOnPhone: true), i => Ui.Text(Fmt.Date(i.InvoiceDate))),
             (new TableColumn(L["Invoices.Col.Due"], HideOnPhone: true), i => i.Status == InvoiceStatus.Open ? Ui.Text(Fmt.Due(i.DueDate, today)) : Ui.None()),

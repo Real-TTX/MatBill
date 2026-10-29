@@ -16,6 +16,10 @@
             {
                 <a class="mat-pill mat-pill--accent" href="/Recurring/Edit?id=@Model.Series.Id">@L["Invoices.FromSeries"]</a>
             }
+            @if (Model.ApiClient is { } apiClient)
+            {
+                <span class="mat-pill mat-pill--info">@Ui.Icon("plug")@L["Invoices.FromApi", apiClient.Name]</span>
+            }
         </div>
         @if (draft)
         {
@@ -51,6 +55,8 @@
                             <p class="mat-muted">@L["Invoices.Edit.DraftText", Model.Editor!.NumberPreview ?? ""]</p>
                         </div>
                     </div>
+
+                    <partial name="_ApiOrigin" model="Model" />
 
                     <div class="mat-card">
                         <div class="mat-card__head">@Ui.Icon("repeat")<h2 class="mat-card__title">@L["Invoices.Edit.Repeat"]</h2></div>
@@ -176,6 +182,8 @@
                         }
                     </div>
                 </div>
+
+                <partial name="_ApiOrigin" model="Model" />
 
                 <div class="mat-card">
                     <div class="mat-card__head">@Ui.Icon("send")<h2 class="mat-card__title">@L["Invoices.Sending"]</h2></div>

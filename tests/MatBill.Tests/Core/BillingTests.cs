@@ -103,6 +103,18 @@ public sealed class NumberPatternTests
     [InlineData("", false)]
     public void Only_patterns_with_one_counter_and_known_placeholders_are_accepted(string pattern, bool ok)
         => Assert.Equal(ok, NumberPattern.Problem(pattern) is null);
+
+    [Fact]
+    public void A_range_of_its_own_carries_a_prefix_and_restarts_with_the_year()
+    {
+        // the own range of an API client (Matmon.Cloud)
+        const string pattern = "RE-MAT-{JJJJ}-{NNNN}";
+        Assert.Null(NumberPattern.Problem(pattern));
+        Assert.Equal("RE-MAT-2026-0003", NumberPattern.Format(pattern, new DateOnly(2026, 10, 29), 3));
+        Assert.Equal("2026", NumberPattern.PeriodKey(pattern, new DateOnly(2026, 12, 31)));
+        Assert.Equal("2027", NumberPattern.PeriodKey(pattern, new DateOnly(2027, 1, 1)));
+        Assert.Equal("MAT/26-10/0012", NumberPattern.Format("MAT/{YY}-{MM}/{NNNN}", new DateOnly(2026, 10, 1), 12));
+    }
 }
 
 public sealed class AmountTests
