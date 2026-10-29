@@ -153,4 +153,4 @@ curl -H "Authorization: Bearer $KEY" -o RE-MAT-2026-0003.xml "https://matbill.ex
 - **Webhooks** (a call to the client when an invoice is issued or paid): a client asks for the state instead (`GET /invoice-requests?reference=…`).
 - A list of a client's requests (`GET /invoice-requests` without a reference) and paging.
 - Linking a customer entered by hand to a client's `externalRef` in the interface.
-- The rate limit counts per address; behind a reverse proxy that address comes from `X-Forwarded-For`, which MatBill takes from any sender.
+- The rate limit counts per address; behind a reverse proxy that address comes from `X-Forwarded-For`, which MatBill believes only from the proxies it trusts (`MATBILL__Server__TrustedProxies`, default: loopback and the private networks - see OPERATIONS).

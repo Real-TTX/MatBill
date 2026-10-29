@@ -22,6 +22,7 @@ environment variables, which win over the file and are never written back:
 | `MATBILL__Server__PublicUrl` | the address people use (links that are handed on) |
 | `MATBILL__Server__TimeZone` | default `Europe/Berlin` |
 | `MATBILL__Server__ForceSecureCookie` | `true` behind HTTPS |
+| `MATBILL__Server__TrustedProxies` | whose `X-Forwarded-For/-Proto/-Host` is believed: addresses or CIDR ranges (comma/semicolon separated), `any` = every sender. Default: loopback and the private networks (a proxy on this machine, the LAN or the Docker network). A proxy on a public address must be named here, or the client address is the proxy's and the API rate limit counts all callers together. |
 | `MATBILL_DATA`, `MATBILL_PORT` | the data folder (`/data`) and the port (2505) |
 | `MATBILL_DB_PASSWORD` (compose only) | one password for both services of `docker-compose.yml` (in `.env`); set it before the first start, Postgres keeps it in its volume |
 

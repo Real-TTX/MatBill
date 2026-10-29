@@ -128,6 +128,7 @@ public sealed class ConfigStore
         if (Env("Server__PublicUrl") is { Length: > 0 } url) { config.Server.PublicUrl = url.TrimEnd('/'); }
         if (Env("Server__TimeZone") is { Length: > 0 } zone) { config.Server.TimeZone = zone; }
         if (bool.TryParse(Env("Server__ForceSecureCookie"), out var secure)) { config.Server.ForceSecureCookie = secure; }
+        if (Env("Server__TrustedProxies") is { Length: > 0 } proxies) { config.Server.TrustedProxies = proxies; }
     }
 }
 

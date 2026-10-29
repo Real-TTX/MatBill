@@ -44,6 +44,7 @@ Test changes by **rebuilding the container and redeploying the stack**. Wait for
   prefix, compared in constant time); `InvoiceRequestService` = the logic (testable without HTTP). The group is `AllowAnonymous` + `DisableAntiforgery` +
   rate limit `api` (120/min per address) + an endpoint filter that authenticates, sets `no-store` and acts as `RunAs(null, "API: <name>")`; every answer is
   JSON (also the catch-all 404, so the status-code page never re-executes into HTML). Errors: `ApiRequestException(status, code, message, problems)`.
+- **Forwarded headers** (`X-Forwarded-For/-Proto/-Host`, `UseForwardedHeaders` in Program.cs) are believed only from the proxies in `MATBILL__Server__TrustedProxies` (`MatBill.Core/Security/TrustedProxies`, `ServerConfig.TrustedProxies`; default loopback + RFC 1918 + link-local + IPv6 ULA, `any` = everybody, read at start). They used to be believed from ANY sender, so a caller could pick the address the rate limits (API, sign-in) count and the host links are built from. Same rule as Matmon. On Docker Desktop every published-port connection comes from the private gateway, so there the default still trusts it; on Linux the real client address arrives. `TrustedProxiesTests`.
 - `tests/MatBill.Tests` (Core unit tests, Integration against PostgreSQL; `ApiTests` covers keys, rights, idempotency, customers, ranges), `tests/e2e/flow.js` (Playwright).
 
 ## Rules of the API

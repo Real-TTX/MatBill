@@ -157,6 +157,26 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
     options.KnownIPNetworks.Clear();
     options.KnownProxies.Clear();
+    // Only a proxy on this machine, the LAN or the Docker network may say who the client is (TrustedProxies) - a header
+    // from anybody else would let a caller pick the address the rate limits count and the host links are built from.
+    var trusted = MatBill.Core.Security.TrustedProxies.Resolve(config.Current.Server.TrustedProxies, out var ignoredProxies);
+    if (ignoredProxies.Count > 0)
+    {
+        Console.Error.WriteLine($"MATBILL__Server__TrustedProxies: ignored {string.Join(", ", ignoredProxies)} (not an address or CIDR range)");
+    }
+    if (trusted is null)
+    {
+        return; // "any": the cleared lists mean every sender is trusted
+    }
+    foreach (var network in trusted)
+    {
+        options.KnownIPNetworks.Add(network);
+    }
+    if (trusted.Count == 0)
+    {
+        // a list that parsed to nothing must not read as "trust everybody", which is what empty lists mean here
+        options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse("127.0.0.1/32"));
+    }
 });
 
 var app = builder.Build();

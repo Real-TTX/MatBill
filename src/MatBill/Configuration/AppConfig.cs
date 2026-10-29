@@ -224,6 +224,11 @@ public sealed class ServerConfig
 
     /// <summary>The cookie is marked secure when the site is reached over HTTPS (also behind a reverse proxy that says so).</summary>
     public bool ForceSecureCookie { get; set; }
+
+    /// <summary>Who may say, through X-Forwarded-For / -Proto / -Host, who the client is: addresses or CIDR ranges (comma, semicolon
+    /// or line separated), "any" for every sender. Empty: loopback and the private networks (a reverse proxy on this machine, the
+    /// LAN or the Docker network). Read at start.</summary>
+    public string TrustedProxies { get; set; } = "";
 }
 
 public enum StorageMode
