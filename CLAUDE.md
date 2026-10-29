@@ -36,7 +36,27 @@ Test changes by **rebuilding the container and redeploying the stack**. Wait for
   and the detail search (`#mb-lookup`, a `mat-dialog--end`). A list filter over data that grows (customers) never lists them: `FilterSpec(Search: "customers", Resolve: Lookup.CustomerName(db))`
   draws a field that asks `/api/customers` while one types (`data-remote-select`); the page loads only the name of the chosen one. The side column of the editor depends on the width of the editor (`@container`), not of the window. From 900 px the paper keeps 210 mm and is zoomed as a whole (`--mb-paper-zoom` from `app.js`); what opens over it undoes the zoom.
 - Number ranges: `NumberService.CanContinueAtAsync` / `SetNextCounterAsync` set the next counter of the current period (forward always, back only over unused numbers).
-- `tests/MatBill.Tests` (Core unit tests, Integration against PostgreSQL), `tests/e2e/flow.js` (Playwright).
+  A range is a name + a pattern; the counter lives in `NumberSequence (Name, Period)`. Every name `invoice` or `invoice:*` is an invoice range (numbers checked
+  against all invoices, so ranges never hand out a number twice). Pattern fields preview live (`data-number-pattern` + `data-number-next` in `app.js`).
+- **The API** (`Api/InvoiceRequestApi.cs`, `/api/v1`, docs/API.md): other programs (first: Matmon.Cloud) request invoices with a key. `ApiClient` (Data/Entities/Api.cs:
+  name, `KeyPrefix` + SHA-256 `KeyHash`, rights `CanCreate`/`CanRead`/`CanIssue`, optional `NumberPattern`, `RevokedDate`, last use) is managed under
+  *Einstellungen › API* (`Pages/Admin/Api`: key shown once via TempData, renew, revoke - never deleted). `ApiClientService` = keys (`mbk_` + 43, found by
+  prefix, compared in constant time); `InvoiceRequestService` = the logic (testable without HTTP). The group is `AllowAnonymous` + `DisableAntiforgery` +
+  rate limit `api` (120/min per address) + an endpoint filter that authenticates, sets `no-store` and acts as `RunAs(null, "API: <name>")`; every answer is
+  JSON (also the catch-all 404, so the status-code page never re-executes into HTML). Errors: `ApiRequestException(status, code, message, problems)`.
+- `tests/MatBill.Tests` (Core unit tests, Integration against PostgreSQL; `ApiTests` covers keys, rights, idempotency, customers, ranges), `tests/e2e/flow.js` (Playwright).
+
+## Rules of the API
+
+- **The reference is the idempotency key**: `Invoice.ApiReference`, unique per `ApiClientId` among non-deleted invoices (filtered index); a repeat answers 200 with
+  the invoice as it is, a race ends in the unique index and answers the winner. A deleted draft frees its reference.
+- **Drafts by default**: `"issue": true` only with `CanIssue`, else `403 issue_not_allowed` and nothing is created. Issuing (API or a person) takes the number
+  from `NumberService.InvoiceRangeOfAsync(invoice.ApiClientId)`: the client's range `invoice:client:<id>` when it has a pattern, else the normal one;
+  `CancelAsync` copies `ApiClientId` so a cancellation counts in the same range. A client's pattern must differ from the normal one and from other clients'.
+- **Customers** are matched by `Customer.ExternalRef` per `ApiClientId` (filtered unique index), never by name; the request updates the customer (name always,
+  other fields when sent) - issued invoices keep their copy of the address. `Invoice.ApiNote` is for the person who checks the draft (shown, not printed).
+- A client sees only its own invoices (and their cancellations); documents only of issued ones (`409 not_issued` for a draft).
+- UI: the list marks requested invoices "von <Client>" and filters `origin=api` / `client=<id>`; the invoice page has a pill and the card `_ApiOrigin`.
 
 ## Rules of the domain
 

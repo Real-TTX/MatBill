@@ -105,3 +105,10 @@ Versions: releases `<major>.<minor>.<build>-<date>` (from `main`), `nightly-<bui
 - Placeholders of number ranges and texts are English now ({YYYY} {YY} {MM} {NNNN}, {Number} {Customer} {Amount} {Date} {DueDate} {ValidUntil} {Days} {Company});
   the German ones of earlier versions ({JJJJ}, {Nummer}, {Faellig} …) keep working in saved settings.
 - List filters in the address bar are English (`/Invoices?status=open`, `/Expenses?status=review`, `/Export?basis=cash`); old German bookmarks show the unfiltered list.
+
+## API for other programs
+
+- *Einstellungen › API*: a client per program (name, key shown once, rights, optional own invoice number range). Requests land as drafts unless the client
+  may issue directly. The API is `/api/v1` with `Authorization: Bearer mbk_…`, 120 calls a minute per address; everything else is in [API.md](API.md).
+- Behind a reverse proxy the API is reached like the pages; give the program the public address (`MATBILL__Server__PublicUrl` also makes the links in the answers absolute).
+- Revoking a client stops its key at once; its invoices stay. A lost key cannot be shown again: make a new one.

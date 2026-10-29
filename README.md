@@ -53,6 +53,8 @@ und ein Export für Steuerberater oder Finanzamt – auf einem Server im eigenen
 - Lokale Anmeldung mit **TOTP** (Authenticator-App), Rollen Administrator, Benutzer und Anonym (Freigabelink)
 - Sitzungen überstehen einen Neustart des Containers
 - **Backup** nach Zeitplan direkt auf ein **NAS** (SMB) oder in einen Ordner, mit Retention, optional verschlüsselt
+- **API für eigene Programme:** ein anderes Programm (etwa ein Abrechnungslauf) fordert Rechnungen per Schlüssel an – als Entwurf zum Prüfen
+  oder, wenn erlaubt, direkt ausgestellt, auf Wunsch in einem **eigenen Nummernkreis** (`RE-MAT-{YYYY}-{NNNN}`); siehe [API](#api)
 - **Installierbar (PWA)**, für das Handy gemacht, mit Offline-Ansicht der zuletzt geöffneten Seiten; hell und dunkel
 - **Englisch und Deutsch:** jede Person wählt ihre Sprache unter *Mein Konto*, vor der Anmeldung gilt die Sprache des Browsers
   (Umschalter EN | DE auf der Anmeldeseite); Rechnungen, Angebote, Mails an Kunden und der Export bleiben deutsch
@@ -303,6 +305,23 @@ cd tests/e2e; npm install; node flow.js http://localhost:2505    # Browser-Durch
 Die Unit-Tests brauchen nichts, die Integrationstests die PostgreSQL des Dev-Stacks, die NAS-Tests einen Samba-Server
 (`MATBILL_TEST_SMB`, die CI startet einen). Der Browser-Durchlauf schreibt eine Rechnung, ein Angebot, storniert, lädt einen Beleg hoch,
 importiert Umsätze, prüft Handy, PWA und Offline – und erzeugt dabei die Screenshots dieser Seite.
+
+## API
+
+Andere Programme fordern Rechnungen an; MatBill bleibt der Ort, an dem Rechnungen entstehen und Nummern vergeben werden.
+Unter *Einstellungen › API* bekommt jedes Programm einen **Client** mit Schlüssel (einmal angezeigt), Rechten (anfordern, abrufen,
+*direkt ausstellen* – aus: jede Anforderung wird ein Entwurf) und optional einem eigenen Nummernkreis.
+
+```bash
+curl -X POST https://matbill.example.com/api/v1/invoice-requests \
+  -H "Authorization: Bearer mbk_…" -H "Content-Type: application/json" \
+  -d '{ "reference": "matmon:2026-10:org:4f1c", "customer": { "externalRef": "matmon:org:4f1c", "name": "Beispiel GmbH",
+        "addressLines": ["Hauptstr. 1"], "postcode": "12345", "city": "Berlin" },
+        "lines": [ { "text": "Matmon Business", "unit": "Monat", "unitPrice": 29.00, "taxRate": 19 } ] }'
+curl -H "Authorization: Bearer mbk_…" -o rechnung.pdf https://matbill.example.com/api/v1/invoices/412/pdf
+```
+
+Dieselbe `reference` zweimal ergibt dieselbe Rechnung. Alles Weitere – Felder, Antworten, Fehlercodes – steht in [docs/API.md](docs/API.md).
 
 ## Wie es gebaut ist
 
