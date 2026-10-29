@@ -79,6 +79,7 @@ builder.Services.AddScoped<NumberService>();
 builder.Services.AddScoped<BrandingService>();
 builder.Services.AddSingleton<PreviewStore>();
 builder.Services.AddScoped<InvoiceService>();
+builder.Services.AddScoped<TestInvoiceService>();
 builder.Services.AddScoped<RecurringService>();
 builder.Services.AddScoped<MailService>();
 builder.Services.AddScoped<NotificationService>();

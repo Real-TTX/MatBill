@@ -114,6 +114,7 @@
   "Invoices.Edit.SendByEmail": { "en": "Send by email", "de": "Per E-Mail senden" },
   "Invoices.Edit.ShareLink": { "en": "Share link", "de": "Freigabelink" },
   "Invoices.Edit.Duplicate": { "en": "Duplicate", "de": "Duplizieren" },
+  "Invoices.Edit.TestDelete": { "en": "Delete test invoice…", "de": "Testrechnung löschen…" },
   "Invoices.Edit.Reopen": { "en": "Undo payment", "de": "Zahlung zurücknehmen" },
   "Invoices.Edit.ReopenConfirm": { "en": "Undo the payment? The invoice is open again afterwards.", "de": "Die Zahlung zurücknehmen? Die Rechnung ist danach wieder offen." },
   "Invoices.Edit.ReopenOk": { "en": "Undo", "de": "Zurücknehmen" },

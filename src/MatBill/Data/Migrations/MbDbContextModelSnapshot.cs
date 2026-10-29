@@ -699,6 +699,58 @@ namespace MatBill.Data.Migrations
                     b.ToTable("Customer");
                 });
 
+            modelBuilder.Entity("MatBill.Data.Entities.DeletedDocument", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CreateUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("DeletedByName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("DeletedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly>("DocumentDate")
+                        .HasColumnType("date");
+
+                    b.Property<decimal>("GrossTotal")
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RecipientName")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("UpdateUserId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("DeletedDocument");
+                });
+
             modelBuilder.Entity("MatBill.Data.Entities.Expense", b =>
                 {
                     b.Property<long>("Id")

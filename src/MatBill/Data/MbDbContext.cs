@@ -55,6 +55,8 @@ public class MbDbContext(DbContextOptions<MbDbContext> options, ICurrentUser cur
 
     public DbSet<ShareLink> ShareLink => Set<ShareLink>();
 
+    public DbSet<DeletedDocument> DeletedDocument => Set<DeletedDocument>();
+
     public DbSet<ActivityLog> ActivityLog => Set<ActivityLog>();
 
     public DbSet<BackupTarget> BackupTarget => Set<BackupTarget>();

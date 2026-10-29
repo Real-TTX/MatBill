@@ -270,6 +270,10 @@
                 <button type="submit" class="mat-btn mat-btn--ghost" asp-page-handler="Reopen" asp-route-id="@invoice.Id" data-confirm="@L["Invoices.Edit.ReopenConfirm"]" data-confirm-ok="@L["Invoices.Edit.ReopenOk"]">@Ui.Icon("undo")<span>@L["Invoices.Edit.Reopen"]</span></button>
             }
             <a class="mat-btn mat-btn--ghost" href="/Invoices">@Ui.Icon("back")<span>@L["Common.Back"]</span></a>
+            @if (Model.IsAdmin && invoice.Kind == InvoiceKind.Invoice && invoice.Status is InvoiceStatus.Open or InvoiceStatus.Cancelled && invoice.SentDate is null)
+            {
+                <a class="mat-btn mat-btn--ghost" href="/Admin/TestInvoices?id=@invoice.Id">@Ui.Icon("trash")<span>@L["Invoices.Edit.TestDelete"]</span></a>
+            }
             @if (invoice.Status is InvoiceStatus.Open or InvoiceStatus.Paid && invoice.Kind == InvoiceKind.Invoice)
             {
                 <span class="mat-btn-row__spacer"></span>

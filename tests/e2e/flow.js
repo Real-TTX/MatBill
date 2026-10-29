@@ -176,7 +176,7 @@ async function confirmDialog(page) {
   await page.setViewportSize({ width: 1440, height: 1000 });
 
   console.log('The lists');
-  for (const [url, file] of [['/Invoices', 'invoices'], ['/Recurring', 'recurring'], ['/Customers', 'customers'], ['/Products', 'products'], ['/Admin/Company', 'company'], ['/Admin/Branding', 'branding'], ['/Notifications', 'notifications'], ['/Admin/Backup', 'backup'], ['/Admin/Mail', 'mail']]) {
+  for (const [url, file] of [['/Invoices', 'invoices'], ['/Recurring', 'recurring'], ['/Customers', 'customers'], ['/Products', 'products'], ['/Admin/Company', 'company'], ['/Admin/Branding', 'branding'], ['/Notifications', 'notifications'], ['/Admin/Backup', 'backup'], ['/Admin/Mail', 'mail'], ['/Admin/TestInvoices', 'testinvoices']]) {
     const response = await page.goto(base + url);
     check(response.ok() && await page.locator('h1').count() === 1, url + ' opens');
     await shot(page, file);
@@ -323,7 +323,7 @@ async function confirmDialog(page) {
   // words of the German interface that must not show up in the English one (data like customer names may be German)
   const germanWords = /\b(Speichern|Zurück|Abbrechen|Löschen|Bearbeiten|Übersicht|Einstellungen|Sortierung|Suchen|Neue Rechnung|Rechnungen|Angebote|Ausgaben|Wiederkehrend|Auswertung|Stammdaten|Kunden|Produkte|Zuordnung|Bezahlt|Überfällig|Entwurf|Fällig|Gespeichert|Abmelden|Mein Konto|Benachrichtigungen|Keine|Alle)\b/;
   for (const [url, file] of [['/', 'en-dashboard'], ['/Invoices', 'en-invoices'], ['/Invoices/Edit', 'en-editor'], ['/Invoices/Edit?id=' + id, 'en-invoice'], ['/Quotes', 'en-quotes'], ['/Recurring', 'en-recurring'],
-    ['/Expenses', 'en-expenses'], ['/Banking', 'en-banking'], ['/Export', 'en-report'], ['/Customers', 'en-customers'], ['/Products', 'en-products'], ['/Admin/Company', 'en-company'], ['/Admin/Branding', 'en-branding'],
+    ['/Expenses', 'en-expenses'], ['/Banking', 'en-banking'], ['/Export', 'en-report'], ['/Customers', 'en-customers'], ['/Products', 'en-products'], ['/Admin/Company', 'en-company'], ['/Admin/Branding', 'en-branding'], ['/Admin/TestInvoices', 'en-testinvoices'],
     ['/Notifications', 'en-notifications'], ['/Admin/Invoicing', 'en-settings-invoicing'], ['/Admin/Mail', 'en-settings-mail'], ['/Admin/Banking', 'en-settings-banking'], ['/Admin/Backup', 'en-backup'],
     ['/Admin/Users', 'en-users'], ['/Admin/System', 'en-system'], ['/Account/Profile', 'en-profile'], ['/Account/Security', 'en-security']]) {
     await english.goto(base + url);
@@ -363,7 +363,7 @@ async function confirmDialog(page) {
   const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: 'de-DE', storageState: await context.storageState() });
   const mobile = await phone.newPage();
   mobile.on('pageerror', err => problems.push('page error (phone): ' + err.message));
-  const lists = ['/Invoices', '/Quotes', '/Recurring', '/Customers', '/Products', '/Expenses', '/Banking', '/Admin/Users'];
+  const lists = ['/Invoices', '/Quotes', '/Recurring', '/Customers', '/Products', '/Expenses', '/Banking', '/Admin/Users', '/Admin/TestInvoices'];
   for (const [url, file] of [['/', 'mobile-dashboard'], ['/Invoices/Edit', 'mobile-editor'], ['/Invoices/Edit?id=' + id, 'mobile-invoice'], ...lists.map(l => [l, 'mobile' + l.toLowerCase().replace(/\//g, '-')])]) {
     await mobile.goto(base + url);
     const overflow = await mobile.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -411,6 +411,26 @@ async function confirmDialog(page) {
   check(/\/Invoices\/Edit\?id=\d+/.test(mobile.url()), 'a tap on a card beside the number opens the invoice: ' + mobile.url());
   const fontSize = await mobile.evaluate(() => { const el = document.querySelector('.mb-in'); return el ? parseFloat(getComputedStyle(el).fontSize) : 16; });
   check(fontSize >= 16, 'fields of the editor have 16 px on a phone (no zoom on iOS): ' + fontSize);
+
+  console.log('Deleting a test invoice');
+  // the invoice of this run (cancelled, never sent) goes again with its cancellation: the way a first test invoice is removed in production
+  await page.goto(base + '/Invoices/Edit?id=' + id);
+  const testNumber = (await page.locator('.mb-paper--view').innerText()).match(/RE-\d{4}-\d{4}/)?.[0] ?? '';
+  await page.getByRole('link', { name: 'Testrechnung löschen' }).click();
+  await page.waitForURL(/Admin\/TestInvoices\?id=/, { timeout: 10000 });
+  check((await page.locator('h1').innerText()).includes(testNumber), 'the page of the deletion names the invoice: ' + testNumber);
+  check((await page.locator('main, .mat-main').first().innerText()).includes('Stornorechnung'), 'it says that the cancellation invoice goes with it');
+  await page.fill('#Input_ConfirmNumber', 'falsch');
+  await page.getByRole('button', { name: 'Endgültig löschen' }).click();
+  check((await page.locator('main, .mat-main').first().innerText()).includes('stimmt nicht überein'), 'a wrong number deletes nothing');
+  check((await page.request.get(base + '/Invoices/Edit?id=' + id)).ok(), 'the invoice is still there after the wrong number');
+  await page.fill('#Input_ConfirmNumber', testNumber);
+  await page.getByRole('button', { name: 'Endgültig löschen' }).click();
+  await page.waitForURL(/Admin\/TestInvoices$/, { timeout: 10000 });
+  check((await page.locator('.mat-toast, .mat-alert').allInnerTexts()).join(' ').includes('endgültig gelöscht'), 'the deletion says what happened');
+  check((await page.request.get(base + '/Invoices/Edit?id=' + id)).status() === 404, 'the test invoice is gone');
+  check((await page.locator('#deleted-documents').innerText()).includes(testNumber), 'the permanent record names the deleted number');
+  await shot(page, 'testinvoices');
 
   console.log('Installable app');
   const manifest = await page.request.get(base + '/manifest.webmanifest');

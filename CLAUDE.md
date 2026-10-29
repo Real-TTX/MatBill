@@ -64,6 +64,11 @@ Test changes by **rebuilding the container and redeploying the stack**. Wait for
 - **An issued invoice never changes.** Only drafts are edited (`InvoiceService.Apply` throws otherwise). Issuing takes the number in the same transaction
   (`NumberService`: `INSERT ... ON CONFLICT DO UPDATE ... RETURNING`), fixes `TaxExempt`, stores the PDF (`PdfFileId`); `PdfAsync` serves the stored one.
   A recipient that was typed becomes a customer on save (`LinkCustomerAsync`); the invoice keeps its own copy of the address.
+  **The one exception: a test invoice** (`TestInvoiceService`, page `/Admin/TestInvoices`, administrators): an issued invoice that never left the house (not sent, no `MailDelivery`,
+  not paid, no bank transaction, no share link, no series, no API client, no quote) is deleted **for good** (`ExecuteDelete`: a soft delete would keep the number taken,
+  `NumberService.InUseAsync` counts deleted rows), with its cancellation invoice when it was cancelled, its positions and its stored PDF. The number must be typed to confirm,
+  `DeletedDocument` stays forever (the activity log is cleaned after a year) and the range can go on at the freed number when no later number is on a document.
+  Every rule is checked in the service (`ProblemsAsync`), never only on the page; a real invoice is cancelled.
 - **A series is a template.** `RecurringService.RunAsync` builds the invoice with `RecurringPreview.Of` (the same code as the preview), issues it and steps the series in one
   transaction; `(RecurringInvoiceId, RecurringDate)` is unique. Failures: `FailedAttempts`, `RetryAfterDate` (15 min doubling, 5 attempts), a `RecurringRun`, a notification.
   `RescheduleAsync` keeps a failed due date; `ResumeAsync` continues from today. Mails of series: `SendState` Pending/Failed, `MailService.SendPendingAsync`.

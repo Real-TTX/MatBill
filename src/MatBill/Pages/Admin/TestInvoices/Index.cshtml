@@ -1,0 +1,88 @@
+@page
+@model MatBill.Pages.Admin.TestInvoices.IndexModel
+
+<div class="mat-alert mat-alert--warning" role="status">@Ui.Icon("alert")<div class="mat-alert__body">@L["Admin.TestInvoices.Warning"]</div></div>
+
+@if (Model.Selected is { } invoice)
+{
+    if (Model.Problems.Count > 0)
+    {
+        <mb-card title="@L["Admin.TestInvoices.Blocked.Title"]" icon="alert" sub="@invoice.Number">
+            <ul class="mb-problems">
+                @foreach (var problem in Model.Problems)
+                {
+                    <li>@problem</li>
+                }
+            </ul>
+            <p class="mat-muted">@L["Admin.TestInvoices.Blocked.Text"]</p>
+        </mb-card>
+        <div class="mat-btn-row"><a class="mat-btn mat-btn--secondary" href="/Admin/TestInvoices">@Ui.Icon("back")<span>@L["Common.Back"]</span></a></div>
+    }
+    else
+    {
+        <form class="mat-form" method="post" asp-route-id="@invoice.Id" novalidate>
+            <mb-summary />
+            <mb-card title="@L["Admin.TestInvoices.Confirm.Title", invoice.Number ?? ""]" icon="trash" sub="@($"{invoice.RecipientName} · {Fmt.Money(invoice.GrossTotal)}")">
+                <p>@L["Admin.TestInvoices.Confirm.Text"]</p>
+                @if (Model.CancellationNumber is { } cancellation)
+                {
+                    <p><strong>@L["Admin.TestInvoices.Confirm.WithCancellation", cancellation]</strong></p>
+                }
+
+                <div class="mat-form__grid">
+                    <mb-input for="Input.Reason" label="@L["Admin.TestInvoices.Reason"]" hint="@L["Admin.TestInvoices.Reason.Hint"]" maxlength="200" full="true" autocomplete="off" />
+                    <mb-input for="Input.ConfirmNumber" label="@L["Admin.TestInvoices.ConfirmNumber"]" autocomplete="off" full="true" placeholder="@invoice.Number" />
+                    <mb-switch for="Input.ResetCounter" label="@L["Admin.TestInvoices.ResetCounter"]" hint="@L["Admin.TestInvoices.ResetCounter.Hint"]" full="true" />
+                </div>
+            </mb-card>
+            <mb-buttons no-save="true" back-href="/Admin/TestInvoices">
+                <span class="mat-btn-row__spacer"></span>
+                <button type="submit" class="mat-btn mat-btn--danger">@Ui.Icon("trash")<span>@L["Admin.TestInvoices.Submit"]</span></button>
+            </mb-buttons>
+        </form>
+    }
+}
+else
+{
+    <div class="mat-list">
+        <partial name="_Table" model="Model.Table" />
+    </div>
+}
+
+<mb-card title="@L["Admin.TestInvoices.Record.Title"]" icon="list" sub="@L["Admin.TestInvoices.Record.Sub"]">
+    @if (Model.Record.Count == 0)
+    {
+        <p class="mat-muted">@L["Admin.TestInvoices.Record.Empty"]</p>
+    }
+    else
+    {
+        <div class="mat-table-wrap">
+            <table class="mat-table" id="deleted-documents">
+                <caption class="mat-sr-only">@L["Admin.TestInvoices.Record.Title"]</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">@L["Admin.TestInvoices.Col.Number"]</th>
+                        <th scope="col" class="mat-hide-sm">@L["Common.Date"]</th>
+                        <th scope="col" class="mat-num">@L["Common.Amount"]</th>
+                        <th scope="col">@L["Admin.TestInvoices.Record.DeletedOn"]</th>
+                        <th scope="col" class="mat-hide-sm">@L["Admin.TestInvoices.Record.By"]</th>
+                        <th scope="col" class="mat-hide-sm">@L["Admin.TestInvoices.Reason"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var d in Model.Record)
+                    {
+                        <tr>
+                            <td data-label="@L["Admin.TestInvoices.Col.Number"]" class="mat-mono">@d.Number</td>
+                            <td data-label="@L["Common.Date"]" class="mat-hide-sm">@Fmt.Date(d.DocumentDate)</td>
+                            <td data-label="@L["Common.Amount"]" class="mat-num">@Fmt.Money(d.GrossTotal)</td>
+                            <td data-label="@L["Admin.TestInvoices.Record.DeletedOn"]">@Fmt.Moment(d.DeletedDate)</td>
+                            <td data-label="@L["Admin.TestInvoices.Record.By"]" class="mat-hide-sm">@d.DeletedByName</td>
+                            <td data-label="@L["Admin.TestInvoices.Reason"]" class="mat-hide-sm">@d.Reason</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</mb-card>

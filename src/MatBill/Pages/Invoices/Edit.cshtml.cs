@@ -46,6 +46,9 @@ public sealed class EditModel(MbDbContext db, InvoiceService invoices, Recurring
 
     public bool IsNew => Invoice.Id == 0;
 
+    /// <summary>Only an administrator is offered to delete a test invoice (the page and the service check it again).</summary>
+    public bool IsAdmin => current.IsAdmin;
+
     /// <summary>The program that requested this invoice through the API (the origin chip and card), null for an invoice written here.</summary>
     public ApiClient? ApiClient { get; private set; }
 

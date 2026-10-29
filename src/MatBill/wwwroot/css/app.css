@@ -590,3 +590,7 @@ select.mb-multi { min-height: 7rem; padding-block: var(--mat-space-1); }
 .mb-preview__pages { display: grid; gap: var(--mat-space-4); justify-items: center; }
 .mb-preview__pages img { display: block; width: 100%; max-width: 210mm; height: auto; background: #fff; border: 1px solid var(--mat-border); }
 [data-preview-download][hidden] { display: none; }
+
+/* the reasons why an invoice cannot be deleted as a test invoice (Admin/TestInvoices) */
+.mb-problems { margin: 0 0 var(--mat-space-3); padding-left: 1.25rem; }
+.mb-problems li + li { margin-top: var(--mat-space-1); }
