@@ -10,14 +10,14 @@
     <mb-card title="@L["Admin.Invoicing.Ranges"]" icon="list" sub="@L["Admin.Invoicing.NextInvoice", Model.NextInvoice]">
         <p class="mat-muted">@L["Admin.Invoicing.Ranges.Hint"]</p>
         <div class="mat-form__grid">
-            <mb-input for="Input.InvoiceNumberPattern" label="@L["Admin.Invoicing.InvoiceNumbers"]" required="true" autocomplete="off" />
+            <mb-input for="Input.InvoiceNumberPattern" label="@L["Admin.Invoicing.InvoiceNumbers"]" required="true" autocomplete="off" data-number-pattern data-number-date="@Fmt.Iso(Model.Today)" data-number-next="Input_InvoiceNext" />
             <mb-input for="Input.InvoiceNext" label="@L["Admin.Invoicing.Next"]" type="number" min="1" step="1" inputmode="numeric" hint="@L["Admin.Invoicing.Next.Hint", Model.NextNumbers["Input.InvoiceNext"]]" />
-            <mb-input for="Input.CustomerNumberPattern" label="@L["Admin.Invoicing.CustomerNumbers"]" required="true" autocomplete="off" />
+            <mb-input for="Input.CustomerNumberPattern" label="@L["Admin.Invoicing.CustomerNumbers"]" required="true" autocomplete="off" data-number-pattern data-number-date="@Fmt.Iso(Model.Today)" data-number-next="Input_CustomerNext" />
             <mb-input for="Input.CustomerNext" label="@L["Admin.Invoicing.Next"]" type="number" min="1" step="1" inputmode="numeric" hint="@L["Admin.Invoicing.Next.Hint", Model.NextNumbers["Input.CustomerNext"]]" />
             <mb-switch for="Input.CustomerNumberManual" label="@L["Admin.Invoicing.CustomerNumberManual"]" hint="@L["Admin.Invoicing.CustomerNumberManual.Hint"]" full="true" />
-            <mb-input for="Input.QuoteNumberPattern" label="@L["Admin.Invoicing.QuoteNumbers"]" required="true" autocomplete="off" />
+            <mb-input for="Input.QuoteNumberPattern" label="@L["Admin.Invoicing.QuoteNumbers"]" required="true" autocomplete="off" data-number-pattern data-number-date="@Fmt.Iso(Model.Today)" data-number-next="Input_QuoteNext" />
             <mb-input for="Input.QuoteNext" label="@L["Admin.Invoicing.Next"]" type="number" min="1" step="1" inputmode="numeric" hint="@L["Admin.Invoicing.Next.Hint", Model.NextNumbers["Input.QuoteNext"]]" />
-            <mb-input for="Input.ExpenseNumberPattern" label="@L["Admin.Invoicing.ExpenseNumbers"]" required="true" autocomplete="off" />
+            <mb-input for="Input.ExpenseNumberPattern" label="@L["Admin.Invoicing.ExpenseNumbers"]" required="true" autocomplete="off" data-number-pattern data-number-date="@Fmt.Iso(Model.Today)" data-number-next="Input_ExpenseNext" />
             <mb-input for="Input.ExpenseNext" label="@L["Admin.Invoicing.Next"]" type="number" min="1" step="1" inputmode="numeric" hint="@L["Admin.Invoicing.Next.Hint", Model.NextNumbers["Input.ExpenseNext"]]" />
         </div>
         <p class="mat-hint">@L["Admin.Invoicing.Cancellation.Hint"]</p>

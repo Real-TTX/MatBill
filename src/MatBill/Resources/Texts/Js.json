@@ -1,5 +1,7 @@
 {
   "Js.Failed": { "en": "That did not work.", "de": "Das hat nicht geklappt." },
+  "Js.Number.Next": { "en": "Next number: {0}", "de": "Nächste Nummer: {0}" },
+  "Js.Number.Invalid": { "en": "The pattern needs exactly one counter such as {NNNN}.", "de": "Das Muster braucht genau einen Zähler wie {NNNN}." },
 
   "Js.Connection.Back": { "en": "The connection is back.", "de": "Die Verbindung ist wieder da." },
   "Js.Connection.Connecting": { "en": "Connecting …", "de": "Verbinde ..." },

@@ -949,6 +949,35 @@
     });
   }
 
+  // ================================================================================================ number ranges
+
+  // The pattern of a number range shows the number it makes while one types (the tokens of NumberPattern.Format; on saving, the server still skips numbers
+  // that are on a document already). The hint of the field of the next counter carries it; an empty pattern shows data-number-fallback (the normal range).
+  var numberToken = /\{(YYYY|YY|JJJJ|JJ|MM|N+)\}/g;
+  $$('[data-number-pattern]').forEach(function (input) {
+    var nextId = input.getAttribute('data-number-next');
+    var next = nextId ? doc.getElementById(nextId) : null;
+    var hint = nextId ? doc.getElementById(nextId + '-hint') : null;
+    var date = (input.getAttribute('data-number-date') || '').split('-');
+    if (!hint || date.length !== 3) { return; }
+    var update = function () {
+      var pattern = input.value.trim();
+      if (!pattern && input.hasAttribute('data-number-fallback')) { hint.textContent = t('Js.Number.Next', input.getAttribute('data-number-fallback')); return; }
+      if ((pattern.match(/\{N+\}/g) || []).length !== 1 || /[{}]/.test(pattern.replace(numberToken, ''))) { hint.textContent = t('Js.Number.Invalid'); return; }
+      var counter = Math.max(1, parseInt(next && next.value, 10) || 1);
+      hint.textContent = t('Js.Number.Next', pattern.replace(numberToken, function (m, token) {
+        if (token === 'YYYY' || token === 'JJJJ') { return date[0]; }
+        if (token === 'YY' || token === 'JJ') { return date[0].slice(2); }
+        if (token === 'MM') { return date[1]; }
+        var digits = String(counter);
+        while (digits.length < token.length) { digits = '0' + digits; }
+        return digits;
+      }));
+    };
+    input.addEventListener('input', update);
+    if (next) { next.addEventListener('input', update); }
+  });
+
   // ================================================================================================ filters that search
 
   // A filter over data that grows (customers) is a field with suggestions from the server (/api/customers), never a select with all of them:

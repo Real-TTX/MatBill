@@ -78,6 +78,9 @@ public sealed class InvoicingModel(ConfigStore config, NumberService numbers, Ac
 
     public string NextInvoice { get; private set; } = "";
 
+    /// <summary>The date the previews of the patterns are drawn for (the current period).</summary>
+    public DateOnly Today => Fmt.Today(clock);
+
     /// <summary>What the next number of each range will be, by the name of its field.</summary>
     public Dictionary<string, string> NextNumbers { get; } = [];
 
