@@ -1,0 +1,9 @@
+@model MatBill.Services.TextPresetPicker
+@* Ready-made texts for a field of the editor: choosing one writes it into the field (app.js, data-preset-for); the text stays free to change. The picker is not part of the paper. *@
+<select class="mat-select mb-preset" data-preset-for="@Model.Target" aria-label="@L["Editor.Preset.Label"]">
+    <option value="">@L["Editor.Preset.Pick"]</option>
+    @foreach (var preset in Model.Presets)
+    {
+        <option value="@preset.Label" data-text="@preset.Text" data-days="@preset.Days">@L[preset.Label]</option>
+    }
+</select>

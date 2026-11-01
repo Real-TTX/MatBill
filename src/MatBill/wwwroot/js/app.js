@@ -488,6 +488,29 @@
       if (e.target.matches('[data-field="Quantity"]')) { var q = parseAmount(e.target.value); if (!isNaN(q)) { e.target.value = quantity(q); } }
       markDirty();
     });
+
+    // A ready-made text (data-preset-for names the field): picking one writes it into the field, as typing would (undo still works); a preset that is for a
+    // payment term also sets the term (due at once = 0 days). The text stays free to change.
+    editor.addEventListener('change', function (e) {
+      var picker = e.target.closest && e.target.closest('[data-preset-for]');
+      if (!picker) { return; }
+      var option = picker.selectedOptions[0];
+      var field = option && option.value ? document.getElementById(picker.getAttribute('data-preset-for')) : null;
+      if (field) {
+        field.focus();
+        field.select();
+        if (!document.execCommand || !document.execCommand('insertText', false, option.getAttribute('data-text') || '')) { field.value = option.getAttribute('data-text') || ''; }
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+        var days = option.getAttribute('data-days');
+        var daysField = $('[name="Input.PaymentTermDays"]', editor);
+        if (days !== null && days !== '' && daysField) {
+          daysField.value = days;
+          daysField.dispatchEvent(new Event('input', { bubbles: true }));
+          daysField.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }
+      picker.selectedIndex = 0;
+    });
     recalc();
 
     // ---- the recipient: suggestions from the customers, or a new customer from the name

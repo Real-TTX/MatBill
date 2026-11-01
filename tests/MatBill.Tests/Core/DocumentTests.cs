@@ -23,6 +23,33 @@ public sealed class DocumentTests
     }
 
     [Fact]
+    public void The_ready_made_texts_use_only_known_placeholders_and_due_at_once_is_a_text_of_its_own()
+    {
+        var invoicing = new InvoicingConfig();
+        var all = DocumentTextPresets.Terms(invoicing).Concat(DocumentTextPresets.QuoteTerms(invoicing)).Concat(DocumentTextPresets.Intro(invoicing))
+            .Concat(DocumentTextPresets.QuoteIntro(invoicing)).Concat(DocumentTextPresets.Closing(invoicing)).ToList();
+        var known = new[] { "Days", "DueDate", "ValidUntil" };
+        foreach (var preset in all)
+        {
+            Assert.False(string.IsNullOrWhiteSpace(preset.Text), preset.Label);
+            foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(preset.Text, @"\{(\w+)\}"))
+            {
+                Assert.Contains(m.Groups[1].Value, known);
+            }
+        }
+
+        // "due at once" says so in words and sets the term to 0; it never reads "within 0 days"
+        var immediately = DocumentTextPresets.Terms(invoicing).Single(p => p.Label == "Editor.Preset.Terms.Immediately");
+        Assert.Equal(0, immediately.Days);
+        Assert.DoesNotContain("{Days}", immediately.Text);
+        Assert.Contains("sofort", Texts.Expand(immediately.Text, 0, new DateOnly(2026, 10, 20)));
+
+        // the first entry is the standard of the settings
+        Assert.Equal(invoicing.PaymentTerms, DocumentTextPresets.Terms(invoicing)[0].Text);
+        Assert.Equal(invoicing.QuoteIntroText, DocumentTextPresets.QuoteIntro(invoicing)[0].Text);
+    }
+
+    [Fact]
     public void The_footer_carries_the_address_and_a_second_bank_and_can_be_written_with_placeholders()
     {
         var company = new CompanyConfig { Name = "Nordlicht Design", NameLine2 = "Erika Mustermann", Street = "Weg 1", PostalCode = "12345", City = "Stadt", Phone = "0123 456", BankName = "Bank A", Iban = "DE11", Bank2Name = "Bank B", Bank2Iban = "DE22", TaxNumber = "12/345" };

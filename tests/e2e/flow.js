@@ -148,6 +148,17 @@ async function confirmDialog(page) {
   check(await page.locator('.mb-dates li').count() > 0, 'the series shows its next dates');
   await shot(page, 'series');
 
+  console.log('Ready-made texts');
+  await page.goto(base + '/Invoices/Edit');
+  await page.selectOption('[data-preset-for="Input_PaymentTerms"]', { label: 'Sofort fällig (setzt das Ziel auf sofort)' });
+  check((await page.inputValue('#Input_PaymentTerms')).startsWith('Der Rechnungsbetrag ist sofort nach Erhalt'), 'a ready-made payment text is written into the field');
+  check((await page.inputValue('#Input_PaymentTermDays')) === '0' && (await page.locator('[data-days-unit]').innerText()) === 'sofort fällig', 'due at once sets the term to 0 and says "sofort fällig", not "0 Tage"');
+  check((await page.locator('[data-preset-for="Input_PaymentTerms"]').inputValue()) === '', 'the pick list goes back to its title');
+  await page.selectOption('[data-preset-for="Input_ClosingText"]', { label: 'Viele Grüße' });
+  check((await page.inputValue('#Input_ClosingText')) === 'Viele Grüße', 'a ready-made closing text is written into the field');
+  await page.selectOption('[data-preset-for="Input_PaymentTerms"]', { index: 1 });
+  check((await page.inputValue('#Input_PaymentTerms')).includes('innerhalb von {Days} Tagen'), 'the standard text of the settings is one of the choices');
+
   console.log('The detail search');
   await page.goto(base + '/Invoices/Edit');
   await page.click('[data-lookup-open="customers"]');

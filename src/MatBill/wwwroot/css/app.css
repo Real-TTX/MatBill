@@ -594,3 +594,6 @@ select.mb-multi { min-height: 7rem; padding-block: var(--mat-space-1); }
 /* the reasons why an invoice cannot be deleted as a test invoice (Admin/TestInvoices) */
 .mb-problems { margin: 0 0 var(--mat-space-3); padding-left: 1.25rem; }
 .mb-problems li + li { margin-top: var(--mat-space-1); }
+
+/* Ready-made texts: a small pick list above the field, in the editor only (the paper stays the PDF). */
+.mb-preset { width: auto; max-width: 100%; min-height: 0; height: 2rem; padding-block: 0; font-size: var(--mat-fs-xs); margin-bottom: var(--mat-space-2); }

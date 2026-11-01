@@ -97,6 +97,48 @@ public sealed class FinanceTests : IClassFixture<AppFixture>
     }
 
     [DatabaseFact]
+    public async Task An_invoice_can_be_issued_without_a_tax_number_or_vat_id()
+    {
+        await _app.EnsureAdminAsync();
+        var config = _app.Services.GetRequiredService<Configuration.ConfigStore>();
+        var (tax, vat, small) = (config.Current.Company.TaxNumber, config.Current.Company.VatId, config.Current.Company.SmallBusiness);
+        try
+        {
+            foreach (var smallBusiness in new[] { false, true })
+            {
+                config.Update(c =>
+                {
+                    c.Company.Name = "Ohne Nummer";
+                    c.Company.Street = "Weg 1";
+                    c.Company.PostalCode = "10115";
+                    c.Company.City = "Berlin";
+                    c.Company.TaxNumber = null;
+                    c.Company.VatId = null;
+                    c.Company.SmallBusiness = smallBusiness;
+                });
+
+                var (_, invoice, _) = await _app.CreateInvoiceWithPdfAsync("Ohne Steuernummer", 100m);
+                var (pdf, xml) = await _app.WithScopeAsync(async sp =>
+                {
+                    var invoices = sp.GetRequiredService<InvoiceService>();
+                    var tracked = (await invoices.FindAsync(invoice.Id))!;
+                    return (await invoices.PdfAsync(tracked), invoices.Xml(tracked, false));
+                });
+
+                Assert.NotNull(invoice.Number);
+                using var document = PdfDocument.Open(pdf);
+                Assert.True(document.Advanced.TryGetEmbeddedFiles(out var files), $"small business {smallBusiness}: the plain PDF has no e-invoice inside");
+                Assert.Contains(files, f => f.Name == "factur-x.xml");
+                Assert.DoesNotContain("SpecifiedTaxRegistration", Encoding.UTF8.GetString(xml), StringComparison.Ordinal);
+            }
+        }
+        finally
+        {
+            config.Update(c => { c.Company.TaxNumber = tax; c.Company.VatId = vat; c.Company.SmallBusiness = small; });
+        }
+    }
+
+    [DatabaseFact]
     public async Task A_quote_is_issued_accepted_and_becomes_an_invoice_draft()
     {
         await _app.EnsureAdminAsync();

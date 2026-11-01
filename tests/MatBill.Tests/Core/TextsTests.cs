@@ -12,7 +12,7 @@ public sealed partial class TextsTests
     // and so do the German templates of the configuration and the German words a bank statement is read by.
     private static readonly string[] GermanOnPurpose =
     [
-        "Services/InvoicePdf.cs", "Services/InvoiceDocument.cs", "Services/EInvoice.cs", "Services/ExportService.cs", "Services/DemoData.cs",
+        "Services/InvoicePdf.cs", "Services/InvoiceDocument.cs", "Services/DocumentTextPresets.cs", "Services/EInvoice.cs", "Services/ExportService.cs", "Services/DemoData.cs",
         "Services/MailService.cs", "Configuration/AppConfig.cs", "Pages/Shared/_DocumentView.cshtml", "Pages/Shared/_DocumentLine.cshtml",
         "Pages/Shared/_DocumentEditor.cshtml", "Pages/Shared/SampleDocument.cs", "Data/Migrations/", "Resources/Texts/", "wwwroot/ui/",
     ];

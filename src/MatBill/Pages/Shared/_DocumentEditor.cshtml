@@ -19,7 +19,10 @@
     var blank = new LineInput { Quantity = "1", TaxRate = Amount.Quantity(Model.Invoicing.DefaultTaxRate) };
     var termDays = $"<span data-term-days>{input.PaymentTermDays ?? Model.Invoicing.PaymentTermDays}</span>";
     // the paper says what it means: 1 Tag, 14 Tage, and for 0 days an invoice is due at once
-    string DaysUnit(int days) => days == 1 ? "Tag" : days == 0 && !quote ? "Tage (sofort)" : "Tage";
+    string DaysUnit(int days) => days == 1 ? "Tag" : days == 0 && !quote ? "sofort fällig" : "Tage";
+    var introPresets = new TextPresetPicker("Input_IntroText", quote ? DocumentTextPresets.QuoteIntro(Model.Invoicing) : DocumentTextPresets.Intro(Model.Invoicing));
+    var termsPresets = new TextPresetPicker("Input_PaymentTerms", quote ? DocumentTextPresets.QuoteTerms(Model.Invoicing) : DocumentTextPresets.Terms(Model.Invoicing));
+    var closingPresets = new TextPresetPicker("Input_ClosingText", DocumentTextPresets.Closing(Model.Invoicing));
 }
 
 <article class="mb-paper mb-doc mb-doc--@MatBill.Configuration.DocumentDesigns.Of(company.Design) @(Model.Stamp is null ? "" : "is-draft") @(Model.TaxExempt ? "is-exempt" : "")" data-stamp="@Model.Stamp" aria-label="@(template ? L["Editor.Aria.Template"] : quote ? L["Editor.Aria.Quote"] : L["Editor.Aria.Invoice"])">
@@ -107,7 +110,7 @@
                 }
                 <div>
                     <dt><label for="Input_PaymentTermDays">@(quote ? "Gültigkeit" : "Zahlungsziel")</label></dt>
-                    <dd><span class="mb-doc__inline"><input class="mb-in mb-in--num mb-in--days" type="number" min="0" max="365" step="1" inputmode="numeric" id="Input_PaymentTermDays" name="Input.PaymentTermDays" value="@(input.PaymentTermDays ?? (quote ? Model.Invoicing.QuoteValidityDays : Model.Invoicing.PaymentTermDays))" /> <span data-days-unit data-one="Tag" data-many="Tage" data-zero="@(quote ? "Tage" : "Tage (sofort)")">@DaysUnit(input.PaymentTermDays ?? (quote ? Model.Invoicing.QuoteValidityDays : Model.Invoicing.PaymentTermDays))</span></span></dd>
+                    <dd><span class="mb-doc__inline"><input class="mb-in mb-in--num mb-in--days" type="number" min="0" max="365" step="1" inputmode="numeric" id="Input_PaymentTermDays" name="Input.PaymentTermDays" value="@(input.PaymentTermDays ?? (quote ? Model.Invoicing.QuoteValidityDays : Model.Invoicing.PaymentTermDays))" /> <span data-days-unit data-one="Tag" data-many="Tage" data-zero="@(quote ? "Tage" : "sofort fällig")">@DaysUnit(input.PaymentTermDays ?? (quote ? Model.Invoicing.QuoteValidityDays : Model.Invoicing.PaymentTermDays))</span></span></dd>
                 </div>
                 @if (!template)
                 {
@@ -119,6 +122,7 @@
 
     <div class="mb-doc__intro">
         <label class="mb-label" for="Input_IntroText">@L["Editor.Intro"]</label>
+        <partial name="_TextPresets" model="introPresets" />
         <textarea class="mb-in" id="Input_IntroText" name="Input.IntroText" rows="2" data-autogrow maxlength="4000" placeholder="@L["Editor.Intro.Placeholder"]">@input.IntroText</textarea>
     </div>
 
@@ -152,6 +156,7 @@
 
     <div class="mb-doc__terms">
         <label class="mb-doc__caption" for="Input_PaymentTerms">@(quote ? "Bedingungen" : "Zahlungsbedingungen")</label>
+        <partial name="_TextPresets" model="termsPresets" />
         <textarea class="mb-in" id="Input_PaymentTerms" name="Input.PaymentTerms" rows="2" data-autogrow maxlength="2000" placeholder="@L["Editor.Terms.Placeholder"]" aria-describedby="terms-hint">@input.PaymentTerms</textarea>
         @if (quote)
         {
@@ -166,6 +171,7 @@
     <div class="mb-doc__closing">
         <div class="mb-field">
             <label class="mb-label" for="Input_ClosingText">@L["Editor.Closing"]</label>
+            <partial name="_TextPresets" model="closingPresets" />
             <textarea class="mb-in" id="Input_ClosingText" name="Input.ClosingText" rows="1" data-autogrow maxlength="2000" placeholder="@L["Editor.Closing.Placeholder"]">@input.ClosingText</textarea>
         </div>
         @if (!string.IsNullOrWhiteSpace(company.Signature))
