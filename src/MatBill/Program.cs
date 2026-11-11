@@ -80,6 +80,7 @@ builder.Services.AddScoped<BrandingService>();
 builder.Services.AddSingleton<PreviewStore>();
 builder.Services.AddScoped<InvoiceService>();
 builder.Services.AddScoped<TestInvoiceService>();
+builder.Services.AddScoped<LegacyImportService>();
 builder.Services.AddScoped<RecurringService>();
 builder.Services.AddScoped<MailService>();
 builder.Services.AddScoped<NotificationService>();
@@ -391,7 +392,8 @@ app.MapGet("/invoices/{id:long}/pdf", async (long id, HttpContext http, InvoiceS
 app.MapGet("/invoices/{id:long}/xml", async (long id, HttpContext http, InvoiceService invoices) =>
 {
     var invoice = await invoices.FindAsync(id, http.RequestAborted);
-    if (invoice is null || invoice.Number is null)
+    // an invoice taken over from another program was no e-invoice: MatBill does not make one up afterwards
+    if (invoice is null || invoice.Number is null || invoice.IsImported)
     {
         return Results.NotFound();
     }

@@ -95,6 +95,7 @@ public class MbDbContext(DbContextOptions<MbDbContext> options, ICurrentUser cur
         b.Entity<User>().Ignore(x => x.Initials);
         b.Entity<Customer>().Ignore(x => x.AddressLine);
         b.Entity<Invoice>().Ignore(x => x.IsDraft);
+        b.Entity<Invoice>().Ignore(x => x.IsImported);
         b.Entity<ApiClient>().Ignore(x => x.IsActive);
 
         b.Entity<User>(e =>
@@ -149,6 +150,8 @@ public class MbDbContext(DbContextOptions<MbDbContext> options, ICurrentUser cur
             // The same request twice is the same invoice: the reference is unique per client (a deleted draft frees it, the request may be made again).
             e.HasIndex(x => new { x.ApiClientId, x.ApiReference }).IsUnique().HasFilter("\"ApiReference\" IS NOT NULL AND \"UpdateState\" <> 0");
             e.HasOne(x => x.ApiClient).WithMany().HasForeignKey(x => x.ApiClientId).OnDelete(DeleteBehavior.Restrict);
+            // An invoice taken over from another program is there once: its id there is unique per program.
+            e.HasIndex(x => new { x.ImportSource, x.ImportRef }).IsUnique().HasFilter("\"ImportRef\" IS NOT NULL AND \"UpdateState\" <> 0");
         });
         b.Entity<InvoiceLine>(e =>
         {
@@ -207,6 +210,7 @@ public class MbDbContext(DbContextOptions<MbDbContext> options, ICurrentUser cur
             e.HasIndex(x => x.Number).IsUnique().HasFilter("\"UpdateState\" <> 0");
             e.HasIndex(x => x.ExpenseDate);
             e.HasIndex(x => x.Status);
+            e.HasIndex(x => new { x.ImportSource, x.ImportRef }).IsUnique().HasFilter("\"ImportRef\" IS NOT NULL AND \"UpdateState\" <> 0");
             e.Property(x => x.TaxRate).HasColumnType("numeric(5,2)");
             e.HasOne(x => x.ReceiptFile).WithMany().HasForeignKey(x => x.ReceiptFileId).OnDelete(DeleteBehavior.SetNull);
         });

@@ -136,6 +136,9 @@ public sealed partial class ExportService(MbDbContext db, FileStoreService files
             await WriteAsync(zip, $"{root}/LIESMICH.txt", Encoding.UTF8.GetBytes(
                 $"Export von MatBill für {company.Name}\r\nZeitraum: {DocFmt.Date(from)} bis {DocFmt.Date(to)}\r\nErstellt: {DocFmt.Moment(DateTime.UtcNow)}\r\n\r\n" +
                 $"Rechnungen: {invoiceList.Count} (Ordner Rechnungen, Liste Rechnungen.csv; ausgestellte Rechnungen sind ZUGFeRD-E-Rechnungen, die XML-Daten stecken in der PDF)\r\n" +
+                (invoiceList.Any(i => i.ImportSource is not null)
+                    ? $"Davon aus einem früheren Rechnungsprogramm übernommen ({string.Join(", ", invoiceList.Where(i => i.ImportSource is not null).Select(i => i.ImportSource).Distinct())}): {invoiceList.Count(i => i.ImportSource is not null)}, als unveränderte Original-PDFs (keine E-Rechnung).\r\n"
+                    : "") +
                 $"Ausgaben: {expenseList.Count} (Ordner Ausgaben, Liste Ausgaben.csv){(missing > 0 ? $"; ohne Beleg: {missing}" : "")}\r\n" +
                 (company.SmallBusiness
                     ? "Übersicht.csv: Einnahmen und Ausgaben (brutto) je Monat (nach Rechnungs- und Belegdatum). Kleinunternehmer nach § 19 UStG: keine Umsatzsteuer, keine Vorsteuer.\r\n"

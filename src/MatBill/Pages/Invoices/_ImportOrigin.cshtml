@@ -1,0 +1,26 @@
+@model MatBill.Pages.Invoices.EditModel
+@* Where an invoice that was taken over from another program comes from: the program, its id there, the note of the import and the original PDF (the side column of the issued view). *@
+@if (Model.Invoice is { ImportSource: { } source } invoice)
+{
+    <div class="mat-card" id="import-origin">
+        <div class="mat-card__head">@Ui.Icon("upload")<h2 class="mat-card__title">@L["Invoices.Import.Title"]</h2></div>
+        <div class="mat-card__body">
+            @if (invoice.ImportNote is { } note)
+            {
+                <div class="mat-alert mat-alert--warning" role="note">@Ui.Icon("alert")<div class="mat-alert__body">@note</div></div>
+            }
+            <p>@L["Invoices.Import.Text", source]</p>
+            <dl class="mat-kv">
+                @if (invoice.ImportRef is { } reference)
+                {
+                    <dt>@L["Invoices.Import.Ref"]</dt><dd class="mat-mono">@reference</dd>
+                }
+                @if (invoice.PdfFile is { } file)
+                {
+                    <dt>@L["Invoices.Import.File"]</dt><dd><a href="/invoices/@invoice.Id/pdf?download=1">@file.FileName</a></dd>
+                    <dt>@L["Invoices.Import.Hash"]</dt><dd class="mat-mono mb-break">@file.Sha256</dd>
+                }
+            </dl>
+        </div>
+    </div>
+}

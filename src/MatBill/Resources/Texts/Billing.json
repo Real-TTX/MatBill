@@ -18,6 +18,7 @@
   "Billing.TestDelete.Reason.Bank": { "en": "A bank transaction is assigned to the invoice.", "de": "Der Rechnung ist ein Bankumsatz zugeordnet." },
   "Billing.TestDelete.Reason.Link": { "en": "A share link of the invoice exists: delete it under Share links first.", "de": "Es gibt einen Freigabelink zur Rechnung: Lösche ihn zuerst unter Freigaben." },
   "Billing.TestDelete.Reason.Series": { "en": "It was made by a recurring series.", "de": "Sie wurde von einer wiederkehrenden Rechnung erzeugt." },
+  "Billing.TestDelete.Reason.Imported": { "en": "It was taken over from another program.", "de": "Sie wurde aus einem anderen Programm übernommen." },
   "Billing.TestDelete.Reason.Api": { "en": "It was requested through the API.", "de": "Sie wurde über die API angefordert." },
   "Billing.TestDelete.Reason.Quote": { "en": "It was made from a quote.", "de": "Sie wurde aus einem Angebot erzeugt." },
   "Billing.TestDelete.Reason.Of": { "en": "{0}: {1}", "de": "{0}: {1}" },

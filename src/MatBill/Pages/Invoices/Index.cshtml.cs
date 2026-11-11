@@ -68,12 +68,13 @@ public sealed class IndexModel(MbDbContext db, TimeProvider clock) : PageModelBa
                 new FilterSpec<Invoice>("year", L["Invoices.Filter.Year"], [.. years.Select(y => new FilterOption(y.ToString(), y.ToString()))], (q, v) => int.TryParse(v, out var y) ? q.Where(i => i.InvoiceDate.Year == y) : q),
                 new FilterSpec<Invoice>("customer", L["Invoices.Customer"], [], (q, v) => long.TryParse(v, out var id) ? q.Where(i => i.CustomerId == id) : q, Search: "customers", Resolve: Lookup.CustomerName(db)),
                 new FilterSpec<Invoice>("origin", L["Invoices.Filter.Origin"],
-                    [new("series", L["Invoices.Origin.Series"]), new("api", L["Invoices.Origin.Api"]), new("single", L["Invoices.Origin.Single"])],
+                    [new("series", L["Invoices.Origin.Series"]), new("api", L["Invoices.Origin.Api"]), new("import", L["Invoices.Origin.Import"]), new("single", L["Invoices.Origin.Single"])],
                     (q, v) => v switch
                     {
                         "series" => q.Where(i => i.RecurringInvoiceId != null),
                         "api" => q.Where(i => i.ApiClientId != null),
-                        _ => q.Where(i => i.RecurringInvoiceId == null && i.ApiClientId == null),
+                        "import" => q.Where(i => i.ImportSource != null),
+                        _ => q.Where(i => i.RecurringInvoiceId == null && i.ApiClientId == null && i.ImportSource == null),
                     }),
                 .. apiClients.Count == 0 ? Array.Empty<FilterSpec<Invoice>>() :
                 [
@@ -109,6 +110,7 @@ public sealed class IndexModel(MbDbContext db, TimeProvider clock) : PageModelBa
             (new TableColumn(L["Invoices.Number"]), i => Ui.NameWithSub(i.Number ?? draft, $"/Invoices/Edit?id={i.Id}",
                 i.RecurringInvoiceId is not null ? fromSeries
                 : i.ApiClientId is { } api ? L["Invoices.FromApi", apiNames.GetValueOrDefault(api) ?? "API"].Value
+                : i.ImportSource is { } source ? L["Invoices.FromImport", source].Value + (i.ImportNote is null ? "" : " · " + L["Invoices.Import.Check"].Value)
                 : null)),
             (new TableColumn(L["Invoices.Customer"]), i => i.CustomerId is { } cid ? Ui.Link(i.RecipientName ?? "", $"/Customers/Edit?id={cid}&tab=invoices") : Ui.Text(i.RecipientName)),
             (new TableColumn(L["Common.Date"], HideOnPhone: true), i => Ui.Text(Fmt.Date(i.InvoiceDate))),

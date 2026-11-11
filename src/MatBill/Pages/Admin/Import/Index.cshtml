@@ -1,0 +1,117 @@
+@page
+@model MatBill.Pages.Admin.Import.IndexModel
+
+<mb-card title="@L["Import.What.Title"]" icon="info">
+    <p>@L["Import.What.Text"]</p>
+    <ul class="mb-problems">
+        <li>@L["Import.What.Customers"]</li>
+        <li>@L["Import.What.Invoices"]</li>
+        <li>@L["Import.What.Expenses"]</li>
+    </ul>
+    <p class="mat-muted">@L["Import.What.Rules"]</p>
+</mb-card>
+
+<form class="mat-form" method="post" enctype="multipart/form-data" novalidate>
+    <mb-card title="@L["Import.Form.Title"]" icon="upload">
+        <div class="mat-form__grid">
+            <div class="mat-field mat-field--full">
+                <label class="mat-label" for="file">@L["Import.File"]</label>
+                <input class="mat-input" type="file" id="file" name="file" accept=".zip" required data-msg-required="@L["Import.File.Missing"]" aria-describedby="file-hint" />
+                <span class="mat-hint" id="file-hint">@L["Import.File.Hint"]</span>
+                <span class="mat-error" aria-live="polite">@ViewData.ModelState["file"]?.Errors.FirstOrDefault()?.ErrorMessage</span>
+            </div>
+            <mb-switch for="Input.ContinueNumbers" label="@L["Import.ContinueNumbers"]" hint="@L["Import.ContinueNumbers.Hint"]" full="true" />
+        </div>
+    </mb-card>
+    <div class="mat-btn-row">
+        <button type="submit" class="mat-btn mat-btn--primary" asp-page-handler="Check">@Ui.Icon("check")<span>@L["Import.Check"]</span></button>
+        <button type="submit" class="mat-btn mat-btn--secondary" asp-page-handler="Import" data-confirm="@L["Import.Confirm"]" data-confirm-ok="@L["Import.Run"]">@Ui.Icon("upload")<span>@L["Import.Run"]</span></button>
+    </div>
+</form>
+
+@if (Model.Result is { } r)
+{
+    @if (r.Problems.Count > 0)
+    {
+        <div class="mat-alert mat-alert--danger" role="alert" id="import-problems">@Ui.Icon("x-circle")<div class="mat-alert__body">
+            <strong>@L["Import.Result.Problems"]</strong>
+            <ul class="mb-problems">
+                @foreach (var p in r.Problems)
+                {
+                    <li>@p</li>
+                }
+            </ul>
+        </div></div>
+    }
+    else if (r.Applied)
+    {
+        <div class="mat-alert mat-alert--success" role="status" id="import-done">@Ui.Icon("check-circle")<div class="mat-alert__body">@L["Import.Result.Done"]</div></div>
+    }
+    else
+    {
+        <div class="mat-alert mat-alert--info" role="status" id="import-checked">@Ui.Icon("info")<div class="mat-alert__body">@L["Import.Result.Checked"]</div></div>
+    }
+
+    <mb-card title="@(r.Applied ? L["Import.Result.Imported"] : L["Import.Result.WouldImport"])" icon="list">
+        <div class="mat-table-wrap">
+            <table class="mat-table" id="import-counts">
+                <caption class="mat-sr-only">@L["Import.Result.Imported"]</caption>
+                <thead><tr><th scope="col">@L["Import.Col.What"]</th><th scope="col" class="mat-num">@L["Import.Col.New"]</th><th scope="col" class="mat-num">@L["Import.Col.Known"]</th></tr></thead>
+                <tbody>
+                    <tr><td data-label="@L["Import.Col.What"]">@L["Import.Row.Customers"]</td><td data-label="@L["Import.Col.New"]" class="mat-num">@r.CustomersNew</td><td data-label="@L["Import.Col.Known"]" class="mat-num">@r.CustomersKnown</td></tr>
+                    <tr><td data-label="@L["Import.Col.What"]">@L["Import.Row.Products"]</td><td data-label="@L["Import.Col.New"]" class="mat-num">@r.ProductsNew</td><td data-label="@L["Import.Col.Known"]" class="mat-num">@r.ProductsKnown</td></tr>
+                    <tr><td data-label="@L["Import.Col.What"]">@L["Import.Row.Invoices"]</td><td data-label="@L["Import.Col.New"]" class="mat-num">@r.InvoicesNew</td><td data-label="@L["Import.Col.Known"]" class="mat-num">@r.InvoicesKnown</td></tr>
+                    <tr><td data-label="@L["Import.Col.What"]">@L["Import.Row.Expenses"]</td><td data-label="@L["Import.Col.New"]" class="mat-num">@r.ExpensesNew</td><td data-label="@L["Import.Col.Known"]" class="mat-num">@r.ExpensesKnown</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <dl class="mat-kv">
+            @if (r.DraftsSkipped > 0)
+            {
+                <dt>@L["Import.Result.Drafts"]</dt><dd>@r.DraftsSkipped</dd>
+            }
+            @if (r.ExpensesToReview > 0)
+            {
+                <dt>@L["Import.Result.ToReview"]</dt><dd>@r.ExpensesToReview</dd>
+            }
+            @if (r.CategoriesAdded.Count > 0)
+            {
+                <dt>@L["Import.Result.Categories"]</dt><dd>@string.Join(", ", r.CategoriesAdded)</dd>
+            }
+            @if (r.NextInvoiceNumber is { } next)
+            {
+                <dt>@L["Import.Result.NextNumber"]</dt><dd><span class="mat-mono" id="import-next">@next</span> <span class="mat-muted">(@r.NumberPattern)</span></dd>
+            }
+        </dl>
+    </mb-card>
+
+    @if (r.Years.Count > 0)
+    {
+        <mb-card title="@L["Import.Years.Title"]" icon="euro" sub="@L["Import.Years.Sub"]">
+            <div class="mat-table-wrap">
+                <table class="mat-table" id="import-years">
+                    <caption class="mat-sr-only">@L["Import.Years.Title"]</caption>
+                    <thead><tr><th scope="col">@L["Import.Col.Year"]</th><th scope="col" class="mat-num">@L["Import.Col.Invoices"]</th><th scope="col" class="mat-num">@L["Import.Col.Expenses"]</th></tr></thead>
+                    <tbody>
+                        @foreach (var (year, sums) in r.Years)
+                        {
+                            <tr><td data-label="@L["Import.Col.Year"]">@year</td><td data-label="@L["Import.Col.Invoices"]" class="mat-num">@Fmt.Money(sums.Invoices)</td><td data-label="@L["Import.Col.Expenses"]" class="mat-num">@Fmt.Money(sums.Expenses)</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </mb-card>
+    }
+
+    @if (r.Notes.Count > 0)
+    {
+        <mb-card title="@L["Import.Notes.Title"]" icon="alert" sub="@L["Import.Notes.Sub"]">
+            <ul class="mb-problems" id="import-notes">
+                @foreach (var n in r.Notes)
+                {
+                    <li>@n</li>
+                }
+            </ul>
+        </mb-card>
+    }
+}

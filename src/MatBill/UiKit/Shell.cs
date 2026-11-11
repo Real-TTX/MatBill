@@ -144,6 +144,7 @@ public sealed class ShellFactory(ICurrentUser user, NavCounts counts, Notificati
             new(Text.T("Shell.Nav.Shares"), "/Admin/Shares", "share"),
             new(Text.T("Shell.Nav.Invoicing"), "/Admin/Invoicing", "sliders"),
             new(Text.T("Shell.Nav.Api"), "/Admin/Api", "plug"),
+            new(Text.T("Shell.Nav.Import"), "/Admin/Import", "upload"),
             new(Text.T("Shell.Nav.Mail"), "/Admin/Mail", "mail"),
             new(Text.T("Shell.Nav.Banking"), "/Admin/Banking", "credit-card"),
         ]),

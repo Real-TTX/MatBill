@@ -784,6 +784,12 @@ namespace MatBill.Data.Migrations
                     b.Property<decimal>("GrossAmount")
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<string>("ImportRef")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ImportSource")
+                        .HasColumnType("text");
+
                     b.Property<bool>("NeedsReview")
                         .HasColumnType("boolean");
 
@@ -844,6 +850,10 @@ namespace MatBill.Data.Migrations
 
                     b.HasIndex("Status");
 
+                    b.HasIndex("ImportSource", "ImportRef")
+                        .IsUnique()
+                        .HasFilter("\"ImportRef\" IS NOT NULL AND \"UpdateState\" <> 0");
+
                     b.ToTable("Expense");
                 });
 
@@ -899,6 +909,15 @@ namespace MatBill.Data.Migrations
 
                     b.Property<decimal>("GrossTotal")
                         .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("ImportNote")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ImportRef")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ImportSource")
+                        .HasColumnType("text");
 
                     b.Property<string>("IntroText")
                         .HasColumnType("text");
@@ -1023,6 +1042,10 @@ namespace MatBill.Data.Migrations
                     b.HasIndex("ApiClientId", "ApiReference")
                         .IsUnique()
                         .HasFilter("\"ApiReference\" IS NOT NULL AND \"UpdateState\" <> 0");
+
+                    b.HasIndex("ImportSource", "ImportRef")
+                        .IsUnique()
+                        .HasFilter("\"ImportRef\" IS NOT NULL AND \"UpdateState\" <> 0");
 
                     b.HasIndex("RecurringInvoiceId", "RecurringDate")
                         .IsUnique()

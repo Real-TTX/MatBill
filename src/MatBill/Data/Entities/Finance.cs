@@ -140,6 +140,11 @@ public class Expense : AuditedEntity, ISoftDeletable
 
     public string? Note { get; set; }
 
+    /// <summary>A receipt taken over from an earlier program: the program and the id it had there (unique per program, so an import run twice adds nothing).</summary>
+    public string? ImportSource { get; set; }
+
+    public string? ImportRef { get; set; }
+
     public UpdateState UpdateState { get; set; } = UpdateState.Created;
 }
 

@@ -250,6 +250,20 @@ public class Invoice : AuditedEntity, ISoftDeletable
 
     public string? ApiNote { get; set; }
 
+    /// <summary>
+    /// An invoice taken over from an earlier program (<see cref="Services.LegacyImportService"/>): the program ("Invoiz") and the id the invoice had there
+    /// (unique per program among the invoices that are not deleted, so an import run twice adds nothing). Its stored PDF is the original as it went to the
+    /// customer; MatBill never drew it.
+    /// </summary>
+    public string? ImportSource { get; set; }
+
+    public string? ImportRef { get; set; }
+
+    /// <summary>What the import noticed about the invoice (a date that does not fit the order of the numbers): shown on its page, never printed.</summary>
+    public string? ImportNote { get; set; }
+
+    public bool IsImported => ImportSource is not null;
+
     public List<InvoiceLine> Lines { get; set; } = [];
 
     public UpdateState UpdateState { get; set; } = UpdateState.Created;

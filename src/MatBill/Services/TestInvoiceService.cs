@@ -114,6 +114,11 @@ public sealed class TestInvoiceService(MbDbContext db, NumberService numbers, Fi
             {
                 problems.Add(Of("Billing.TestDelete.Reason.Quote"));
             }
+
+            if (i.ImportSource is not null)
+            {
+                problems.Add(Of("Billing.TestDelete.Reason.Imported"));
+            }
         }
 
         return problems;

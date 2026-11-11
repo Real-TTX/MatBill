@@ -20,6 +20,14 @@
             {
                 <span class="mat-pill mat-pill--info">@Ui.Icon("plug")@L["Invoices.FromApi", apiClient.Name]</span>
             }
+            @if (invoice.ImportSource is { } importSource)
+            {
+                <span class="mat-pill mat-pill--info" id="import-pill">@Ui.Icon("upload")@L["Invoices.FromImport", importSource]</span>
+                @if (invoice.ImportNote is not null)
+                {
+                    <span class="mat-pill mat-pill--warn">@Ui.Icon("alert")@L["Invoices.Import.Check"]</span>
+                }
+            }
         </div>
         @if (draft)
         {
@@ -168,7 +176,10 @@
                             {
                                 <dt>@L["Invoices.Edit.FromQuote"]</dt><dd><a href="/Quotes/Edit?id=@quoteId">@L["Invoices.Edit.OpenQuote"]</a></dd>
                             }
+                            @if (!invoice.IsImported)
+                            {
                             <dt>@L["Invoices.Edit.EInvoice"]</dt><dd><a href="/invoices/@invoice.Id/xml">ZUGFeRD-XML</a> · <a href="/invoices/@invoice.Id/xml?xrechnung=1">XRechnung</a></dd>
+                            }
                         </dl>
                         @if (invoice.Status == InvoiceStatus.Open && invoice.Kind == InvoiceKind.Invoice)
                         {
@@ -184,6 +195,7 @@
                 </div>
 
                 <partial name="_ApiOrigin" model="Model" />
+                <partial name="_ImportOrigin" model="Model" />
 
                 <div class="mat-card">
                     <div class="mat-card__head">@Ui.Icon("send")<h2 class="mat-card__title">@L["Invoices.Sending"]</h2></div>

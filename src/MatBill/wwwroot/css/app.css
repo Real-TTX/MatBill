@@ -16,6 +16,7 @@
 .mb-sub { display: block; }
 .mb-name, .mat-table__name.mb-name { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .mb-prewrap { white-space: pre-wrap; overflow-wrap: anywhere; }
+.mb-break { overflow-wrap: anywhere; }
 .mb-person { display: inline-flex; align-items: center; gap: var(--mat-space-2); }
 .mb-money { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .mb-warn-text { color: var(--mat-danger-text); }

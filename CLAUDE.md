@@ -69,6 +69,14 @@ Test changes by **rebuilding the container and redeploying the stack**. Wait for
   `NumberService.InUseAsync` counts deleted rows), with its cancellation invoice when it was cancelled, its positions and its stored PDF. The number must be typed to confirm,
   `DeletedDocument` stays forever (the activity log is cleaned after a year) and the range can go on at the freed number when no later number is on a document.
   Every rule is checked in the service (`ProblemsAsync`), never only on the page; a real invoice is cancelled.
+- **Old data** (`LegacyImportService`, page `/Admin/Import`, parser `MatBill.Core/Import/InvoizExport`): the export of Invoiz as a ZIP (`daten/kunden-artikel.json`,
+  `daten/rechnungen.psv`, `Rechnungen/<date>_<number>.pdf`, `Ausgaben/Ausgaben.csv` + receipts). Check first (saves nothing), then import; all or nothing.
+  Issued invoices keep their number, dates, positions (a discount is folded into the price) and payments, the **original PDF** is the stored PDF (`PdfAsync` serves it,
+  MatBill draws none, no e-invoice XML for them); drafts stay out. `Invoice/Expense.ImportSource` + `ImportRef` (unique per source) make a second run add nothing;
+  customers match by number then name, products by item number then name. What looks wrong is kept and marked (`Invoice.ImportNote`: a date more than 60 days
+  before a lower number; `NeedsReview`: a hint starting "ZU PRÜFEN"), a missing expense category is added, and the invoice range can take the form of the old
+  numbers and go on after the last one. Every record goes to the activity log with the SHA-256 of its file. `ImportTrialTests` runs a real export folder
+  (`MATBILL_IMPORT_TRIAL=<folder>`) against a fresh database and checks every year's export.
 - **Ready-made texts** (`DocumentTextPresets`, partial `_TextPresets`, `data-preset-for` in `app.js`): a pick list above the intro, the payment terms and the closing text writes a German text into the field (undo works); the first entry is the standard of the invoice settings. "Due at once" is a text of its own that sets the term to 0 (the paper says "sofort fällig", never "0 Tage"). Labels are interface keys (`Editor.Preset.*`), the texts are document text.
 - **A series is a template.** `RecurringService.RunAsync` builds the invoice with `RecurringPreview.Of` (the same code as the preview), issues it and steps the series in one
   transaction; `(RecurringInvoiceId, RecurringDate)` is unique. Failures: `FailedAttempts`, `RetryAfterDate` (15 min doubling, 5 attempts), a `RecurringRun`, a notification.
